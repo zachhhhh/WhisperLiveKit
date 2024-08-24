@@ -48,39 +48,12 @@ class StreamingSortformerState:
 
 
 class SortformerDiarization:
-    def __init__(self, sample_rate: int = 16000, model_name: str = "nvidia/diar_streaming_sortformer_4spk-v2"):
+    def __init__(self, model_name: str = "nvidia/diar_streaming_sortformer_4spk-v2"):
         """
-        Initialize the streaming Sortformer diarization system.
-        
-        Args:
-            sample_rate: Audio sample rate (default: 16000)
-            model_name: Pre-trained model name (default: "nvidia/diar_streaming_sortformer_4spk-v2")
+        Stores the shared streaming Sortformer diarization model. Used when a new online_diarization is initialized.
         """
-        self.sample_rate = sample_rate
-        self.speaker_segments = []
-        self.buffer_audio = np.array([], dtype=np.float32)
-        self.segment_lock = threading.Lock()
-        self.global_time_offset = 0.0
-        self.processed_time = 0.0
-        self.debug = False
-        
         self._load_model(model_name)
-        
-        self._init_streaming_state()
-        
-        self._previous_chunk_features = None
-        self._chunk_index = 0
-        self._len_prediction = None
-        
-        # Audio buffer to store PCM chunks for debugging
-        self.audio_buffer = []
-        
-        # Buffer for accumulating audio chunks until reaching chunk_duration_seconds
-        self.audio_chunk_buffer = []
-        self.accumulated_duration = 0.0
-        
-        logger.info("SortformerDiarization initialized successfully")
-
+    
     def _load_model(self, model_name: str):
         """Load and configure the Sortformer model for streaming."""
         try:
@@ -102,26 +75,59 @@ class SortformerDiarization:
             self.diar_model.sortformer_modules.spkcache_update_period = 144
             self.diar_model.sortformer_modules.log = False
             self.diar_model.sortformer_modules._check_streaming_parameters()
-
-            self.audio2mel = AudioToMelSpectrogramPreprocessor(
-                window_size=0.025,
-                normalize="NA",
-                n_fft=512,
-                features=128,
-                pad_to=0
-            )
-            
-            self.chunk_duration_seconds = (
-                self.diar_model.sortformer_modules.chunk_len * 
-                self.diar_model.sortformer_modules.subsampling_factor * 
-                self.diar_model.preprocessor._cfg.window_stride
-            )
-            
-            logger.info(f"Chunk duration: {self.chunk_duration_seconds:.2f}s")
-            
+                        
         except Exception as e:
             logger.error(f"Failed to load Sortformer model: {e}")
             raise
+ 
+class SortformerDiarizationOnline:
+    def __init__(self, shared_model, sample_rate: int = 16000):
+        """
+        Initialize the streaming Sortformer diarization system.
+        
+        Args:
+            sample_rate: Audio sample rate (default: 16000)
+            model_name: Pre-trained model name (default: "nvidia/diar_streaming_sortformer_4spk-v2")
+        """
+        self.sample_rate = sample_rate
+        self.speaker_segments = []
+        self.buffer_audio = np.array([], dtype=np.float32)
+        self.segment_lock = threading.Lock()
+        self.global_time_offset = 0.0
+        self.processed_time = 0.0
+        self.debug = False
+                
+        self.diar_model = shared_model.diar_model
+             
+        self.audio2mel = AudioToMelSpectrogramPreprocessor(
+            window_size=0.025,
+            normalize="NA",
+            n_fft=512,
+            features=128,
+            pad_to=0
+        )
+        
+        self.chunk_duration_seconds = (
+            self.diar_model.sortformer_modules.chunk_len * 
+            self.diar_model.sortformer_modules.subsampling_factor * 
+            self.diar_model.preprocessor._cfg.window_stride
+        )
+        
+        self._init_streaming_state()
+        
+        self._previous_chunk_features = None
+        self._chunk_index = 0
+        self._len_prediction = None
+        
+        # Audio buffer to store PCM chunks for debugging
+        self.audio_buffer = []
+        
+        # Buffer for accumulating audio chunks until reaching chunk_duration_seconds
+        self.audio_chunk_buffer = []
+        self.accumulated_duration = 0.0
+        
+        logger.info("SortformerDiarization initialized successfully")
+
 
     def _init_streaming_state(self):
         """Initialize the streaming state for the model."""

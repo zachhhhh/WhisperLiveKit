@@ -6,7 +6,7 @@ import logging
 import traceback
 from datetime import timedelta
 from whisperlivekit.timed_objects import ASRToken, Silence
-from whisperlivekit.core import TranscriptionEngine, online_factory
+from whisperlivekit.core import TranscriptionEngine, online_factory, online_diarization_factory
 from whisperlivekit.ffmpeg_manager import FFmpegManager, FFmpegState
 from whisperlivekit.remove_silences import handle_silences
 from whisperlivekit.trail_repetition import trim_tail_repetition
@@ -63,7 +63,6 @@ class AudioProcessor:
         # Models and processing
         self.asr = models.asr
         self.tokenizer = models.tokenizer
-        self.diarization = models.diarization
         self.vac_model = models.vac_model
         if self.args.vac:
             self.vac = FixedVADIterator(models.vac_model)
@@ -96,6 +95,11 @@ class AudioProcessor:
         # Initialize transcription engine if enabled
         if self.args.transcription:
             self.online = online_factory(self.args, models.asr, models.tokenizer)
+            
+        # Initialize diarization engine if enabled
+        if self.args.diarization:
+            self.diarization = online_diarization_factory(self.args, models.diarization_model)
+
 
     def convert_pcm_to_float(self, pcm_buffer):
         """Convert PCM buffer in s16le format to normalized NumPy array."""

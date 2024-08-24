@@ -121,14 +121,14 @@ class TranscriptionEngine:
         if self.args.diarization:
             if self.args.diarization_backend == "diart":
                 from whisperlivekit.diarization.diart_backend import DiartDiarization
-                self.diarization = DiartDiarization(
+                self.diarization_model = DiartDiarization(
                     block_duration=self.args.min_chunk_size,
                     segmentation_model_name=self.args.segmentation_model,
                     embedding_model_name=self.args.embedding_model
                 )
             elif self.args.diarization_backend == "sortformer":
                 from whisperlivekit.diarization.sortformer_backend import SortformerDiarization
-                self.diarization = SortformerDiarization()
+                self.diarization_model = SortformerDiarization()
             else:
                 raise ValueError(f"Unknown diarization backend: {self.args.diarization_backend}")
             
@@ -154,3 +154,15 @@ def online_factory(args, asr, tokenizer, logfile=sys.stderr):
         )
     return online
   
+  
+def online_diarization_factory(args, diarization_backend):
+    if args.diarization_backend == "diart":
+        online = diarization_backend
+        # Not the best here, since several user/instances will share the same backend, but diart is not SOTA anymore and sortformer is recommanded
+    
+    if args.diarization_backend == "sortformer":
+        from whisperlivekit.diarization.sortformer_backend import SortformerDiarizationOnline
+        online = SortformerDiarizationOnline(shared_model=diarization_backend)
+    return online
+
+        
