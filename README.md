@@ -8,7 +8,7 @@
 
 <p align="center">
 <a href="https://pypi.org/project/whisperlivekit/"><img alt="PyPI Version" src="https://img.shields.io/pypi/v/whisperlivekit?color=g"></a>
-<a href="https://pepy.tech/project/whisperlivekit"><img alt="PyPI Downloads" src="https://static.pepy.tech/personalized-badge/whisperlivekit?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=downloads"></a>
+<a href="https://pepy.tech/project/whisperlivekit"><img alt="PyPI Downloads" src="https://static.pepy.tech/personalized-badge/whisperlivekit?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=installations"></a>
 <a href="https://pypi.org/project/whisperlivekit/"><img alt="Python Versions" src="https://img.shields.io/badge/python-3.9--3.13-dark_green"></a>
 <a href="https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT/Dual Licensed-dark_green"></a>
 </p>
@@ -92,10 +92,10 @@ See  **Parameters & Configuration** below on how to use them.
 Start the transcription server with various options:
 
 ```bash
-# SimulStreaming backend for ultra-low latency
-whisperlivekit-server --backend simulstreaming --model large-v3
+# Use better model than default (small)
+whisperlivekit-server --model large-v3
 
-# Advanced configuration with diarization
+# Advanced configuration with diarization and language
 whisperlivekit-server --host 0.0.0.0 --port 8000 --model medium --diarization --language fr
 ```
 
@@ -146,6 +146,16 @@ The package includes an HTML/JavaScript implementation [here](https://github.com
 
 ### ⚙️ Parameters & Configuration
 
+An important list of parameters can be changed. But what *should* you change?
+- the `--model` size. List and recommandations [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/available_models.md)
+- the `--language`.  List [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/simul_whisper/whisper/tokenizer.py)
+- the `--backend` ? you can switch to `--backend faster-whisper` if  `simulstreaming` does not work correctly or if you prefer to avoid the dual-license requirements.
+- `--warmup-file`, if you have one
+- `--host`, `--port`, `--ssl-certfile`, `--ssl-keyfile`, if you set up a server
+- `--diarization`, if you want to use it.
+
+The rest I don't recommend. But below are your options.
+
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `--model` | Whisper model size. | `small` |
@@ -187,7 +197,6 @@ The package includes an HTML/JavaScript implementation [here](https://github.com
 |-----------|-------------|---------|
 | `--diarization` | Enable speaker identification | `False` |
 | `--diarization-backend` |  `diart` or `sortformer` | `sortformer` |
-| `--punctuation-split` | Use punctuation to improve speaker boundaries | `True` |
 | `--segmentation-model` | Hugging Face model ID for Diart segmentation model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `pyannote/segmentation-3.0` |
 | `--embedding-model` | Hugging Face model ID for Diart embedding model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `speechbrain/spkrec-ecapa-voxceleb` |
 
