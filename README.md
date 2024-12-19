@@ -6,7 +6,7 @@ This project extends the [Whisper Streaming](https://github.com/ufal/whisper_str
 
 2. **Buffering Indication**: Improves streaming display by showing the current processing status, providing users with immediate feedback.
 
-3. **Javascript Client implementation**: Functionnal and minimalist MediaRecorder implementation that can be copied on your client side
+3. **Javascript Client implementation**: Functionnal and minimalist MediaRecorder implementation that can be copied on your client side.
 
 4. **MLX Whisper backend**: Integrates the alternative backend option MLX Whisper, optimized for efficient speech recognition on Apple silicon.
 
@@ -25,21 +25,41 @@ This project extends the [Whisper Streaming](https://github.com/ufal/whisper_str
 
 ### How to Launch the Server
 
-1. **Install Dependencies**:
+1. **Dependencies**:
+
+- Install required dependences :
 
     ```bash
-    pip install -r requirements.txt
+    # Whisper streaming required dependencies
+    pip install librosa soundfile
+
+    # Whisper streaming web required dependencies
+    pip install fastapi ffmpeg
     ```
-2. Install a whisper backend among:
+- Install at least one whisper backend among:
 
- ```
-whisper
-whisper-timestamped
-faster-whisper (faster backend on NVIDIA GPU)
-mlx-whisper (faster backend on Apple Silicon)
+    ```
+   whisper
+   whisper-timestamped
+   faster-whisper (faster backend on NVIDIA GPU)
+   mlx-whisper (faster backend on Apple Silicon)
+   
+   and torch if you want to use VAC (Voice Activity Controller)
+   ```
+- Optionnal dependencies
 
-and torch if you want to use VAC (Voice Activity Controller)
-```
+    ```
+    # If you want to use VAC (Voice Activity Controller)
+    torch
+   
+    # If you choose sentences as buffer trimming strategy
+    mosestokenizer
+    wtpsplit
+    tokenize_uk # If you work with Ukrainian text
+
+    # If you want to run the server using uvicorn (recommended)
+    uvicorn
+    ```
 
 
 3. **Run the FastAPI Server**:
