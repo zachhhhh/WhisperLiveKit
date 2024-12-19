@@ -41,24 +41,86 @@
             display: inline;
             color: rgb(197, 197, 197);
         }
+        .settings-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .settings {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+        #chunkSelector, #websocketInput {
+            font-size: 16px;
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+        #websocketInput {
+            width: 200px;
+        }
+        #chunkSelector:focus, #websocketInput:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        label {
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <p id="status">Click to start transcription</p>
-    <button id="recordButton">🎙️</button>
+    <div class="settings-container">
+        <button id="recordButton">🎙️</button>
+        <div class="settings">
+            <div>
+                <label for="chunkSelector">Chunk size (ms):</label>
+                <select id="chunkSelector">
+                    <option value="500">500 ms</option>
+                    <option value="1000" selected>1000 ms</option>
+                    <option value="2000">2000 ms</option>
+                    <option value="3000">3000 ms</option>
+                    <option value="4000">4000 ms</option>
+                    <option value="5000">5000 ms</option>
+                </select>
+            </div>
+            <div>
+                <label for="websocketInput">WebSocket URL:</label>
+                <input id="websocketInput" type="text" value="ws://localhost:8000/ws" />
+            </div>
+        </div>
+    </div>
+    <p id="status"></p>
+
     <div id="transcriptions"></div>
 
     <script>
-        let isRecording = false, websocket, recorder;
+        let isRecording = false, websocket, recorder, chunkDuration = 1000, websocketUrl = "ws://localhost:8000/ws";
 
         const statusText = document.getElementById("status");
         const recordButton = document.getElementById("recordButton");
+        const chunkSelector = document.getElementById("chunkSelector");
+        const websocketInput = document.getElementById("websocketInput");
         const transcriptionsDiv = document.getElementById("transcriptions");
 
         let fullTranscription = ""; // Store confirmed transcription
 
+        // Update chunk duration based on the selector
+        chunkSelector.addEventListener("change", () => {
+            chunkDuration = parseInt(chunkSelector.value);
+        });
+
+        // Update WebSocket URL dynamically
+        websocketInput.addEventListener("change", () => {
+            websocketUrl = websocketInput.value;
+        });
+
         function setupWebSocket() {
-            websocket = new WebSocket("ws://localhost:8000/ws");
+            websocket = new WebSocket(websocketUrl);
             websocket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 const { transcription, buffer } = data;
@@ -72,13 +134,18 @@
                     <span class="buffer">${buffer}</span>
                 `;
             };
+
+            websocket.onerror = () => {
+                statusText.textContent = "Error connecting to WebSocket";
+                stopRecording(); // Stop recording if WebSocket fails
+            };
         }
 
         async function startRecording() {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
             recorder.ondataavailable = (e) => websocket?.send(e.data);
-            recorder.start(3000);
+            recorder.start(chunkDuration); // Use dynamic chunk duration
             isRecording = true;
             updateUI();
         }
