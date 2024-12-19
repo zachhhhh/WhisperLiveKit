@@ -2,9 +2,9 @@
 
 This project extends the [Whisper Streaming](https://github.com/ufal/whisper_streaming) implementation by incorporating few extras. The enhancements include:
 
-1. **FastAPI Server with WebSocket Endpoint**: Enables real-time speech-to-text transcription directly from the browser.
+1. **Efficient FastAPI Server with WebSocket Endpoint**: Real-time speech-to-text transcription for browsers, web apps, or React Native, with audio chunks processed via FFmpeg async streaming process to ensure minimal latency.
 
-2. **Buffering Indication**: Improves streaming display by showing the current processing status, providing users with immediate feedback.
+2. **Buffering preview**: Enhances streaming feedback by displaying the unvalidated buffer content, allowing users to see live processing updates.
 
 3. **Javascript Client implementation**: Functionnal and minimalist MediaRecorder implementation that can be copied on your client side.
 
