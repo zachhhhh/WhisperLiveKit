@@ -20,27 +20,24 @@ app.add_middleware(
 )
 
 
-# Argument parsing
-parser = argparse.ArgumentParser()
-parser.add_argument("--host", type=str, default='localhost')
-parser.add_argument("--port", type=int, default=8000)
+parser = argparse.ArgumentParser(description="Whisper FastAPI Online Server")
+parser.add_argument("--host", type=str, default='localhost', help="The host address to bind the server to.")
+parser.add_argument("--port", type=int, default=8000, help="The port number to bind the server to.")
 parser.add_argument("--warmup-file", type=str, dest="warmup_file", 
         help="The path to a speech audio wav file to warm up Whisper so that the very first chunk processing is fast. It can be e.g. https://github.com/ggerganov/whisper.cpp/raw/master/samples/jfk.wav .")
 add_shared_args(parser)
 args = parser.parse_args()
 
-# Initialize Whisper
 asr, online = asr_factory(args)
 
 # Load demo HTML for the root endpoint
-with open("live_transcription.html", "r") as f:
+with open("src/live_transcription.html", "r") as f:
     html = f.read()
 
 @app.get("/")
 async def get():
     return HTMLResponse(html)
 
-# Streaming constants
 SAMPLE_RATE = 16000
 CHANNELS = 1
 SAMPLES_PER_SEC = SAMPLE_RATE * int(args.min_chunk_size)
@@ -67,11 +64,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
     ffmpeg_process = await start_ffmpeg_decoder()
     pcm_buffer = bytearray()
-
     # Continuously read decoded PCM from ffmpeg stdout in a background task
     async def ffmpeg_stdout_reader():
         nonlocal pcm_buffer
         loop = asyncio.get_event_loop()
+        full_transcription = ""
         while True:
             try:
                 chunk = await loop.run_in_executor(None, ffmpeg_process.stdout.read, 4096)
@@ -81,7 +78,6 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 pcm_buffer.extend(chunk)
 
-                # Process in 3-second batches
                 while len(pcm_buffer) >= BYTES_PER_SEC:
                     three_sec_chunk = pcm_buffer[:BYTES_PER_SEC]
                     del pcm_buffer[:BYTES_PER_SEC]
@@ -89,15 +85,17 @@ async def websocket_endpoint(websocket: WebSocket):
                     # Convert int16 -> float32
                     pcm_array = np.frombuffer(three_sec_chunk, dtype=np.int16).astype(np.float32) / 32768.0
 
-                    # Send PCM data to Whisper
                     online.insert_audio_chunk(pcm_array)
-                    transcription = online.process_iter()
-                    buffer = online.to_flush(online.transcript_buffer.buffer)
-
-                    # Return partial transcription results to the client
+                    transcription = online.process_iter()[2]
+                    if args.vac:
+                        buffer = online.online.to_flush(online.online.transcript_buffer.buffer)[2] # We need to access the underlying online object to get the buffer
+                    else:
+                        buffer = online.to_flush(online.transcript_buffer.buffer)[2]
+                    if buffer in full_transcription: # With VAC, the buffer is not updated until the next chunk is processed
+                        buffer = ""
                     await websocket.send_json({
-                        "transcription": transcription[2],
-                        "buffer": buffer[2]
+                        "transcription": transcription,
+                        "buffer": buffer
                     })
             except Exception as e:
                 print(f"Exception in ffmpeg_stdout_reader: {e}")

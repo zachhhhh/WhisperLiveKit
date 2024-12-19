@@ -68,7 +68,9 @@ This project extends the [Whisper Streaming](https://github.com/ufal/whisper_str
     python whisper_fastapi_online_server.py --host 0.0.0.0 --port 8000
     ```
 
-    - `--host` and `--port` let you specify the server’s IP/port.  
+    - `--host` and `--port` let you specify the server’s IP/port. 
+    - `-min-chunk-size` sets the minimum chunk size for audio processing. Make sure this value aligns with the chunk size selected in the frontend. If not aligned, the system will work but may unnecessarily over-process audio data.
+    - For a full list of configurable options, run `python whisper_fastapi_online_server.py -h`
 
 4. **Open the Provided HTML**:
 
@@ -88,7 +90,7 @@ This project extends the [Whisper Streaming](https://github.com/ufal/whisper_str
 
 If you want to **deploy** this setup:
 
-1. **Host the FastAPI app** behind a production-grade HTTP(S) server (like **Uvicorn + Nginx** or Docker).  
+1. **Host the FastAPI app** behind a production-grade HTTP(S) server (like **Uvicorn + Nginx** or Docker). If you use HTTPS, use "wss" instead of "ws" in WebSocket URL.
 2. The **HTML/JS page** can be served by the same FastAPI app or a separate static host.  
 3. Users open the page in **Chrome/Firefox** (any modern browser that supports MediaRecorder + WebSocket).  
 
