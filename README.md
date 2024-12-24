@@ -86,7 +86,7 @@ This project reuses and extends code from the original Whisper Streaming reposit
 ### How the Live Interface Works
 
 - Once you **allow microphone access**, the page records small chunks of audio using the **MediaRecorder** API in **webm/opus** format.  
-- These chunks are sent over a **WebSocket** to the FastAPI endpoint at `/ws`.  
+- These chunks are sent over a **WebSocket** to the FastAPI endpoint at `/asr`.  
 - The Python server decodes `.webm` chunks on the fly using **FFmpeg** and streams them into the **whisper streaming** implementation for transcription.  
 - **Partial transcription** appears as soon as enough audio is processed. The “unvalidated” text is shown in **lighter or grey color** (i.e., an ‘aperçu’) to indicate it’s still buffered partial output. Once Whisper finalizes that segment, it’s displayed in normal text.  
 - You can watch the transcription update in near real time, ideal for demos, prototyping, or quick debugging.

@@ -57,7 +57,7 @@ async def start_ffmpeg_decoder():
     )
     return process
 
-@app.websocket("/ws")
+@app.websocket("/asr")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print("WebSocket connection opened.")
