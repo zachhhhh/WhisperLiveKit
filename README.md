@@ -39,7 +39,7 @@ This project reuses and extends code from the original Whisper Streaming reposit
     pip install librosa soundfile
 
     # Whisper streaming web required dependencies
-    pip install fastapi ffmpeg
+    pip install fastapi ffmpeg-python
     ```
 - Install at least one whisper backend among:
 
