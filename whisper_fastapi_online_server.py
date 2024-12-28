@@ -3,6 +3,7 @@ import argparse
 import asyncio
 import numpy as np
 import ffmpeg
+from time import time
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
@@ -69,22 +70,24 @@ async def websocket_endpoint(websocket: WebSocket):
         nonlocal pcm_buffer
         loop = asyncio.get_event_loop()
         full_transcription = ""
+        beg = time()
         while True:
             try:
-                chunk = await loop.run_in_executor(None, ffmpeg_process.stdout.read, 4096)
-                if not chunk:  # FFmpeg might have closed
-                    print("FFmpeg stdout closed.")
-                    break
+                elapsed_time = int(time() - beg)
+                beg = time()
+                chunk = await loop.run_in_executor(None, ffmpeg_process.stdout.read, 32000*elapsed_time)
+                if not chunk: # The first chunk will be almost empty, FFmpeg is still starting up
+                    chunk = await loop.run_in_executor(None, ffmpeg_process.stdout.read, 4096)
+                    if not chunk: # FFmpeg might have closed
+                        print("FFmpeg stdout closed.")
+                        break
 
                 pcm_buffer.extend(chunk)
 
-                while len(pcm_buffer) >= BYTES_PER_SEC:
-                    three_sec_chunk = pcm_buffer[:BYTES_PER_SEC]
-                    del pcm_buffer[:BYTES_PER_SEC]
-
+                if len(pcm_buffer) >= BYTES_PER_SEC:
                     # Convert int16 -> float32
-                    pcm_array = np.frombuffer(three_sec_chunk, dtype=np.int16).astype(np.float32) / 32768.0
-
+                    pcm_array = np.frombuffer(pcm_buffer, dtype=np.int16).astype(np.float32) / 32768.0
+                    pcm_buffer = bytearray()
                     online.insert_audio_chunk(pcm_array)
                     transcription = online.process_iter()[2]
                     if args.vac:
