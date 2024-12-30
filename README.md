@@ -48,13 +48,11 @@ This project reuses and extends code from the original Whisper Streaming reposit
    whisper-timestamped
    faster-whisper (faster backend on NVIDIA GPU)
    mlx-whisper (faster backend on Apple Silicon)
-   
-   and torch if you want to use VAC (Voice Activity Controller)
    ```
 - Optionnal dependencies
 
     ```
-    # If you want to use VAC (Voice Activity Controller)
+    # If you want to use VAC (Voice Activity Controller). Useful for preventing hallucinations
     torch
    
     # If you choose sentences as buffer trimming strategy
