@@ -534,9 +534,9 @@ class OnlineASRProcessor:
         o = self.transcript_buffer.flush()
         self.commited.extend(o)
         completed = self.to_flush(o)
-        logger.debug(f">>>>COMPLETE NOW: {completed}")
+        logger.debug(f">>>>COMPLETE NOW: {completed[2]}")
         the_rest = self.to_flush(self.transcript_buffer.complete())
-        logger.debug(f"INCOMPLETE: {the_rest}")
+        logger.debug(f"INCOMPLETE: {the_rest[2]}")
 
         # there is a newly confirmed text
 
@@ -572,7 +572,7 @@ class OnlineASRProcessor:
     def chunk_completed_sentence(self):
         if self.commited == []:
             return
-        logger.debug(self.commited)
+        logger.debug("COMPLETED SENTENCE: ", [s[2] for s in self.commited])
         sents = self.words_to_sentences(self.commited)
         for s in sents:
             logger.debug(f"\t\tSENT: {s}")
