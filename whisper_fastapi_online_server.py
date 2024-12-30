@@ -90,6 +90,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     pcm_buffer = bytearray()
                     online.insert_audio_chunk(pcm_array)
                     transcription = online.process_iter()[2]
+                    full_transcription += transcription
                     if args.vac:
                         buffer = online.online.to_flush(online.online.transcript_buffer.buffer)[2] # We need to access the underlying online object to get the buffer
                     else:
