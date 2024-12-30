@@ -459,16 +459,20 @@ class OnlineASRProcessor:
     SAMPLING_RATE = 16000
 
     def __init__(
-        self, asr, tokenizer=None, buffer_trimming=("segment", 15), logfile=sys.stderr
+        self,
+        asr,
+        tokenize_method=None,
+        buffer_trimming=("segment", 15),
+        logfile=sys.stderr,
     ):
         """asr: WhisperASR object
-        tokenizer: sentence tokenizer object for the target language. Must have a method *split* that behaves like the one of MosesTokenizer. It can be None, if "segment" buffer trimming option is used, then tokenizer is not used at all.
+        tokenize_method: sentence tokenizer function for the target language. Must be a callable and behaves like the one of MosesTokenizer. It can be None, if "segment" buffer trimming option is used, then tokenizer is not used at all.
         ("segment", 15)
         buffer_trimming: a pair of (option, seconds), where option is either "sentence" or "segment", and seconds is a number. Buffer is trimmed if it is longer than "seconds" threshold. Default is the most recommended option.
         logfile: where to store the log.
         """
         self.asr = asr
-        self.tokenizer = tokenizer
+        self.tokenize = tokenize_method
         self.logfile = logfile
 
         self.init()
@@ -612,13 +616,13 @@ class OnlineASRProcessor:
         self.buffer_time_offset = time
 
     def words_to_sentences(self, words):
-        """Uses self.tokenizer for sentence segmentation of words.
+        """Uses self.tokenize for sentence segmentation of words.
         Returns: [(beg,end,"sentence 1"),...]
         """
 
         cwords = [w for w in words]
         t = " ".join(o[2] for o in cwords)
-        s = self.tokenizer.split(t)
+        s = self.tokenize(t)
         out = []
         while s:
             beg = None
