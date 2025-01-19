@@ -10,7 +10,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from whisper_online import backend_factory, online_factory, add_shared_args
-
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -37,10 +36,23 @@ parser.add_argument(
     dest="warmup_file",
     help="The path to a speech audio wav file to warm up Whisper so that the very first chunk processing is fast. It can be e.g. https://github.com/ggerganov/whisper.cpp/raw/master/samples/jfk.wav .",
 )
+
+parser.add_argument(
+    "--diarization",
+    type=bool,
+    default=False,
+    help="Whether to enable speaker diarization.",
+)
+
+
 add_shared_args(parser)
 args = parser.parse_args()
 
 asr, tokenizer = backend_factory(args)
+
+if args.diarization:
+    from src.diarization.diarization_online import DiartDiarization
+
 
 # Load demo HTML for the root endpoint
 with open("src/web/live_transcription.html", "r", encoding="utf-8") as f:
@@ -89,6 +101,9 @@ async def websocket_endpoint(websocket: WebSocket):
     online = online_factory(args, asr, tokenizer)
     print("Online loaded.")
 
+    if args.diarization:
+        diarization = DiartDiarization(SAMPLE_RATE)
+
     # Continuously read decoded PCM from ffmpeg stdout in a background task
     async def ffmpeg_stdout_reader():
         nonlocal pcm_buffer
@@ -136,9 +151,13 @@ async def websocket_endpoint(websocket: WebSocket):
                         buffer in full_transcription
                     ):  # With VAC, the buffer is not updated until the next chunk is processed
                         buffer = ""
-                    await websocket.send_json(
-                        {"transcription": transcription, "buffer": buffer}
-                    )
+                    response = {"transcription": transcription, "buffer": buffer}
+                    if args.diarization:
+                        speakers = await diarization.get_speakers(pcm_array)
+                        response["speakers"] = speakers
+
+                    await websocket.send_json(response)
+                    
             except Exception as e:
                 print(f"Exception in ffmpeg_stdout_reader: {e}")
                 break
@@ -174,6 +193,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
         ffmpeg_process.wait()
         del online
+        
+        if args.diarization:
+            # Stop Diart
+            diarization.close()
+
 
 
 
