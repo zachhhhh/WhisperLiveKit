@@ -57,9 +57,10 @@ def init_diart(SAMPLE_RATE):
         l_speakers = []
         annotation, audio = result
         for speaker in annotation._labels:            
-            segment = annotation._labels[speaker].__str__()
+            segments_beg = annotation._labels[speaker].segments_boundaries_[0]
+            segments_end = annotation._labels[speaker].segments_boundaries_[-1]
             asyncio.create_task(
-            l_speakers_queue.put({"speaker": speaker, "segment": segment})
+            l_speakers_queue.put({"speaker": speaker, "beg": segments_beg, "end": segments_end})
         )
 
     l_speakers_queue = asyncio.Queue()
@@ -74,13 +75,36 @@ def init_diart(SAMPLE_RATE):
 class DiartDiarization():
     def __init__(self, SAMPLE_RATE):
         self.inference, self.l_speakers_queue, self.ws_source = init_diart(SAMPLE_RATE)
+        self.segment_speakers = []
 
-    async def get_speakers(self, pcm_array):
+    async def diarize(self, pcm_array):
         self.ws_source.push_audio(pcm_array)
-        speakers = []
+        self.segment_speakers = []
         while not self.l_speakers_queue.empty():
-            speakers.append(await self.l_speakers_queue.get())
-        return speakers
+            self.segment_speakers.append(await self.l_speakers_queue.get())
     
     def close(self):
         self.ws_source.close()
+
+
+    def assign_speakers_to_chunks(self, chunks):
+        """
+        Go through each chunk and see which speaker(s) overlap
+        that chunk's time range in the Diart annotation.
+        Then store the speaker label(s) (or choose the most overlapping).
+        This modifies `chunks` in-place or returns a new list with assigned speakers.
+        """
+        if not self.segment_speakers:
+            return chunks
+
+        for segment in self.segment_speakers:
+            seg_beg = segment["beg"]
+            seg_end = segment["end"]
+            speaker = segment["speaker"]
+            for ch in chunks:
+                if seg_end <= ch["beg"] or seg_beg >= ch["end"]:
+                    continue
+                # We have overlap. Let's just pick the speaker (could be more precise in a more complex implementation)
+                ch["speaker"] = speaker
+
+        return chunks
