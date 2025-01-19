@@ -9,7 +9,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from whisper_online import backend_factory, online_factory, add_shared_args
+from src.whisper_streaming.whisper_online import backend_factory, online_factory, add_shared_args
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
