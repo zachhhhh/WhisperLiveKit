@@ -12,7 +12,7 @@ This project extends the [Whisper Streaming](https://github.com/ufal/whisper_str
 
 5. **MLX Whisper backend**: Integrates the alternative backend option MLX Whisper, optimized for efficient speech recognition on Apple silicon.
 
-6. **Diarization (beta)**: Adds speaker labeling in real-time alongside transcription using the [Diart](https://github.com/juanmc2005/diart) library. Each transcription segment is tagged with a speaker. Currently under active development. 
+6. **Diarization (beta)**: Adds speaker labeling in real-time alongside transcription using the [Diart](https://github.com/juanmc2005/diart) library. Each transcription segment is tagged with a speaker.
 
 ![Demo Screenshot](src/web/demo.png)
 
@@ -69,7 +69,6 @@ This project reuses and extends code from the original Whisper Streaming reposit
 
     # If you want to use diarization
     diart
-
     ```
 
 
