@@ -194,10 +194,16 @@ class OnlineASRProcessor:
     def chunk_completed_sentence(self):
         if self.commited == []:
             return
-        logger.debug("COMPLETED SENTENCE: ", [s[2] for s in self.commited])
+        
+        raw_text = self.asr.sep.join([s[2] for s in self.commited]) 
+        logger.debug(f"[Sentence-segmentation] Raw Text: {raw_text}")
+
         sents = self.words_to_sentences(self.commited)
+
+
+
         for s in sents:
-            logger.debug(f"\t\tSENT: {s}")
+            logger.debug(f"[Sentence-segmentation] completed sentence: {s}")
         if len(sents) < 2:
             return
         while len(sents) > 2:
@@ -205,7 +211,7 @@ class OnlineASRProcessor:
         # we will continue with audio processing at this timestamp
         chunk_at = sents[-2][1]
 
-        logger.debug(f"--- sentence chunked at {chunk_at:2.2f}")
+        logger.debug(f"[Sentence-segmentation]: sentence chunked at {chunk_at:2.2f}")
         self.chunk_at(chunk_at)
 
     def chunk_completed_segment(self, res):
