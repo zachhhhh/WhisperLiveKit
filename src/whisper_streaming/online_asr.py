@@ -175,7 +175,13 @@ class OnlineASRProcessor:
             if (
                 len(self.audio_buffer) / self.SAMPLING_RATE > self.buffer_trimming_sec
             ):  # longer than this
+                
+                logger.debug("chunking sentence")
                 self.chunk_completed_sentence()
+                
+
+            else:
+                logger.debug("not enough audio to trim as a sentence")
 
         if self.buffer_trimming_way == "segment":
             s = self.buffer_trimming_sec  # trim the completed segments longer than s,
@@ -286,7 +292,7 @@ class OnlineASRProcessor:
         """
         o = self.transcript_buffer.complete()
         f = self.to_flush(o)
-        logger.debug(f"last, noncommited: {f}")
+        logger.debug(f"last, noncommited: {f[0]*1000:.0f}-{f[1]*1000:.0f}: {f[2]}")
         self.buffer_time_offset += len(self.audio_buffer) / 16000
         return f
 
