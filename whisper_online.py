@@ -236,10 +236,12 @@ def asr_factory(args, logfile=sys.stderr):
     online = online_factory(args, asr, tokenizer, logfile=logfile)
     return asr, online
 
-def set_logging(args, logger, other="_server"):
+def set_logging(args, logger, others=[]):
     logging.basicConfig(format="%(levelname)s\t%(message)s")  # format='%(name)s
     logger.setLevel(args.log_level)
-    logging.getLogger("whisper_online" + other).setLevel(args.log_level)
+
+    for other in others:
+        logging.getLogger(other).setLevel(args.log_level)
 
 
 #    logging.getLogger("whisper_online_server").setLevel(args.log_level)
@@ -276,7 +278,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # reset to store stderr to different file stream, e.g. open(os.devnull,"w")
-    logfile = sys.stderr
+    logfile = None # sys.stderr
 
     if args.offline and args.comp_unaware:
         logger.error(
@@ -288,7 +290,7 @@ if __name__ == "__main__":
     #        logging.basicConfig(format='whisper-%(levelname)s:%(name)s: %(message)s',
     #                            level=getattr(logging, args.log_level))
 
-    set_logging(args, logger)
+    set_logging(args, logger,others=["src.whisper_streaming.online_asr"])
 
     audio_path = args.audio_path
 
