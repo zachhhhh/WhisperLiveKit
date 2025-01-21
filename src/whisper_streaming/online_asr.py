@@ -151,7 +151,7 @@ class OnlineASRProcessor:
         """
 
         prompt, non_prompt = self.prompt()
-        logger.debug(f"PROMPT: {prompt}")
+        logger.debug(f"PROMPT(previous): {prompt}")
         logger.debug(f"CONTEXT: {non_prompt}")
         logger.debug(
             f"transcribing {len(self.audio_buffer)/self.SAMPLING_RATE:2.2f} seconds from {self.buffer_time_offset:2.2f}"

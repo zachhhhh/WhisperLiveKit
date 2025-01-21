@@ -323,15 +323,18 @@ if __name__ == "__main__":
         if now is None:
             now = time.time() - start
         if o[0] is not None:
-            print(
-                "%1.4f %1.0f %1.0f %s" % (now * 1000, o[0] * 1000, o[1] * 1000, o[2]),
-                file=logfile,
-                flush=True,
+            log_string = f"{now*1000:1.0f}, {o[0]*1000:1.0f}-{o[1]*1000:1.0f} ({(now-o[1]):+1.0f}s): {o[2]}"
+
+            logger.debug(
+                log_string
             )
-            print(
-                "%1.4f %1.0f %1.0f %s" % (now * 1000, o[0] * 1000, o[1] * 1000, o[2]),
-                flush=True,
-            )
+
+            if logfile is not None:
+                print(
+                    log_string,
+                    file=logfile,
+                    flush=True,
+                )
         else:
             # No text, so no output
             pass
