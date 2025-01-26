@@ -49,9 +49,9 @@ def create_tokenizer(lan):
         lan
         in "as bn ca cs de el en es et fi fr ga gu hi hu is it kn lt lv ml mni mr nl or pa pl pt ro ru sk sl sv ta te yue zh".split()
     ):
-        from mosestokenizer import MosesTokenizer
+        from mosestokenizer import MosesSentenceSplitter        
 
-        return MosesTokenizer(lan)
+        return MosesSentenceSplitter(lan)
 
     # the following languages are in Whisper, but not in wtpsplit:
     if (
@@ -204,6 +204,7 @@ def backend_factory(args):
 
     # Create the tokenizer
     if args.buffer_trimming == "sentence":
+
         tokenizer = create_tokenizer(tgt_language)
     else:
         tokenizer = None
@@ -235,10 +236,12 @@ def asr_factory(args, logfile=sys.stderr):
     online = online_factory(args, asr, tokenizer, logfile=logfile)
     return asr, online
 
-def set_logging(args, logger, other="_server"):
+def set_logging(args, logger, others=[]):
     logging.basicConfig(format="%(levelname)s\t%(message)s")  # format='%(name)s
     logger.setLevel(args.log_level)
-    logging.getLogger("whisper_online" + other).setLevel(args.log_level)
+
+    for other in others:
+        logging.getLogger(other).setLevel(args.log_level)
 
 
 #    logging.getLogger("whisper_online_server").setLevel(args.log_level)
@@ -275,7 +278,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # reset to store stderr to different file stream, e.g. open(os.devnull,"w")
-    logfile = sys.stderr
+    logfile = None # sys.stderr
 
     if args.offline and args.comp_unaware:
         logger.error(
@@ -287,7 +290,7 @@ if __name__ == "__main__":
     #        logging.basicConfig(format='whisper-%(levelname)s:%(name)s: %(message)s',
     #                            level=getattr(logging, args.log_level))
 
-    set_logging(args, logger)
+    set_logging(args, logger,others=["src.whisper_streaming.online_asr"])
 
     audio_path = args.audio_path
 
@@ -320,15 +323,18 @@ if __name__ == "__main__":
         if now is None:
             now = time.time() - start
         if o[0] is not None:
-            print(
-                "%1.4f %1.0f %1.0f %s" % (now * 1000, o[0] * 1000, o[1] * 1000, o[2]),
-                file=logfile,
-                flush=True,
+            log_string = f"{now*1000:1.0f}, {o[0]*1000:1.0f}-{o[1]*1000:1.0f} ({(now-o[1]):+1.0f}s): {o[2]}"
+
+            logger.debug(
+                log_string
             )
-            print(
-                "%1.4f %1.0f %1.0f %s" % (now * 1000, o[0] * 1000, o[1] * 1000, o[2]),
-                flush=True,
-            )
+
+            if logfile is not None:
+                print(
+                    log_string,
+                    file=logfile,
+                    flush=True,
+                )
         else:
             # No text, so no output
             pass
