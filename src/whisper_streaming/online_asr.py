@@ -69,6 +69,7 @@ class HypothesisBuffer:
         return commit
 
     def pop_commited(self, time):
+        "Remove (from the beginning) of commited_in_buffer all the words that are finished before `time`"
         while self.commited_in_buffer and self.commited_in_buffer[0][1] <= time:
             self.commited_in_buffer.pop(0)
 
@@ -183,7 +184,8 @@ class OnlineASRProcessor:
         if self.buffer_trimming_way == "sentence":
 
             self.chunk_completed_sentence()
-                
+
+            
 
 
             
@@ -197,6 +199,7 @@ class OnlineASRProcessor:
             
             
             self.chunk_completed_segment(res)
+    
        
 
                 # alternative: on any word
@@ -215,9 +218,7 @@ class OnlineASRProcessor:
 
 
 
-        logger.debug(
-            f"len of buffer now: {len(self.audio_buffer)/self.SAMPLING_RATE:2.2f}"
-        )
+
         return self.to_flush(o)
 
     def chunk_completed_sentence(self):
@@ -252,7 +253,9 @@ class OnlineASRProcessor:
 
         t = self.commited[-1][1]
 
-        if len(ends) > 1:
+        if len(ends) <= 1:
+            logger.debug(f"--- not enough segments to chunk (<=1 words)")
+        else:
 
             e = ends[-2] + self.buffer_time_offset
             while len(ends) > 2 and e > t:
@@ -263,15 +266,20 @@ class OnlineASRProcessor:
                 self.chunk_at(e)
             else:
                 logger.debug(f"--- last segment not within commited area")
-        else:
-            logger.debug(f"--- not enough segments to chunk")
+
 
     def chunk_at(self, time):
         """trims the hypothesis and audio buffer at "time" """
+        logger.debug(f"chunking at {time:2.2f}s")
+
         self.transcript_buffer.pop_commited(time)
         cut_seconds = time - self.buffer_time_offset
         self.audio_buffer = self.audio_buffer[int(cut_seconds * self.SAMPLING_RATE) :]
         self.buffer_time_offset = time
+
+        logger.debug(
+            f"len of audio buffer is now: {len(self.audio_buffer)/self.SAMPLING_RATE:2.2f}s"
+            )
 
     def words_to_sentences(self, words):
         """Uses self.tokenize for sentence segmentation of words.
