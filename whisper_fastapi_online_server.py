@@ -125,13 +125,13 @@ async def websocket_endpoint(websocket: WebSocket):
                     transcription = online.process_iter()[2]
                     full_transcription += transcription
                     if args.vac:
-                        buffer = online.online.to_flush(
+                        buffer = online.online.concatenate_tsw(
                             online.online.transcript_buffer.buffer
                         )[
                             2
                         ]  # We need to access the underlying online object to get the buffer
                     else:
-                        buffer = online.to_flush(online.transcript_buffer.buffer)[2]
+                        buffer = online.concatenate_tsw(online.transcript_buffer.buffer)[2]
                     if (
                         buffer in full_transcription
                     ):  # With VAC, the buffer is not updated until the next chunk is processed

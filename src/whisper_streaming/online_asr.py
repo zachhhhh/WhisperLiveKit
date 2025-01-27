@@ -170,15 +170,15 @@ class OnlineASRProcessor:
 
         # transform to [(beg,end,"word1"), ...]
         tsw = self.asr.ts_words(res)
-
+        # insert into HypothesisBuffer
         self.transcript_buffer.insert(tsw, self.buffer_time_offset)
         o = self.transcript_buffer.flush()
         # Completed words
         self.commited.extend(o)
-        completed = self.to_flush(o)
+        completed = self.concatenate_tsw(o) # This will be returned at the end of the function
         logger.debug(f">>>>COMPLETE NOW: {completed[2]}")
         ## The rest is incomplete
-        the_rest = self.to_flush(self.transcript_buffer.complete())
+        the_rest = self.concatenate_tsw(self.transcript_buffer.complete())
         logger.debug(f"INCOMPLETE: {the_rest[2]}")
 
         # there is a newly confirmed text
@@ -245,7 +245,7 @@ class OnlineASRProcessor:
         # we will continue with audio processing at this timestamp
         chunk_at = sents[-2][1]
 
-        logger.debug(f"[Sentence-segmentation]: sentence will be chunked at {chunk_at:2.2f}")
+
         self.chunk_at(chunk_at)
 
     def chunk_completed_segment(self, res):
@@ -274,6 +274,11 @@ class OnlineASRProcessor:
     def chunk_at(self, time):
         """trims the hypothesis and audio buffer at "time" """
         logger.debug(f"chunking at {time:2.2f}s")
+
+        logger.debug(
+            f"len of audio buffer before chunking is: {len(self.audio_buffer)/self.SAMPLING_RATE:2.2f}s"
+            )
+
 
         self.transcript_buffer.pop_commited(time)
         cut_seconds = time - self.buffer_time_offset
@@ -316,14 +321,14 @@ class OnlineASRProcessor:
         Returns: the same format as self.process_iter()
         """
         o = self.transcript_buffer.complete()
-        f = self.to_flush(o)
+        f = self.concatenate_tsw(o)
         logger.debug(f"last, noncommited: {f[0]*1000:.0f}-{f[1]*1000:.0f}: {f[2]}")
         self.buffer_time_offset += len(self.audio_buffer) / 16000
         return f
 
-    def to_flush(
+    def concatenate_tsw(
         self,
-        sents,
+        tsw,
         sep=None,
         offset=0,
     ):
@@ -332,13 +337,14 @@ class OnlineASRProcessor:
         # return: (beg1,end-of-last-sentence,"concatenation of sentences") or (None, None, "") if empty
         if sep is None:
             sep = self.asr.sep
-        t = sep.join(s[2] for s in sents)
-        if len(sents) == 0:
+            
+        t = sep.join(s[2] for s in tsw)
+        if len(tsw) == 0:
             b = None
             e = None
         else:
-            b = offset + sents[0][0]
-            e = offset + sents[-1][1]
+            b = offset + tsw[0][0]
+            e = offset + tsw[-1][1]
         return (b, e, t)
 
 
