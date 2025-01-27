@@ -173,9 +173,11 @@ class OnlineASRProcessor:
 
         self.transcript_buffer.insert(tsw, self.buffer_time_offset)
         o = self.transcript_buffer.flush()
+        # Completed words
         self.commited.extend(o)
         completed = self.to_flush(o)
         logger.debug(f">>>>COMPLETE NOW: {completed[2]}")
+        ## The rest is incomplete
         the_rest = self.to_flush(self.transcript_buffer.complete())
         logger.debug(f"INCOMPLETE: {the_rest[2]}")
 
@@ -183,11 +185,12 @@ class OnlineASRProcessor:
 
         if self.buffer_trimming_way == "sentence":
 
-            self.chunk_completed_sentence()
+            self.chunk_completed_sentence(self.commited)
 
             
 
-
+        # TODO: new words in `completed` should not be reterned unless they form a sentence
+        # TODO: only complete sentences should go to completed
             
 
         if len(self.audio_buffer) / self.SAMPLING_RATE > self.buffer_trimming_sec :
@@ -219,13 +222,13 @@ class OnlineASRProcessor:
 
 
 
-        return self.to_flush(o)
+        return completed
 
-    def chunk_completed_sentence(self):
-        if self.commited == []:
+    def chunk_completed_sentence(self, commited_text):
+        if commited_text == []:
             return
 
-        sents = self.words_to_sentences(self.commited)
+        sents = self.words_to_sentences(commited_text)
 
 
 
@@ -436,7 +439,7 @@ class VACOnlineASRProcessor(OnlineASRProcessor):
             ret = self.online.process_iter()
             return ret
         else:
-            print("no online update, only VAD", self.status, file=self.logfile)
+            logger.debug("no online update, only VAD")
             return (None, None, "")
 
     def finish(self):
