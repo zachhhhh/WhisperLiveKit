@@ -110,6 +110,15 @@ class OnlineASRProcessor:
 
         self.buffer_trimming_way, self.buffer_trimming_sec = buffer_trimming
 
+        if self.buffer_trimming_way not in ["sentence", "segment"]:
+            raise ValueError("buffer_trimming must be either 'sentence' or 'segment'")
+        if self.buffer_trimming_sec <= 0:
+            raise ValueError("buffer_trimming_sec must be positive")
+        elif self.buffer_trimming_sec > 30:
+            logger.warning(
+                f"buffer_trimming_sec is set to {self.buffer_trimming_sec}, which is very long. It may cause OOM."
+            )
+
     def init(self, offset=None):
         """run this when starting or restarting processing"""
         self.audio_buffer = np.array([], dtype=np.float32)
@@ -171,35 +180,40 @@ class OnlineASRProcessor:
 
         # there is a newly confirmed text
 
-        if o and self.buffer_trimming_way == "sentence":  # trim the completed sentences
-            if (
-                len(self.audio_buffer) / self.SAMPLING_RATE > self.buffer_trimming_sec
-            ):  # longer than this
-                
-                logger.debug("chunking sentence")
-                self.chunk_completed_sentence()
+        if self.buffer_trimming_way == "sentence":
+
+            self.chunk_completed_sentence()
                 
 
-            else:
-                logger.debug("not enough audio to trim as a sentence")
 
-        if self.buffer_trimming_way == "segment":
-            s = self.buffer_trimming_sec  # trim the completed segments longer than s,
-        else:
-            s = 30  # if the audio buffer is longer than 30s, trim it
+            
 
-        if len(self.audio_buffer) / self.SAMPLING_RATE > s:
+        if len(self.audio_buffer) / self.SAMPLING_RATE > self.buffer_trimming_sec :
+                
+            if self.buffer_trimming_way == "sentence":
+                logger.warning(f"Chunck segment after {self.buffer_trimming_sec} seconds!"
+                                " Even if no sentence was found!"
+                             )
+            
+            
             self.chunk_completed_segment(res)
+       
 
-            # alternative: on any word
-            # l = self.buffer_time_offset + len(self.audio_buffer)/self.SAMPLING_RATE - 10
-            # let's find commited word that is less
-            # k = len(self.commited)-1
-            # while k>0 and self.commited[k][1] > l:
-            #    k -= 1
-            # t = self.commited[k][1]
-            logger.debug("chunking segment")
-            # self.chunk_at(t)
+                # alternative: on any word
+                # l = self.buffer_time_offset + len(self.audio_buffer)/self.SAMPLING_RATE - 10
+                # let's find commited word that is less
+                # k = len(self.commited)-1
+                # while k>0 and self.commited[k][1] > l:
+                #    k -= 1
+                # t = self.commited[k][1]
+                # self.chunk_at(t)
+
+        
+
+
+
+
+
 
         logger.debug(
             f"len of buffer now: {len(self.audio_buffer)/self.SAMPLING_RATE:2.2f}"
