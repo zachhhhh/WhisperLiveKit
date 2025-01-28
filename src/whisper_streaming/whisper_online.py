@@ -5,8 +5,8 @@ import librosa
 from functools import lru_cache
 import time
 import logging
-from src.whisper_streaming.backends import FasterWhisperASR, MLXWhisper, WhisperTimestampedASR, OpenaiApiASR
-from src.whisper_streaming.online_asr import OnlineASRProcessor, VACOnlineASRProcessor
+from backends import FasterWhisperASR, MLXWhisper, WhisperTimestampedASR, OpenaiApiASR
+from online_asr import OnlineASRProcessor, VACOnlineASRProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -290,7 +290,7 @@ if __name__ == "__main__":
     #        logging.basicConfig(format='whisper-%(levelname)s:%(name)s: %(message)s',
     #                            level=getattr(logging, args.log_level))
 
-    set_logging(args, logger,others=["src.whisper_streaming.online_asr"])
+    set_logging(args, logger,others=["online_asr"])
 
     audio_path = args.audio_path
 
