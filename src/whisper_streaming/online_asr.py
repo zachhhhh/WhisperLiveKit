@@ -215,21 +215,14 @@ class OnlineASRProcessor:
                 # self.chunk_at(t)
 
         
-
-
-
-
-
-
-
         return completed
 
-    def chunk_completed_sentence(self, commited_text):
-        if commited_text == []:
-            return
-
-        sents = self.words_to_sentences(commited_text)
-
+    def chunk_completed_sentence(self):
+        if self.commited == []:
+            return        
+        raw_text = self.asr.sep.join([s[2] for s in self.commited]) 
+        logger.debug(f"COMPLETED SENTENCE: {raw_text}")
+        sents = self.words_to_sentences(self.commited)
 
 
         if len(sents) < 2:
@@ -322,7 +315,7 @@ class OnlineASRProcessor:
         """
         o = self.transcript_buffer.complete()
         f = self.concatenate_tsw(o)
-        logger.debug(f"last, noncommited: {f[0]*1000:.0f}-{f[1]*1000:.0f}: {f[2]}")
+        logger.debug(f"last, noncommited: {f[0]*1000:.0f}-{f[1]*1000:.0f}: {f[2][0]*1000:.0f}-{f[1]*1000:.0f}: {f[2]}")
         self.buffer_time_offset += len(self.audio_buffer) / 16000
         return f
 
@@ -365,7 +358,7 @@ class VACOnlineASRProcessor(OnlineASRProcessor):
         import torch
 
         model, _ = torch.hub.load(repo_or_dir="snakers4/silero-vad", model="silero_vad")
-        from silero_vad_iterator import FixedVADIterator
+        from src.whisper_streaming.silero_vad_iterator import FixedVADIterator
 
         self.vac = FixedVADIterator(
             model
