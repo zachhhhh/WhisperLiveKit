@@ -174,7 +174,7 @@ class OnlineASRProcessor:
 
         non_prompt =  self.concatenate_tsw(self.commited_not_final)[2]
 
-        logger.debug(f"PROMPT(previous): {prompt[:20]}...{prompt[-20:]} (length={len(prompt)}chars)")
+        logger.debug(f"PROMPT(previous): {prompt[:20]}…{prompt[-20:]} (length={len(prompt)}chars)")
         logger.debug(f"CONTEXT: {non_prompt}")
 
         return prompt, non_prompt
@@ -212,6 +212,8 @@ class OnlineASRProcessor:
         # completed will be returned at the end of the function.
         # completed is a transcribed text with (beg,end,"sentence ...") format.
 
+
+        completed = []
         if self.buffer_trimming_way == "sentence":
             
             sentences = self.words_to_sentences(self.commited_not_final)
@@ -221,7 +223,7 @@ class OnlineASRProcessor:
             if len(sentences) < 2:
                 logger.debug(f"[Sentence-segmentation] no full sentence segmented, do not commit anything.")
                 
-                completed = []
+                
 
             
             else:
@@ -240,25 +242,24 @@ class OnlineASRProcessor:
                 completed= sentences[:-1]
 
             
-        else:
+        
 
 
             # break audio buffer anyway if it is too long
 
-            if len(self.audio_buffer) / self.SAMPLING_RATE > self.buffer_trimming_sec :
+        if len(self.audio_buffer) / self.SAMPLING_RATE > self.buffer_trimming_sec :
                     
-                if self.buffer_trimming_way == "sentence":
-                    logger.warning(f"Chunck segment after {self.buffer_trimming_sec} seconds!"
-                                    " Even if no sentence was found!"
-                                )
+            if self.buffer_trimming_way == "sentence":
+                logger.warning(f"Chunck segment after {self.buffer_trimming_sec} seconds!"
+                                " Even if no sentence was found!"
+                            )
                     
                     
+
                 
+            completed = self.chunk_completed_segment() 
                 
-                completed = self.chunk_completed_segment() 
-                
-            else:
-                completed = []
+
             
 
         
@@ -294,13 +295,14 @@ class OnlineASRProcessor:
 
             ends = [w[1] for w in ts_words]
 
-            t = ts_words[-1][1]
-            e = ends[-2] + self.buffer_time_offset
+            t = ts_words[-1][1] # start of the last word
+            e = ends[-2] 
             while len(ends) > 2 and e > t:
                 ends.pop(-1)
-                e = ends[-2] + self.buffer_time_offset
+                e = ends[-2] 
+
             if e <= t:
-                logger.debug(f"--- segment chunked at {e:2.2f}")
+                
                 self.chunk_at(e)
 
                 n_commited_words = len(ends)-1
@@ -373,7 +375,8 @@ class OnlineASRProcessor:
         """
         o = self.transcript_buffer.complete()
         f = self.concatenate_tsw(o)
-        logger.debug(f"last, noncommited: {f[0]*1000:.0f}-{f[1]*1000:.0f}: {f[2][0]*1000:.0f}-{f[1]*1000:.0f}: {f[2]}")
+        if f[1] is not None:
+            logger.debug(f"last, noncommited: {f[0]*1000:.0f}-{f[1]*1000:.0f}: {f[2]}")
         self.buffer_time_offset += len(self.audio_buffer) / 16000
         return f
 
@@ -408,6 +411,8 @@ class VACOnlineASRProcessor(OnlineASRProcessor):
     it runs VAD and continuously detects whether there is speech or not.
     When it detects end of speech (non-voice for 500ms), it makes OnlineASRProcessor to end the utterance immediately.
     """
+
+# TODO: VACOnlineASRProcessor does not break after chunch length is reached, this can lead to overflow!
 
     def __init__(self, online_chunk_size, *a, **kw):
         self.online_chunk_size = online_chunk_size
