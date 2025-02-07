@@ -213,16 +213,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     
                     full_transcription += trans
                     if args.vac:
-                        buffer = online.online.concatenate_tsw(
-                            online.online.transcript_buffer.buffer
-                        )[
-                            2
-                        ]  # We need to access the underlying online object to get the buffer
+                        transcript = online.online.concatenate_tokens(online.online.transcript_buffer.buffer)
                     else:
-                        buffer = online.concatenate_tsw(online.transcript_buffer.buffer)[2]
-                    if (
-                        buffer in full_transcription
-                    ):  # With VAC, the buffer is not updated until the next chunk is processed
+                        transcript = online.concatenate_tokens(online.transcript_buffer.buffer)
+
+                    buffer = transcript.text  
+                    if buffer in full_transcription: # With VAC, the buffer is not updated until the next chunk is processed
                         buffer = ""
                                         
                     lines = [
