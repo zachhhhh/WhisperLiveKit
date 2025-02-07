@@ -133,9 +133,7 @@ class OnlineASRProcessor:
         if offset is not None:
             self.buffer_time_offset = offset
         self.transcript_buffer.last_commited_time = self.buffer_time_offset
-        self.final_transcript = []
-        self.commited_not_final = []
- 
+        self.commited = []
 
     def insert_audio_chunk(self, audio):
         self.audio_buffer = np.append(self.audio_buffer, audio)
@@ -143,42 +141,23 @@ class OnlineASRProcessor:
     def prompt(self):
         """Returns a tuple: (prompt, context), where "prompt" is a 200-character suffix of commited text that is inside of the scrolled away part of audio buffer.
         "context" is the commited text that is inside the audio buffer. It is transcribed again and skipped. It is returned only for debugging and logging reasons.
+        """
+        k = max(0, len(self.commited) - 1)
+        while k > 0 and self.commited[k - 1][1] > self.buffer_time_offset:
+            k -= 1
 
-        
-        """        
-        
-        if len(self.final_transcript) == 0:
-            prompt=""
-
-        if len(self.final_transcript) == 1:
-            prompt = self.final_transcript[0][2][-200:]
-        
-        else:
-            prompt = self.concatenate_tsw(self.final_transcript)[2][-200:]
-        # TODO: this is not ideal as we concatenate each time the whole transcript
-
-        # k = max(0, len(self.final_transcript) - 1)
-        # while k > 1 and self.final_transcript[k - 1][1] > self.buffer_time_offset:
-        #     k -= 1
-
-        # p = self.final_transcript[:k]
-
-        
-        # p = [t for _, _, t in p]
-        # prompt = []
-        # l = 0
-        # while p and l < 200:  # 200 characters prompt size
-        #     x = p.pop(-1)
-        #     l += len(x) + 1
-        #     prompt.append(x)
-
-        non_prompt =  self.concatenate_tsw(self.commited_not_final)[2]
-
-        logger.debug(f"PROMPT(previous): {prompt[:20]}…{prompt[-20:]} (length={len(prompt)}chars)")
-        logger.debug(f"CONTEXT: {non_prompt}")
-
-        return prompt, non_prompt
-        
+        p = self.commited[:k]
+        p = [t for _, _, t in p]
+        prompt = []
+        l = 0
+        while p and l < 200:  # 200 characters prompt size
+            x = p.pop(-1)
+            l += len(x) + 1
+            prompt.append(x)
+        non_prompt = self.commited[k:]
+        return self.asr.sep.join(prompt[::-1]), self.asr.sep.join(
+            t for _, _, t in non_prompt
+        )
 
     def process_iter(self):
         """Runs on the current audio buffer.
@@ -191,134 +170,88 @@ class OnlineASRProcessor:
         logger.debug(
             f"transcribing {len(self.audio_buffer)/self.SAMPLING_RATE:2.2f} seconds from {self.buffer_time_offset:2.2f}"
         )
-
-        ## Transcribe and format the result to [(beg,end,"word1"), ...]
         res = self.asr.transcribe(self.audio_buffer, init_prompt=prompt)
+
+        # transform to [(beg,end,"word1"), ...]
         tsw = self.asr.ts_words(res)
 
-
-        # insert into HypothesisBuffer, and get back the commited words
         self.transcript_buffer.insert(tsw, self.buffer_time_offset)
-        commited_tsw = self.transcript_buffer.flush()
-        
-        if len(commited_tsw) == 0:
-            return (None, None, "")
+        o = self.transcript_buffer.flush()
+        self.commited.extend(o)
+        completed = self.concatenate_tsw(o)
+        logger.debug(f">>>>COMPLETE NOW: {completed[2]}")
+        the_rest = self.concatenate_tsw(self.transcript_buffer.complete())
+        logger.debug(f"INCOMPLETE: {the_rest[2]}")
 
+        # there is a newly confirmed text
 
-        self.commited_not_final.extend(commited_tsw)
+        if o and self.buffer_trimming_way == "sentence":  # trim the completed sentences
+            if (
+                len(self.audio_buffer) / self.SAMPLING_RATE > self.buffer_trimming_sec
+            ):  # longer than this
+                self.chunk_completed_sentence()
 
-
-        # Define `completed` and `the_rest` based on the buffer_trimming_way
-        # completed will be returned at the end of the function.
-        # completed is a transcribed text with (beg,end,"sentence ...") format.
-
-
-        completed = []
-        if self.buffer_trimming_way == "sentence":
-            
-            sentences = self.words_to_sentences(self.commited_not_final)
-
-
-
-            if len(sentences) < 2:
-                logger.debug(f"[Sentence-segmentation] no full sentence segmented, do not commit anything.")
-                
-                
-
-            
-            else:
-                identified_sentence= "\n    - ".join([f"{s[0]*1000:.0f}-{s[1]*1000:.0f} {s[2]}" for s in sentences])
-                logger.debug(f"[Sentence-segmentation] identified sentences:\n    - {identified_sentence}")
-
-                # assume last sentence is incomplete, which is not always true
-
-                # we will continue with audio processing at this timestamp
-                chunk_at = sentences[-2][1]
-
-                self.chunk_at(chunk_at)
-                # TODO: here paragraph breaks can be added
-                self.commited_not_final = sentences[-1:]
-
-                completed= sentences[:-1]
-
-            
-        
-
-
-            # break audio buffer anyway if it is too long
-
-        if len(self.audio_buffer) / self.SAMPLING_RATE > self.buffer_trimming_sec :
-                    
-            if self.buffer_trimming_way == "sentence":
-                logger.warning(f"Chunck segment after {self.buffer_trimming_sec} seconds!"
-                                " Even if no sentence was found!"
-                            )
-                    
-                    
-
-                
-            completed = self.chunk_completed_segment() 
-                
-
-            
-
-        
-
-        if len(completed) == 0:      
-            return (None, None, "")
+        if self.buffer_trimming_way == "segment":
+            s = self.buffer_trimming_sec  # trim the completed segments longer than s,
         else:
-            self.final_transcript.extend(completed) # add whole time stamped sentences / or words to commited list
-        
+            s = 30  # if the audio buffer is longer than 30s, trim it
 
-            completed_text_segment= self.concatenate_tsw(completed)
-            
-            the_rest = self.concatenate_tsw(self.transcript_buffer.complete())
-            commited_but_not_final = self.concatenate_tsw(self.commited_not_final)
-            logger.debug(f"\n    COMPLETE NOW: {completed_text_segment[2]}\n"
-                         f"    COMMITTED (but not Final): {commited_but_not_final[2]}\n"
-                         f"    INCOMPLETE: {the_rest[2]}"
-                         )
+        if len(self.audio_buffer) / self.SAMPLING_RATE > s:
+            self.chunk_completed_segment(res)
 
+            # alternative: on any word
+            # l = self.buffer_time_offset + len(self.audio_buffer)/self.SAMPLING_RATE - 10
+            # let's find commited word that is less
+            # k = len(self.commited)-1
+            # while k>0 and self.commited[k][1] > l:
+            #    k -= 1
+            # t = self.commited[k][1]
+            logger.debug("chunking segment")
+            # self.chunk_at(t)
 
-            return completed_text_segment
+        logger.debug(
+            f"len of buffer now: {len(self.audio_buffer)/self.SAMPLING_RATE:2.2f}"
+        )
+        return self.concatenate_tsw(o)
 
+    def chunk_completed_sentence(self):
+        if self.commited == []:
+            return
+        logger.debug("COMPLETED SENTENCE: ", [s[2] for s in self.commited])
+        sents = self.words_to_sentences(self.commited)
+        for s in sents:
+            logger.debug(f"\t\tSENT: {s}")
+        if len(sents) < 2:
+            return
+        while len(sents) > 2:
+            sents.pop(0)
+        # we will continue with audio processing at this timestamp
+        chunk_at = sents[-2][1]
 
-    def chunk_completed_segment(self) -> list:
+        logger.debug(f"--- sentence chunked at {chunk_at:2.2f}")
+        self.chunk_at(chunk_at)
 
-        
-        ts_words = self.commited_not_final
+    def chunk_completed_segment(self, res):
+        if self.commited == []:
+            return
 
-        if len(ts_words) <= 1:
-            logger.debug(f"--- not enough segments to chunk (<=1 words)")
-            return []
-        else:
+        ends = self.asr.segments_end_ts(res)
 
-            ends = [w[1] for w in ts_words]
+        t = self.commited[-1][1]
 
-            t = ts_words[-1][1] # start of the last word
-            e = ends[-2] 
+        if len(ends) > 1:
+
+            e = ends[-2] + self.buffer_time_offset
             while len(ends) > 2 and e > t:
                 ends.pop(-1)
-                e = ends[-2] 
-
+                e = ends[-2] + self.buffer_time_offset
             if e <= t:
-                
+                logger.debug(f"--- segment chunked at {e:2.2f}")
                 self.chunk_at(e)
-
-                n_commited_words = len(ends)-1
-
-                words_to_commit = ts_words[:n_commited_words]
-                self.final_transcript.extend(words_to_commit)
-                self.commited_not_final = ts_words[n_commited_words:]
-
-                return words_to_commit
-
-
-
             else:
                 logger.debug(f"--- last segment not within commited area")
-                return []
-
+        else:
+            logger.debug(f"--- not enough segments to chunk")
 
     def chunk_at(self, time):
         """trims the hypothesis and audio buffer at "time" """
@@ -345,10 +278,8 @@ class OnlineASRProcessor:
 
 
         cwords = [w for w in words]
-        t = self.asr.sep.join(o[2] for o in cwords)
-        logger.debug(f"[Sentence-segmentation] Raw Text: {t}")
-
-        s = self.tokenize([t])
+        t = " ".join(o[2] for o in cwords)
+        s = self.tokenize(t)
         out = []
         while s:
             beg = None
@@ -360,13 +291,11 @@ class OnlineASRProcessor:
                 w = w.strip()
                 if beg is None and sent.startswith(w):
                     beg = b
-                if end is None and sent == w:
+                elif end is None and sent == w:
                     end = e
-                if beg is not None and end is not None:
                     out.append((beg, end, fsent))
                     break
                 sent = sent[len(w) :].strip()
-        
         return out
 
     def finish(self):
@@ -375,14 +304,13 @@ class OnlineASRProcessor:
         """
         o = self.transcript_buffer.complete()
         f = self.concatenate_tsw(o)
-        if f[1] is not None:
-            logger.debug(f"last, noncommited: {f[0]*1000:.0f}-{f[1]*1000:.0f}: {f[2]}")
+        logger.debug(f"last, noncommited: {f}")
         self.buffer_time_offset += len(self.audio_buffer) / 16000
         return f
 
     def concatenate_tsw(
         self,
-        tsw,
+        sents,
         sep=None,
         offset=0,
     ):
@@ -391,16 +319,13 @@ class OnlineASRProcessor:
         # return: (beg1,end-of-last-sentence,"concatenation of sentences") or (None, None, "") if empty
         if sep is None:
             sep = self.asr.sep
-
-        
-
-        t = sep.join(s[2] for s in tsw)
-        if len(tsw) == 0:
+        t = sep.join(s[2] for s in sents)
+        if len(sents) == 0:
             b = None
             e = None
         else:
-            b = offset + tsw[0][0]
-            e = offset + tsw[-1][1]
+            b = offset + sents[0][0]
+            e = offset + sents[-1][1]
         return (b, e, t)
 
 
