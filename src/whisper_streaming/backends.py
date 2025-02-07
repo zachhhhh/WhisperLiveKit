@@ -6,7 +6,7 @@ import math
 import torch
 from typing import List
 import numpy as np
-from src.whisper_streaming.asr_token import ASRToken
+from src.whisper_streaming.timed_objects import ASRToken
 
 logger = logging.getLogger(__name__)
 

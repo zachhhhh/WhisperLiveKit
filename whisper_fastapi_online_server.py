@@ -201,17 +201,17 @@ async def websocket_endpoint(websocket: WebSocket):
                     )
                     pcm_buffer = bytearray()
                     online.insert_audio_chunk(pcm_array)
-                    beg_trans, end_trans, trans = online.process_iter()
+                    transcription = online.process_iter()
                     
-                    if trans:
+                    if transcription:
                         chunk_history.append({
-                        "beg": beg_trans,
-                        "end": end_trans,
-                        "text": trans,
+                        "beg": transcription.start,
+                        "end": transcription.end,
+                        "text": transcription.text,
                         "speaker": "0"
                         })
                     
-                    full_transcription += trans
+                    full_transcription += transcription.text
                     if args.vac:
                         transcript = online.online.concatenate_tokens(online.online.transcript_buffer.buffer)
                     else:

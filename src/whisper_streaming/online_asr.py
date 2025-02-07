@@ -2,36 +2,9 @@ import sys
 import numpy as np
 import logging
 from typing import List, Tuple, Optional
-from src.whisper_streaming.asr_token import ASRToken
+from src.whisper_streaming.timed_objects import ASRToken, Sentence, Transcript
 
 logger = logging.getLogger(__name__)
-
-class Sentence:
-    """
-    A sentence assembled from tokens.
-    """
-    def __init__(self, start: float, end: float, text: str):
-        self.start = start
-        self.end = end
-        self.text = text
-
-    def __repr__(self):
-        return f"Sentence(start={self.start:.2f}, end={self.end:.2f}, text={self.text!r})"
-
-class Transcript:
-    """
-    A transcript that bundles a start time, an end time, and a concatenated text.
-    """
-    def __init__(self, start: Optional[float], end: Optional[float], text: str):
-        self.start = start
-        self.end = end
-        self.text = text
-
-    def __iter__(self):
-        return iter((self.start, self.end, self.text))
-
-    def __repr__(self):
-        return f"Transcript(start={self.start}, end={self.end}, text={self.text!r})"
 
 
 class HypothesisBuffer:
@@ -110,10 +83,6 @@ class HypothesisBuffer:
         """
         while self.committed_in_buffer and self.committed_in_buffer[0].end <= time:
             self.committed_in_buffer.pop(0)
-
-    def complete(self) -> List[ASRToken]:
-        """Return any remaining tokens (i.e. the current buffer)."""
-        return self.buffer
 
 
 class OnlineASRProcessor:
@@ -211,7 +180,7 @@ class OnlineASRProcessor:
         self.committed.extend(committed_tokens)
         completed = self.concatenate_tokens(committed_tokens)
         logger.debug(f">>>> COMPLETE NOW: {completed.text}")
-        incomp = self.concatenate_tokens(self.transcript_buffer.complete())
+        incomp = self.concatenate_tokens(self.transcript_buffer.buffer)
         logger.debug(f"INCOMPLETE: {incomp.text}")
 
         if committed_tokens and self.buffer_trimming_way == "sentence":
@@ -318,7 +287,7 @@ class OnlineASRProcessor:
         """
         Flush the remaining transcript when processing ends.
         """
-        remaining_tokens = self.transcript_buffer.complete()
+        remaining_tokens = self.transcript_buffer.buffer
         final_transcript = self.concatenate_tokens(remaining_tokens)
         logger.debug(f"Final non-committed transcript: {final_transcript}")
         self.buffer_time_offset += len(self.audio_buffer) / self.SAMPLING_RATE
