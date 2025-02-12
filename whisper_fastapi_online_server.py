@@ -4,6 +4,7 @@ import asyncio
 import numpy as np
 import ffmpeg
 from time import time
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
@@ -12,73 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.whisper_streaming.whisper_online import backend_factory, online_factory, add_shared_args
 
 
-import logging
-import logging.config
-
-def setup_logging():
-    logging_config = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'standard': {
-                'format': '%(asctime)s %(levelname)s [%(name)s]: %(message)s',
-            },
-        },
-        'handlers': {
-            'console': {
-                'level': 'INFO',
-                'class': 'logging.StreamHandler',
-                'formatter': 'standard',
-            },
-        },
-        'root': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-        'loggers': {
-            'uvicorn': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': False,
-            },
-            'uvicorn.error': {
-                'level': 'INFO',
-            },
-            'uvicorn.access': {
-                'level': 'INFO',
-            },
-            'src.whisper_streaming.online_asr': {  # Add your specific module here
-                'handlers': ['console'],
-                'level': 'DEBUG',
-                'propagate': False,
-            },
-            'src.whisper_streaming.whisper_streaming': {  # Add your specific module here
-                'handlers': ['console'],
-                'level': 'DEBUG',
-                'propagate': False,
-            },
-        },
-    }
-
-    logging.config.dictConfig(logging_config)
-
-setup_logging()
-logger = logging.getLogger(__name__)
-
-
-
-
-
-
-app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+##### LOAD ARGS #####
 
 parser = argparse.ArgumentParser(description="Whisper FastAPI Online Server")
 parser.add_argument(
@@ -108,28 +43,37 @@ parser.add_argument(
 add_shared_args(parser)
 args = parser.parse_args()
 
-asr, tokenizer = backend_factory(args)
-
-if args.diarization:
-    from src.diarization.diarization_online import DiartDiarization
-
-
-# Load demo HTML for the root endpoint
-with open("src/web/live_transcription.html", "r", encoding="utf-8") as f:
-    html = f.read()
-
-
-@app.get("/")
-async def get():
-    return HTMLResponse(html)
-
-
 SAMPLE_RATE = 16000
 CHANNELS = 1
 SAMPLES_PER_SEC = SAMPLE_RATE * int(args.min_chunk_size)
 BYTES_PER_SAMPLE = 2  # s16le = 2 bytes per sample
 BYTES_PER_SEC = SAMPLES_PER_SEC * BYTES_PER_SAMPLE
 
+if args.diarization:
+    from src.diarization.diarization_online import DiartDiarization
+
+
+##### LOAD APP #####
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global asr, tokenizer
+    asr, tokenizer = backend_factory(args)
+    yield
+
+app = FastAPI(lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Load demo HTML for the root endpoint
+with open("src/web/live_transcription.html", "r", encoding="utf-8") as f:
+    html = f.read()
 
 async def start_ffmpeg_decoder():
     """
@@ -150,6 +94,11 @@ async def start_ffmpeg_decoder():
     return process
 
 
+##### ENDPOINTS #####
+
+@app.get("/")
+async def get():
+    return HTMLResponse(html)
 
 @app.websocket("/asr")
 async def websocket_endpoint(websocket: WebSocket):
