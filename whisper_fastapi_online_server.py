@@ -11,65 +11,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.whisper_streaming.whisper_online import backend_factory, online_factory, add_shared_args
 
-
-import logging
-import logging.config
-
-def setup_logging():
-    logging_config = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'standard': {
-                'format': '%(asctime)s %(levelname)s [%(name)s]: %(message)s',
-            },
-        },
-        'handlers': {
-            'console': {
-                'level': 'INFO',
-                'class': 'logging.StreamHandler',
-                'formatter': 'standard',
-            },
-        },
-        'root': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-        'loggers': {
-            'uvicorn': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': False,
-            },
-            'uvicorn.error': {
-                'level': 'INFO',
-            },
-            'uvicorn.access': {
-                'level': 'INFO',
-            },
-            'src.whisper_streaming.online_asr': {  # Add your specific module here
-                'handlers': ['console'],
-                'level': 'DEBUG',
-                'propagate': False,
-            },
-            'src.whisper_streaming.whisper_streaming': {  # Add your specific module here
-                'handlers': ['console'],
-                'level': 'DEBUG',
-                'propagate': False,
-            },
-        },
-    }
-
-    logging.config.dictConfig(logging_config)
-
-setup_logging()
-logger = logging.getLogger(__name__)
-
-
-
-
-
-
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
