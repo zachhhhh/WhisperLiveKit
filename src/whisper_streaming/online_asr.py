@@ -85,6 +85,7 @@ class HypothesisBuffer:
             self.committed_in_buffer.pop(0)
 
 
+
 class OnlineASRProcessor:
     """
     Processes incoming audio in a streaming fashion, calling the ASR system
@@ -162,6 +163,13 @@ class OnlineASRProcessor:
         non_prompt_tokens = self.committed[k:]
         context_text = self.asr.sep.join(token.text for token in non_prompt_tokens)
         return self.asr.sep.join(prompt_list[::-1]), context_text
+
+    def get_buffer(self):
+        """
+        Get the unvalidated buffer in string format.
+        """
+        return self.concatenate_tokens(self.transcript_buffer.buffer).text
+        
 
     def process_iter(self) -> Transcript:
         """
@@ -414,3 +422,9 @@ class VACOnlineASRProcessor:
         self.current_online_chunk_buffer_size = 0
         self.is_currently_final = False
         return result
+    
+    def get_buffer(self):
+        """
+        Get the unvalidated buffer in string format.
+        """
+        return self.online.concatenate_tokens(self.online.transcript_buffer.buffer).text

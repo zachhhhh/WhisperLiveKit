@@ -158,12 +158,8 @@ async def websocket_endpoint(websocket: WebSocket):
                         })
                     
                     full_transcription += transcription.text
-                    if args.vac:
-                        transcript = online.online.concatenate_tokens(online.online.transcript_buffer.buffer)
-                    else:
-                        transcript = online.concatenate_tokens(online.transcript_buffer.buffer)
-
-                    buffer = transcript.text  
+                    buffer = online.get_buffer()
+                  
                     if buffer in full_transcription: # With VAC, the buffer is not updated until the next chunk is processed
                         buffer = ""
                                         
