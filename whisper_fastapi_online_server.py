@@ -12,6 +12,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.whisper_streaming.whisper_online import backend_factory, online_factory, add_shared_args
 
+import subprocess
+import math
+
 
 ##### LOAD ARGS #####
 
@@ -125,23 +128,17 @@ async def websocket_endpoint(websocket: WebSocket):
         
         while True:
             try:
-                elapsed_time = int(time() - beg)
+                elapsed_time = math.floor((time() - beg) * 10) / 10 # Round to 0.1 sec
+                ffmpeg_buffer_from_duration = max(int(32000 * elapsed_time), 4096)
                 beg = time()
                 chunk = await loop.run_in_executor(
-                    None, ffmpeg_process.stdout.read, 32000 * elapsed_time
+                    None, ffmpeg_process.stdout.read, ffmpeg_buffer_from_duration
                 )
-                if (
-                    not chunk
-                ):  # The first chunk will be almost empty, FFmpeg is still starting up
-                    chunk = await loop.run_in_executor(
-                        None, ffmpeg_process.stdout.read, 4096
-                    )
-                    if not chunk:  # FFmpeg might have closed
-                        print("FFmpeg stdout closed.")
-                        break
+                if not chunk:
+                    print("FFmpeg stdout closed.")
+                    break
 
                 pcm_buffer.extend(chunk)
-
                 if len(pcm_buffer) >= BYTES_PER_SEC:
                     # Convert int16 -> float32
                     pcm_array = (
@@ -186,7 +183,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             lines.append(
                                 {
                                     "speaker": ch["speaker"][-1],
-                                    "text": ch['text'],
+                                    "text": ch['text']
                                 }
                             )
                         else:
