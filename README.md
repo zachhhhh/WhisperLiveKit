@@ -2,15 +2,26 @@
 
 This fork of [Whisper Streaming](https://github.com/ufal/whisper_streaming) adds a ready-to-use HTML interface, making it super easy to start transcribing audio directly from your browser. Just launch the local server, allow microphone access, and start streaming. Everything runs locally on your machine 🎙️✨
 
-## What's New?  
-✅ **Built-in Web UI** – Just open your browser and start transcribing, no need to build a frontend.  
-✅ **FastAPI Server with WebSocket Endpoint** – Enables real-time STT in browsers with async FFmpeg processing.  
-✅ **Buffering Preview** – Displays unvalidated buffer content for better streaming feedback.  
-✅ **Multiple Users Support** – The backend handles multiple users simultaneously without conflicts.  
-✅ **HTML - JavaScript Client Implementation** – A plug-and-play MediaRecorder setup for seamless client integration
-✅ **MLX Whisper Backend** – Optimized Apple Silicon support for faster local processing.  
-✅ **Enhanced sentence segmentation** – Improves buffer trimming and sentence boundaries in certain languages  
-✅ **Diarization (Beta)** – Real-time speaker labeling using [Diart](https://github.com/juanmc2005/diart).  
+### What's New?  
+
+#### 🌐 **Web & API**  
+✅ **Built-in Web UI** – No frontend setup needed, just open your browser and start transcribing.  
+✅ **FastAPI WebSocket Server** – Real-time STT processing with async FFmpeg streaming.  
+✅ **JavaScript Client** – A ready-to-use MediaRecorder implementation that can be copied on your client side.
+
+#### ⚙️ **Core Improvements**  
+✅ **Buffering Preview** – Displays unvalidated transcription segments for better feedback.  
+✅ **Multi-User Support** – Handle multiple users simultaneously without conflicts.  
+✅ **MLX Whisper Backend** – Optimized for Apple Silicon for faster local processing.  
+✅ **Enhanced Sentence Segmentation** – Better buffer trimming for better accuracy across languages.  
+✅ **Extended Logging** – More detailed logs to improve debugging and monitoring.  
+
+#### 🔥 **Advanced Features**  
+✅ **Real-Time Diarization (Beta)** – Assigns speaker labels dynamically using [Diart](https://github.com/juanmc2005/diart).  
+
+
+### Web UI
+
 
 <p align="center">
   <img src="src/web/demo.png" alt="Demo Screenshot" width="600">
