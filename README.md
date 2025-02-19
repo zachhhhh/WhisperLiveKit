@@ -1,13 +1,13 @@
-# Whisper Streaming with FastAPI & WebSocket Integration
+# Whisper Streaming Web: Real-time Speech-to-Text with Web UI & FastAPI WebSocket
 
-A feature-packed fork of [Whisper Streaming](https://github.com/ufal/whisper_streaming) with **real-time speech-to-text (STT) enhancements**, multi-user support, and a JavaScript client 🎙️✨
+This fork of [Whisper Streaming](https://github.com/ufal/whisper_streaming) adds a ready-to-use HTML interface, making it super easy to start transcribing audio directly from your browser. Just launch the local server, allow microphone access, and start streaming. Everything runs locally on your machine 🎙️✨
 
 ## What's New?  
-
+✅ **Built-in Web UI** – Just open your browser and start transcribing, no need to build a frontend.  
 ✅ **FastAPI Server with WebSocket Endpoint** – Enables real-time STT in browsers with async FFmpeg processing.  
 ✅ **Buffering Preview** – Displays unvalidated buffer content for better streaming feedback.  
 ✅ **Multiple Users Support** – The backend handles multiple users simultaneously without conflicts.  
-✅ **HTML - JavaScript Client Implementation** – A plug-and-play MediaRecorder setup for seamless client integration.  
+✅ **HTML - JavaScript Client Implementation** – A plug-and-play MediaRecorder setup for seamless client integration
 ✅ **MLX Whisper Backend** – Optimized Apple Silicon support for faster local processing.  
 ✅ **Enhanced sentence segmentation** – Improves buffer trimming and sentence boundaries in certain languages  
 ✅ **Diarization (Beta)** – Real-time speaker labeling using [Diart](https://github.com/juanmc2005/diart).  
