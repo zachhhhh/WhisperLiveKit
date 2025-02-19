@@ -1,26 +1,20 @@
-# Whisper Streaming with FastAPI and WebSocket Integration
+# Whisper Streaming with FastAPI & WebSocket Integration
 
-This project extends the [Whisper Streaming](https://github.com/ufal/whisper_streaming) implementation by incorporating few extras. The enhancements include:
+A feature-packed fork of [Whisper Streaming](https://github.com/ufal/whisper_streaming) with **real-time speech-to-text (STT) enhancements**, multi-user support, and a JavaScript client 🎙️✨
 
-1. **FastAPI Server with WebSocket Endpoint**: Real-time STT in browsers. Audio chunks processed via FFmpeg async streaming process.
+## What's New?  
 
-2. **Buffering preview**: Enhances streaming feedback by displaying the unvalidated buffer content.
+✅ **FastAPI Server with WebSocket Endpoint** – Enables real-time STT in browsers with async FFmpeg processing.  
+✅ **Buffering Preview** – Displays unvalidated buffer content for better streaming feedback.  
+✅ **Multiple Users Support** – The backend handles multiple users simultaneously without conflicts.  
+✅ **HTML - JavaScript Client Implementation** – A plug-and-play MediaRecorder setup for seamless client integration.  
+✅ **MLX Whisper Backend** – Optimized Apple Silicon support for faster local processing.  
+✅ **Enhanced sentence segmentation** – Improves buffer trimming and sentence boundaries in certain languages  
+✅ **Diarization (Beta)** – Real-time speaker labeling using [Diart](https://github.com/juanmc2005/diart).  
 
-3. **Multiple users**: The backend can support multiple users simultaneously without conflicts.
-
-4. **Javascript Client implementation**: MediaRecorder implementation that can be copied on your client side.
-
-5. **MLX Whisper backend**: Integrates the alternative backend option MLX Whisper, optimized for efficient speech recognition on Apple silicon.
-
-6. **Diarization (beta)**: Adds speaker labeling in real-time alongside transcription using the [Diart](https://github.com/juanmc2005/diart) library. Each transcription segment is tagged with a speaker.
-
-![Demo Screenshot](src/web/demo.png)
-
-##  Code Origins
-
-This project reuses and extends code from the original Whisper Streaming repository:
-- whisper_online.py, backends.py and online_asr.py: Contains code from whisper_streaming
-- silero_vad_iterator.py: Originally from the Silero VAD repository, included in the whisper_streaming project.
+<p align="center">
+  <img src="src/web/demo.png" alt="Demo Screenshot" width="600">
+</p>
 
 ## Installation
 
@@ -81,6 +75,7 @@ This project reuses and extends code from the original Whisper Streaming reposit
     - `--host` and `--port` let you specify the server’s IP/port. 
     - `-min-chunk-size` sets the minimum chunk size for audio processing. Make sure this value aligns with the chunk size selected in the frontend. If not aligned, the system will work but may unnecessarily over-process audio data.
     - For a full list of configurable options, run `python whisper_fastapi_online_server.py -h`
+    - `--transcription`, default to True. Change to False if you want to run only diarization
     - `--diarization`, default to False, let you choose whether or not you want to run diarization in parallel
     - For other parameters, look at [whisper streaming](https://github.com/ufal/whisper_streaming) readme.
 
