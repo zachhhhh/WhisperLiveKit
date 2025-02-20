@@ -1,6 +1,6 @@
 # Whisper Streaming Web: Real-time Speech-to-Text with FastAPI WebSocket
 
-This project is based on Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. Simply launch the local server and grant microphone access. Everything runs locally on your machine ✨
+This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. Simply launch the local server and grant microphone access. Everything runs locally on your machine ✨
 
 <p align="center">
   <img src="src/web/demo.png" alt="Demo Screenshot" width="600">
