@@ -1,6 +1,6 @@
 # Whisper Streaming Web: Real-time Speech-to-Text with Web UI & FastAPI WebSocket
 
-This fork of [Whisper Streaming](https://github.com/ufal/whisper_streaming) adds a ready-to-use HTML interface, making it easy to start transcribing audio directly from your browser. Launch the local server, allow microphone access, and start speaking. Everything runs locally on your machine 🎙️✨
+This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and provides a ready-to-use HTML interface, allowing you to start transcribing audio directly from your browser. Launch the local server, grant microphone access, and start speaking. Everything runs locally on your machine ✨
 
 <p align="center">
   <img src="src/web/demo.png" alt="Demo Screenshot" width="600">
