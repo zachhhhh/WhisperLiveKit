@@ -6,22 +6,22 @@ This project is based on [Whisper Streaming](https://github.com/ufal/whisper_str
   <img src="src/web/demo.png" alt="Demo Screenshot" width="600">
 </p>
 
-### What's New?  
+### Differences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
 
 #### 🌐 **Web & API**  
-- **Built-in Web UI** – No frontend setup needed, just open your browser and start transcribing.  
-- **FastAPI WebSocket Server** – Real-time STT processing with async FFmpeg streaming.  
-- **JavaScript Client** – A ready-to-use MediaRecorder implementation that can be copied on your client side.
+- **Built-in Web UI** – No frontend setup required, just open your browser and start transcribing.  
+- **FastAPI WebSocket Server** – Real-time speech-to-text processing with async FFmpeg streaming.  
+- **JavaScript Client** – Ready-to-use MediaRecorder implementation for seamless client-side integration.
 
 #### ⚙️ **Core Improvements**  
-- **Buffering Preview** – Displays unvalidated transcription segments for better feedback.  
-- **Multi-User Support** – Handle multiple users simultaneously without conflicts.  
+- **Buffering Preview** – Displays unvalidated transcription segments for immediate feedback.  
+- **Multi-User Support** – Handles multiple users simultaneously without conflicts.  
 - **MLX Whisper Backend** – Optimized for Apple Silicon for faster local processing.  
-- **Enhanced Sentence Segmentation** – Better buffer trimming for better accuracy across languages.  
+- **Enhanced Sentence Segmentation** – Improved buffer trimming for better accuracy across languages.  
 - **Extended Logging** – More detailed logs to improve debugging and monitoring.  
 
 #### 🎙️ **Advanced Features**  
-- **Real-Time Diarization** – Recognize different speakers in real time using [Diart](https://github.com/juanmc2005/diart).  
+- **Real-Time Diarization** – Identify different speakers in real time using [Diart](https://github.com/juanmc2005/diart).  
 
 
 ## Installation
