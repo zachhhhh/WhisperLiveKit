@@ -202,7 +202,7 @@ class OnlineASRProcessor:
         logger.debug(
             f"Length of audio buffer now: {len(self.audio_buffer)/self.SAMPLING_RATE:.2f} seconds"
         )
-        return self.concatenate_tokens(committed_tokens)
+        return committed_tokens
 
     def chunk_completed_sentence(self):
         """
