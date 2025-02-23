@@ -263,11 +263,26 @@ class OnlineASRProcessor:
 
     def words_to_sentences(self, tokens: List[ASRToken]) -> List[Sentence]:
         """
-        Converts a list of tokens to a list of Sentence objects by using the provided
+        Converts a list of tokens to a list of Sentence objects using the provided
         sentence tokenizer.
         """
+        if not tokens:
+            return []
+
         full_text = " ".join(token.text for token in tokens)
-        sentence_texts = self.tokenize(full_text) if self.tokenize else [full_text]
+
+        if self.tokenize:
+            try:
+                sentence_texts = self.tokenize(full_text)
+            except Exception as e:
+                # Some tokenizers (e.g., MosesSentenceSplitter) expect a list input.
+                try:
+                    sentence_texts = self.tokenize([full_text])
+                except Exception as e2:
+                    raise ValueError("Tokenization failed") from e2
+        else:
+            sentence_texts = [full_text]
+
         sentences: List[Sentence] = []
         token_index = 0
         for sent_text in sentence_texts:
@@ -276,7 +291,7 @@ class OnlineASRProcessor:
                 continue
             sent_tokens = []
             accumulated = ""
-            # Accumulate tokens until roughly matching the sentence text.
+            # Accumulate tokens until roughly matching the length of the sentence text.
             while token_index < len(tokens) and len(accumulated) < len(sent_text):
                 token = tokens[token_index]
                 accumulated = (accumulated + " " + token.text).strip() if accumulated else token.text
@@ -290,7 +305,6 @@ class OnlineASRProcessor:
                 )
                 sentences.append(sentence)
         return sentences
-
     def finish(self) -> Transcript:
         """
         Flush the remaining transcript when processing ends.
