@@ -208,6 +208,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                 "beg": transcription.start,
                                 "end": transcription.end,
                                 "text": transcription.text,
+                                "speaker": -1
                             })
                         full_transcription += transcription.text if transcription else ""
                         buffer = online.get_buffer()
@@ -218,23 +219,32 @@ async def websocket_endpoint(websocket: WebSocket):
                                 "beg": time() - beg_loop,
                                 "end": time() - beg_loop + 1,
                                 "text": '',
+                                "speaker": -1
                         })
                         sleep(1)
                         buffer = ''
 
                     if args.diarization:
                         await diarization.diarize(pcm_array)
-                        diarization.assign_speakers_to_chunks(chunk_history)
+                        end_attributed_speaker = diarization.assign_speakers_to_chunks(chunk_history)
 
                     
-                    current_speaker = 0
+                    current_speaker = -10
                     lines = []
                     last_end_diarized = 0
+                    previous_speaker = -1
                     for ind, ch in enumerate(chunk_history):
-                        speaker = ch.get("speaker", -3)
-                        if speaker == -1 and ind < len(chunk_history) - 1:
-                            continue
-                        elif speaker != current_speaker:
+                        speaker = ch.get("speaker")
+                        if args.diarization:
+                            if speaker == -1 or speaker == 0:
+                                if ch['end'] < end_attributed_speaker:
+                                    speaker = previous_speaker
+                                else:
+                                    speaker = 0
+                            else:
+                                last_end_diarized = max(ch['end'], last_end_diarized)
+
+                        if speaker != current_speaker:
                             lines.append(
                                 {
                                     "speaker": speaker,
@@ -245,12 +255,11 @@ async def websocket_endpoint(websocket: WebSocket):
                                 }
                             )
                             current_speaker = speaker
-                        elif speaker != -1:
+                        else:
                             lines[-1]["text"] += ch['text']
                             lines[-1]["end"] = format_time(ch['end'])
-                        if speaker != -1:
-                            last_end_diarized = max(ch['end'], last_end_diarized)
-
+                            lines[-1]["diff"] = round(ch['end'] - last_end_diarized, 2)
+                            
                     response = {"lines": lines, "buffer": buffer}
                     await websocket.send_json(response)
                     
