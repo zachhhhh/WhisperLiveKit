@@ -5,7 +5,8 @@ from typing import Optional
 class TimedText:
     start: Optional[float]
     end: Optional[float]
-    text: str
+    text: Optional[str] = ''
+    speaker: Optional[int] = -1
 
 @dataclass
 class ASRToken(TimedText):

@@ -81,11 +81,10 @@ class DiartDiarization:
     def close(self):
         self.source.close()
 
-    def assign_speakers_to_chunks(self, chunks: list) -> list:
-        end_attributed_speaker = 0
-        for chunk in chunks:
+    def assign_speakers_to_tokens(self, end_attributed_speaker, tokens: list) -> list:
+        for token in tokens:
             for segment in self.segment_speakers:
-                if not (segment["end"] <= chunk["beg"] or segment["beg"] >= chunk["end"]):
-                    chunk["speaker"] = extract_number(segment["speaker"]) + 1
-                    end_attributed_speaker = chunk["end"]
+                if not (segment["end"] <= token.start or segment["beg"] >= token.end):
+                    token.speaker = extract_number(segment["speaker"]) + 1
+                    end_attributed_speaker = max(token.end, end_attributed_speaker)
         return end_attributed_speaker
