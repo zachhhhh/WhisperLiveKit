@@ -21,3 +21,7 @@ class Sentence(TimedText):
 @dataclass
 class Transcript(TimedText):
     pass
+
+@dataclass
+class SpeakerSegment(TimedText):
+    pass
