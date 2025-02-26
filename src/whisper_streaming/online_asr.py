@@ -168,7 +168,7 @@ class OnlineASRProcessor:
         """
         Get the unvalidated buffer in string format.
         """
-        return self.concatenate_tokens(self.transcript_buffer.buffer).text
+        return self.concatenate_tokens(self.transcript_buffer.buffer)
         
 
     def process_iter(self) -> Transcript:

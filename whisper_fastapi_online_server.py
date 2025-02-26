@@ -186,7 +186,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 if not chunk:
                     logger.info("FFmpeg stdout closed.")
                     break
-
                 pcm_buffer.extend(chunk)
                 if len(pcm_buffer) >= BYTES_PER_SEC:
                     if len(pcm_buffer) > MAX_BYTES_PER_SEC:
@@ -207,7 +206,9 @@ async def websocket_endpoint(websocket: WebSocket):
                         new_tokens = online.process_iter()
                         tokens.extend(new_tokens)
                         full_transcription += sep.join([t.text for t in new_tokens])
-                        buffer = online.get_buffer()
+                        _buffer = online.get_buffer()
+                        buffer = _buffer.text
+                        end_buffer = _buffer.end if _buffer.end else tokens[-1].end if tokens else 0
                         if buffer in full_transcription: # With VAC, the buffer is not updated until the next chunk is processed
                             buffer = ""
                     else:
@@ -253,6 +254,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             lines[-1]["diff"] = round(token.end - last_end_diarized, 2)
                             
                     response = {"lines": lines, "buffer": buffer}
+                    # response = {"lines": lines, "buffer": buffer, "time_buffer_transcription": time() + beg_loop - end_buffer, "time_buffer_diarization": time() + beg_loop - end_attributed_speaker}
                     await websocket.send_json(response)
                     
             except Exception as e:
