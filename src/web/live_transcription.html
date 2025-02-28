@@ -343,7 +343,7 @@
                 } else if (item.speaker == 0) {
                     speakerLabel = `<span class='loading'><span class="spinner"></span><span id='timeInfo'>${remaining_time_diarization} second(s) of audio are undergoing diarization</span></span>`;
                 } else if (item.speaker == -1) {
-                    speakerLabel = `<span id="speaker"><span id='timeInfo'>${timeInfo}</span>`;
+                    speakerLabel = `<span id="speaker"><span id='timeInfo'>${timeInfo}</span></span>`;
                 } else if (item.speaker !== -1) {
                     speakerLabel = `<span id="speaker">Speaker ${item.speaker}<span id='timeInfo'>${timeInfo}</span></span>`;
                 }
