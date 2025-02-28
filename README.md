@@ -3,7 +3,7 @@
 This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. Simply launch the local server and grant microphone access. Everything runs locally on your machine ✨
 
 <p align="center">
-  <img src="src/web/demo.png" alt="Demo Screenshot" width="600">
+  <img src="web/demo.png" alt="Demo Screenshot" width="600">
 </p>
 
 ### Differences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
@@ -22,6 +22,11 @@ This project is based on [Whisper Streaming](https://github.com/ufal/whisper_str
 
 #### 🎙️ **Advanced Features**  
 - **Real-Time Diarization** – Identify different speakers in real time using [Diart](https://github.com/juanmc2005/diart).  
+
+#### 🚀 **Coming Soon**
+
+- **Faster Word Validation** – Accelerate real-time transcription by validating high-confidence words immediately upon first appearance for whisper backends that returns words & segment probabilities
+- **Enhanced Diarization Performance** – Optimize speaker identification by implementing longer steps for Diart processing and leveraging language-specific segmentation patterns to improve speaker boundary detection
 
 
 ## Installation
