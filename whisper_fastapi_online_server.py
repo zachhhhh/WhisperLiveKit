@@ -70,6 +70,78 @@ BYTES_PER_SEC = SAMPLES_PER_SEC * BYTES_PER_SAMPLE
 MAX_BYTES_PER_SEC = 32000 * 5  # 5 seconds of audio at 32 kHz
 
 
+class SharedState:
+    def __init__(self):
+        self.tokens = []
+        self.buffer_transcription = ""
+        self.buffer_diarization = ""
+        self.full_transcription = ""
+        self.end_buffer = 0
+        self.end_attributed_speaker = 0
+        self.lock = asyncio.Lock()
+        self.beg_loop = time()
+        self.sep = " "  # Default separator
+        
+    async def update_transcription(self, new_tokens, buffer, end_buffer, full_transcription, sep):
+        async with self.lock:
+            self.tokens.extend(new_tokens)
+            self.buffer_transcription = buffer
+            self.end_buffer = end_buffer
+            self.full_transcription = full_transcription
+            self.sep = sep
+            
+    async def update_diarization(self, end_attributed_speaker, buffer_diarization=""):
+        async with self.lock:
+            self.end_attributed_speaker = end_attributed_speaker
+            if buffer_diarization:
+                self.buffer_diarization = buffer_diarization
+            
+    async def add_dummy_token(self):
+        async with self.lock:
+            current_time = time() - self.beg_loop
+            dummy_token = ASRToken(
+                start=current_time,
+                end=current_time + 0.5,
+                text="",
+                speaker=-1
+            )
+            self.tokens.append(dummy_token)
+            
+    async def get_current_state(self):
+        async with self.lock:
+            current_time = time()
+            remaining_time_transcription = 0
+            remaining_time_diarization = 0
+            
+            # Calculate remaining time for transcription buffer
+            if self.end_buffer > 0:
+                remaining_time_transcription = max(0, round(current_time - self.beg_loop - self.end_buffer, 2))
+                
+            # Calculate remaining time for diarization
+            if self.end_attributed_speaker > 0:
+                remaining_time_diarization = max(0, round(current_time - self.beg_loop - self.end_attributed_speaker, 2))
+                
+            return {
+                "tokens": self.tokens.copy(),
+                "buffer_transcription": self.buffer_transcription,
+                "buffer_diarization": self.buffer_diarization,
+                "end_buffer": self.end_buffer,
+                "end_attributed_speaker": self.end_attributed_speaker,
+                "sep": self.sep,
+                "remaining_time_transcription": remaining_time_transcription,
+                "remaining_time_diarization": remaining_time_diarization
+            }
+            
+    async def reset(self):
+        """Reset the state."""
+        async with self.lock:
+            self.tokens = []
+            self.buffer_transcription = ""
+            self.buffer_diarization = ""
+            self.end_buffer = 0
+            self.end_attributed_speaker = 0
+            self.full_transcription = ""
+            self.beg_loop = time()
 
 ##### LOAD APP #####
 
@@ -120,6 +192,133 @@ async def start_ffmpeg_decoder():
     )
     return process
 
+async def transcription_processor(shared_state, pcm_queue, online):
+    full_transcription = ""
+    sep = online.asr.sep
+    
+    while True:
+        try:
+            pcm_array = await pcm_queue.get()
+            
+            logger.info(f"{len(online.audio_buffer) / online.SAMPLING_RATE} seconds of audio will be processed by the model.")
+            
+            # Process transcription
+            online.insert_audio_chunk(pcm_array)
+            new_tokens = online.process_iter()
+            
+            if new_tokens:
+                full_transcription += sep.join([t.text for t in new_tokens])
+                
+            _buffer = online.get_buffer()
+            buffer = _buffer.text
+            end_buffer = _buffer.end if _buffer.end else (new_tokens[-1].end if new_tokens else 0)
+            
+            if buffer in full_transcription:
+                buffer = ""
+                
+            await shared_state.update_transcription(
+                new_tokens, buffer, end_buffer, full_transcription, sep)
+            
+        except Exception as e:
+            logger.warning(f"Exception in transcription_processor: {e}")
+        finally:
+            pcm_queue.task_done()
+
+async def diarization_processor(shared_state, pcm_queue, diarization_obj):
+    buffer_diarization = ""
+    
+    while True:
+        try:
+            pcm_array = await pcm_queue.get()
+            
+            # Process diarization
+            await diarization_obj.diarize(pcm_array)
+            
+            # Get current state
+            state = await shared_state.get_current_state()
+            tokens = state["tokens"]
+            end_attributed_speaker = state["end_attributed_speaker"]
+            
+            # Update speaker information
+            new_end_attributed_speaker = diarization_obj.assign_speakers_to_tokens(
+                end_attributed_speaker, tokens)
+            
+            await shared_state.update_diarization(new_end_attributed_speaker, buffer_diarization)
+            
+        except Exception as e:
+            logger.warning(f"Exception in diarization_processor: {e}")
+        finally:
+            pcm_queue.task_done()
+
+async def results_formatter(shared_state, websocket):
+    while True:
+        try:
+            # Get the current state
+            state = await shared_state.get_current_state()
+            tokens = state["tokens"]
+            buffer_transcription = state["buffer_transcription"]
+            buffer_diarization = state["buffer_diarization"]
+            end_attributed_speaker = state["end_attributed_speaker"]
+            remaining_time_transcription = state["remaining_time_transcription"]
+            remaining_time_diarization = state["remaining_time_diarization"]
+            sep = state["sep"]
+            
+            # If diarization is enabled but no transcription, add dummy tokens periodically
+            if not tokens and not args.transcription and args.diarization:
+                await shared_state.add_dummy_token()
+                # Re-fetch tokens after adding dummy
+                state = await shared_state.get_current_state()
+                tokens = state["tokens"]
+            
+            # Process tokens to create response
+            previous_speaker = -10
+            lines = []
+            last_end_diarized = 0
+            
+            for token in tokens:
+                speaker = token.speaker
+                if args.diarization:
+                    if speaker == -1 or speaker == 0:
+                        if token.end < end_attributed_speaker:
+                            speaker = previous_speaker
+                        else:
+                            speaker = 0
+                    else:
+                        last_end_diarized = max(token.end, last_end_diarized)
+
+                if speaker != previous_speaker:
+                    lines.append(
+                        {
+                            "speaker": speaker,
+                            "text": token.text,
+                            "beg": format_time(token.start),
+                            "end": format_time(token.end),
+                            "diff": round(token.end - last_end_diarized, 2)
+                        }
+                    )
+                    previous_speaker = speaker
+                elif token.text:  # Only append if text isn't empty
+                    lines[-1]["text"] += sep + token.text
+                    lines[-1]["end"] = format_time(token.end)
+                    lines[-1]["diff"] = round(token.end - last_end_diarized, 2)
+            
+            # Prepare response object
+            response = {
+                "lines": lines, 
+                "buffer_transcription": buffer_transcription,
+                "buffer_diarization": buffer_diarization,
+                "remaining_time_transcription": remaining_time_transcription,
+                "remaining_time_diarization": remaining_time_diarization
+            }
+            
+            await websocket.send_json(response)
+            
+            # Add a small delay to avoid overwhelming the client
+            await asyncio.sleep(0.1)
+            
+        except Exception as e:
+            logger.warning(f"Exception in results_formatter: {e}")
+            await asyncio.sleep(0.5)  # Back off on error
 
 ##### ENDPOINTS #####
 
@@ -134,8 +333,12 @@ async def websocket_endpoint(websocket: WebSocket):
 
     ffmpeg_process = None
     pcm_buffer = bytearray()
-    online = online_factory(args, asr, tokenizer) if args.transcription else None
+    shared_state = SharedState()
     
+    transcription_queue = asyncio.Queue() if args.transcription else None
+    diarization_queue = asyncio.Queue() if args.diarization else None
+    
+    online = None
 
     async def restart_ffmpeg():
         nonlocal ffmpeg_process, online, pcm_buffer
@@ -147,20 +350,29 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.warning(f"Error killing FFmpeg process: {e}")
         ffmpeg_process = await start_ffmpeg_decoder()
         pcm_buffer = bytearray()
-        online = online_factory(args, asr, tokenizer) if args.transcription else None
+        
+        if args.transcription:
+            online = online_factory(args, asr, tokenizer)
+        
+        await shared_state.reset()
         logger.info("FFmpeg process started.")
 
     await restart_ffmpeg()
 
+    tasks = []    
+    if args.transcription and online:
+        tasks.append(asyncio.create_task(
+            transcription_processor(shared_state, transcription_queue, online)))    
+    if args.diarization and diarization:
+        tasks.append(asyncio.create_task(
+            diarization_processor(shared_state, diarization_queue, diarization)))
+    formatter_task = asyncio.create_task(results_formatter(shared_state, websocket))
+    tasks.append(formatter_task)
+
     async def ffmpeg_stdout_reader():
-        nonlocal ffmpeg_process, online, pcm_buffer
+        nonlocal ffmpeg_process, pcm_buffer
         loop = asyncio.get_event_loop()
-        full_transcription = ""
         beg = time()
-        beg_loop = time()
-        tokens = []
-        end_attributed_speaker = 0
-        sep = online.asr.sep
         
         while True:
             try:
@@ -179,7 +391,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 except asyncio.TimeoutError:
                     logger.warning("FFmpeg read timeout. Restarting...")
                     await restart_ffmpeg()
-                    full_transcription = ""
                     beg = time()
                     continue  # Skip processing and read from new process
 
@@ -200,62 +411,14 @@ async def websocket_endpoint(websocket: WebSocket):
                     )
                     pcm_buffer = pcm_buffer[MAX_BYTES_PER_SEC:]
                     
-                    if args.transcription:
-                        logger.info(f"{len(online.audio_buffer) / online.SAMPLING_RATE} seconds of audio will be processed by the model.")
-                        online.insert_audio_chunk(pcm_array)
-                        new_tokens = online.process_iter()
-                        tokens.extend(new_tokens)
-                        full_transcription += sep.join([t.text for t in new_tokens])
-                        _buffer = online.get_buffer()
-                        buffer = _buffer.text
-                        end_buffer = _buffer.end if _buffer.end else tokens[-1].end if tokens else 0
-                        if buffer in full_transcription: # With VAC, the buffer is not updated until the next chunk is processed
-                            buffer = ""
-                    else:
-                        tokens.append(
-                            ASRToken(
-                                start = time() - beg_loop,
-                                end = time() - beg_loop + 0.5))
-                        sleep(0.5)
-                        buffer = ''
-
-                    if args.diarization:
-                        await diarization.diarize(pcm_array)
-                        end_attributed_speaker = diarization.assign_speakers_to_tokens(end_attributed_speaker, tokens)
+                    if args.transcription and transcription_queue:
+                        await transcription_queue.put(pcm_array.copy())
                     
-                    previous_speaker = -10
-                    lines = []
-                    last_end_diarized = 0
-                    for token in tokens:
-                        speaker = token.speaker
-                        if args.diarization:
-                            if speaker == -1 or speaker == 0:
-                                if token.end < end_attributed_speaker:
-                                    speaker = previous_speaker
-                                else:
-                                    speaker = 0
-                            else:
-                                last_end_diarized = max(token.end, last_end_diarized)
-
-                        if speaker != previous_speaker:
-                            lines.append(
-                                {
-                                    "speaker": speaker,
-                                    "text": token.text,
-                                    "beg": format_time(token.start),
-                                    "end": format_time(token.end),
-                                    "diff": round(token.end - last_end_diarized, 2)
-                                }
-                            )
-                            previous_speaker = speaker
-                        else:
-                            lines[-1]["text"] += sep + token.text
-                            lines[-1]["end"] = format_time(token.end)
-                            lines[-1]["diff"] = round(token.end - last_end_diarized, 2)
-                            
-                    response = {"lines": lines, "buffer": buffer}
-                    # response = {"lines": lines, "buffer": buffer, "time_buffer_transcription": time() + beg_loop - end_buffer, "time_buffer_diarization": time() + beg_loop - end_attributed_speaker}
-                    await websocket.send_json(response)
+                    if args.diarization and diarization_queue:
+                        await diarization_queue.put(pcm_array.copy())
+                    
+                    if not args.transcription and not args.diarization:
+                        await asyncio.sleep(0.1)
                     
             except Exception as e:
                 logger.warning(f"Exception in ffmpeg_stdout_reader: {e}")
@@ -264,7 +427,7 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.info("Exiting ffmpeg_stdout_reader...")
 
     stdout_reader_task = asyncio.create_task(ffmpeg_stdout_reader())
-
+    tasks.append(stdout_reader_task)    
     try:
         while True:
             # Receive incoming WebM audio chunks from the client
@@ -280,16 +443,20 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         logger.warning("WebSocket disconnected.")
     finally:
-        stdout_reader_task.cancel()
+        for task in tasks:
+            task.cancel()
+            
         try:
+            await asyncio.gather(*tasks, return_exceptions=True)
             ffmpeg_process.stdin.close()
             ffmpeg_process.wait()
-        except:
-            pass
-        if args.diarization:
+        except Exception as e:
+            logger.warning(f"Error during cleanup: {e}")
+        
+        if args.diarization and diarization:
             diarization.close()
-
-
+        
+        logger.info("WebSocket endpoint cleaned up.")
 
 if __name__ == "__main__":
     import uvicorn
