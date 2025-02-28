@@ -10,8 +10,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.whisper_streaming.whisper_online import backend_factory, online_factory, add_shared_args
-from src.whisper_streaming.timed_objects import ASRToken
+from whisper_streaming_custom.whisper_online import backend_factory, online_factory, add_shared_args
+from timed_objects import ASRToken
 
 import math
 import logging
@@ -49,7 +49,7 @@ parser.add_argument(
 parser.add_argument(
     "--diarization",
     type=bool,
-    default=False,
+    default=True,
     help="Whether to enable speaker diarization.",
 )
 
@@ -157,7 +157,7 @@ async def lifespan(app: FastAPI):
         asr, tokenizer = None, None
 
     if args.diarization:
-        from src.diarization.diarization_online import DiartDiarization
+        from diarization.diarization_online import DiartDiarization
         diarization = DiartDiarization(SAMPLE_RATE)
     else :
         diarization = None
@@ -174,7 +174,7 @@ app.add_middleware(
 
 
 # Load demo HTML for the root endpoint
-with open("src/web/live_transcription.html", "r", encoding="utf-8") as f:
+with open("web/live_transcription.html", "r", encoding="utf-8") as f:
     html = f.read()
 
 async def start_ffmpeg_decoder():
@@ -277,24 +277,18 @@ async def results_formatter(shared_state, websocket):
             
             # Process tokens to create response
             previous_speaker = -10
-            lines = [
-            ]
+            lines = []
             last_end_diarized = 0
             undiarized_text = []
             
             for token in tokens:
                 speaker = token.speaker
-                # Handle diarization differently if diarization is enabled
                 if args.diarization:
-                    # If token is not yet processed by diarization
                     if (speaker == -1 or speaker == 0) and token.end >= end_attributed_speaker:
-                        # Add this token's text to undiarized buffer instead of creating a new line
                         undiarized_text.append(token.text)
                         continue
-                    # If speaker isn't assigned yet but should be (based on timestamp)
                     elif (speaker == -1 or speaker == 0) and token.end < end_attributed_speaker:
                         speaker = previous_speaker
-                    # Track last diarized token end time
                     if speaker not in [-1, 0]:
                         last_end_diarized = max(token.end, last_end_diarized)
 
@@ -314,7 +308,6 @@ async def results_formatter(shared_state, websocket):
                     lines[-1]["end"] = format_time(token.end)
                     lines[-1]["diff"] = round(token.end - last_end_diarized, 2)
             
-            # Update buffer_diarization with undiarized text
             if undiarized_text:
                 combined_buffer_diarization = sep.join(undiarized_text)
                 if buffer_transcription:
@@ -322,7 +315,6 @@ async def results_formatter(shared_state, websocket):
                 await shared_state.update_diarization(end_attributed_speaker, combined_buffer_diarization)
                 buffer_diarization = combined_buffer_diarization
                 
-            # Prepare response object
             if lines:
                 response = {
                     "lines": lines, 
@@ -350,7 +342,6 @@ async def results_formatter(shared_state, websocket):
             response_content = ' '.join([str(line['speaker']) + ' ' + line["text"] for line in lines]) + ' | ' + buffer_transcription + ' | ' + buffer_diarization
             
             if response_content != shared_state.last_response_content:
-                # Only send if there's actual content to send
                 if lines or buffer_transcription or buffer_diarization:
                     await websocket.send_json(response)
                     shared_state.last_response_content = response_content
