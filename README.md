@@ -25,7 +25,7 @@ This project is based on [Whisper Streaming](https://github.com/ufal/whisper_str
 
 #### 🚀 **Coming Soon**
 
-- **Faster Word Validation** – Accelerate real-time transcription by validating high-confidence words immediately upon first appearance for whisper backends that returns words & segment probabilities
+- **Faster Word Validation** – Accelerate real-time transcription by validating high-confidence words immediately upon first appearance for whisper backends that return word & segment probabilities
 - **Enhanced Diarization Performance** – Optimize speaker identification by implementing longer steps for Diart processing and leveraging language-specific segmentation patterns to improve speaker boundary detection
 
 
@@ -77,6 +77,8 @@ This project is based on [Whisper Streaming](https://github.com/ufal/whisper_str
     # If you want to use diarization
     diart
     ```
+
+    Diart uses by default [pyannote.audio](https://github.com/pyannote/pyannote-audio) models from the _huggingface hub_. To use them, please follow the steps described [here](https://github.com/juanmc2005/diart?tab=readme-ov-file#get-access-to--pyannote-models).
 
 
 3. **Run the FastAPI Server**:
