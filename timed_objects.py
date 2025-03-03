@@ -7,12 +7,13 @@ class TimedText:
     end: Optional[float]
     text: Optional[str] = ''
     speaker: Optional[int] = -1
+    probability: Optional[float] = None
 
 @dataclass
 class ASRToken(TimedText):
     def with_offset(self, offset: float) -> "ASRToken":
         """Return a new token with the time offset added."""
-        return ASRToken(self.start + offset, self.end + offset, self.text)
+        return ASRToken(self.start + offset, self.end + offset, self.text, self.speaker, self.probability)
 
 @dataclass
 class Sentence(TimedText):

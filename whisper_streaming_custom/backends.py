@@ -131,7 +131,7 @@ class FasterWhisperASR(ASRBase):
             if segment.no_speech_prob > 0.9:
                 continue
             for word in segment.words:
-                token = ASRToken(word.start, word.end, word.word)
+                token = ASRToken(word.start, word.end, word.word, probability=word.probability)
                 tokens.append(token)
         return tokens
 
@@ -210,7 +210,7 @@ class MLXWhisper(ASRBase):
             if segment.get("no_speech_prob", 0) > 0.9:
                 continue
             for word in segment.get("words", []):
-                token = ASRToken(word["start"], word["end"], word["word"])
+                token = ASRToken(word["start"], word["end"], word["word"], probability=word["probability"])
                 tokens.append(token)
         return tokens
 

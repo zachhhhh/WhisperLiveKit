@@ -47,6 +47,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--confidence-validation",
+    type=bool,
+    default=True,
+    help="Accelerates validation of tokens using confidence scores. Transcription will be faster but punctuation might be less accurate.",
+)
+
+parser.add_argument(
     "--diarization",
     type=bool,
     default=False,

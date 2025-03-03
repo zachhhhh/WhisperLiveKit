@@ -1,4 +1,4 @@
-# Real-time, fully local Speech-to-Text and speaker diarization using FastAPI WebSockets with a web interface
+# Real-time, Fully Local Speech-to-Text and Speaker Diarization
 
 This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. Simply launch the local server and grant microphone access. Everything runs locally on your machine ✨
 
@@ -8,24 +8,23 @@ This project is based on [Whisper Streaming](https://github.com/ufal/whisper_str
 
 ### Differences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
 
-#### 🌐 **Web & API**  
-- **Built-in Web UI** – No frontend setup required, just open your browser and start transcribing.  
-- **FastAPI WebSocket Server** – Real-time speech-to-text processing with async FFmpeg streaming.  
-- **JavaScript Client** – Ready-to-use MediaRecorder implementation for seamless client-side integration.
-
 #### ⚙️ **Core Improvements**  
 - **Buffering Preview** – Displays unvalidated transcription segments for immediate feedback.  
 - **Multi-User Support** – Handles multiple users simultaneously without conflicts.  
 - **MLX Whisper Backend** – Optimized for Apple Silicon for faster local processing.  
 - **Enhanced Sentence Segmentation** – Improved buffer trimming for better accuracy across languages.  
-- **Extended Logging** – More detailed logs to improve debugging and monitoring.  
+- **Confidence validation** – Immediately validate high-confidence tokens for faster inference
 
-#### 🎙️ **Advanced Features**  
-- **Real-Time Diarization** – Identify different speakers in real time using [Diart](https://github.com/juanmc2005/diart).  
+#### 🎙️ **Speaker Identification**  
+- **Real-Time Diarization** – Identify different speakers in real time using [Diart](https://github.com/juanmc2005/diart).
+
+#### 🌐 **Web & API**  
+- **Built-in Web UI** – Simple browser interface with no frontend setup required
+- **FastAPI WebSocket Server** – Real-time speech-to-text processing with async FFmpeg streaming.  
+- **JavaScript Client** – Ready-to-use MediaRecorder implementation for seamless client-side integration.
 
 #### 🚀 **Coming Soon**
 
-- **Faster Word Validation** – Accelerate real-time transcription by validating high-confidence words immediately upon first appearance for whisper backends that return word & segment probabilities
 - **Enhanced Diarization Performance** – Optimize speaker identification by implementing longer steps for Diart processing and leveraging language-specific segmentation patterns to improve speaker boundary detection
 
 
@@ -87,12 +86,13 @@ This project is based on [Whisper Streaming](https://github.com/ufal/whisper_str
     python whisper_fastapi_online_server.py --host 0.0.0.0 --port 8000
     ```
 
+    All [Whisper Streaming](https://github.com/ufal/whisper_streaming) parameters are supported.  
+    Additional parameters:
     - `--host` and `--port` let you specify the server’s IP/port. 
     - `-min-chunk-size` sets the minimum chunk size for audio processing. Make sure this value aligns with the chunk size selected in the frontend. If not aligned, the system will work but may unnecessarily over-process audio data.
-    - For a full list of configurable options, run `python whisper_fastapi_online_server.py -h`
-    - `--transcription`, default to True. Change to False if you want to run only diarization
-    - `--diarization`, default to False, let you choose whether or not you want to run diarization in parallel
-    - For other parameters, look at [whisper streaming](https://github.com/ufal/whisper_streaming) readme.
+    - `--transcription`: Enable/disable transcription (default: True)
+    - `--diarization`: Enable/disable speaker diarization (default: False)
+    - `--confidence-validation`: Use confidence scores for faster validation. Transcription will be faster but punctuation might be less accurate (default: True)
 
 4. **Open the Provided HTML**:
 

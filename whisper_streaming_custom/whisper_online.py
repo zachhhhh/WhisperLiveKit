@@ -77,7 +77,7 @@ def add_shared_args(parser):
     parser.add_argument(
         "--model",
         type=str,
-        default="tiny.en",
+        default="large-v3-turbo",
         choices="tiny.en,tiny,base.en,base,small.en,small,medium.en,medium,large-v1,large-v2,large-v3,large,large-v3-turbo".split(
             ","
         ),
@@ -207,6 +207,7 @@ def online_factory(args, asr, tokenizer, logfile=sys.stderr):
             tokenizer,
             logfile=logfile,
             buffer_trimming=(args.buffer_trimming, args.buffer_trimming_sec),
+            confidence_validation = args.confidence_validation
         )
     else:
         online = OnlineASRProcessor(
@@ -214,6 +215,7 @@ def online_factory(args, asr, tokenizer, logfile=sys.stderr):
             tokenizer,
             logfile=logfile,
             buffer_trimming=(args.buffer_trimming, args.buffer_trimming_sec),
+            confidence_validation = args.confidence_validation
         )
     return online
   

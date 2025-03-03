@@ -16,7 +16,8 @@ class HypothesisBuffer:
       - buffer: the last hypothesis that is not yet committed
       - new: new tokens coming from the recognizer
     """
-    def __init__(self, logfile=sys.stderr):
+    def __init__(self, logfile=sys.stderr, confidence_validation=False):
+        self.confidence_validation = confidence_validation
         self.committed_in_buffer: List[ASRToken] = []
         self.buffer: List[ASRToken] = []
         self.new: List[ASRToken] = []
@@ -62,9 +63,15 @@ class HypothesisBuffer:
         committed: List[ASRToken] = []
         while self.new:
             current_new = self.new[0]
-            if not self.buffer:
+            if self.confidence_validation and current_new.probability and current_new.probability > 0.95:
+                committed.append(current_new)
+                self.last_committed_word = current_new.text
+                self.last_committed_time = current_new.end
+                self.new.pop(0)
+                self.buffer.pop(0) if self.buffer else None
+            elif not self.buffer:
                 break
-            if current_new.text == self.buffer[0].text:
+            elif current_new.text == self.buffer[0].text:
                 committed.append(current_new)
                 self.last_committed_word = current_new.text
                 self.last_committed_time = current_new.end
@@ -102,6 +109,7 @@ class OnlineASRProcessor:
         asr,
         tokenize_method: Optional[callable] = None,
         buffer_trimming: Tuple[str, float] = ("segment", 15),
+        confidence_validation = False,
         logfile=sys.stderr,
     ):
         """
@@ -114,7 +122,7 @@ class OnlineASRProcessor:
         self.asr = asr
         self.tokenize = tokenize_method
         self.logfile = logfile
-
+        self.confidence_validation = confidence_validation
         self.init()
 
         self.buffer_trimming_way, self.buffer_trimming_sec = buffer_trimming
@@ -131,7 +139,7 @@ class OnlineASRProcessor:
     def init(self, offset: Optional[float] = None):
         """Initialize or reset the processing buffers."""
         self.audio_buffer = np.array([], dtype=np.float32)
-        self.transcript_buffer = HypothesisBuffer(logfile=self.logfile)
+        self.transcript_buffer = HypothesisBuffer(logfile=self.logfile, confidence_validation=self.confidence_validation)
         self.buffer_time_offset = offset if offset is not None else 0.0
         self.transcript_buffer.last_committed_time = self.buffer_time_offset
         self.committed: List[ASRToken] = []
@@ -323,13 +331,14 @@ class OnlineASRProcessor:
     ) -> Transcript:
         sep = sep if sep is not None else self.asr.sep
         text = sep.join(token.text for token in tokens)
+        probability = sum(token.probability for token in tokens if token.probability) / len(tokens) if tokens else None
         if tokens:
             start = offset + tokens[0].start
             end = offset + tokens[-1].end
         else:
             start = None
             end = None
-        return Transcript(start, end, text)
+        return Transcript(start, end, text, probability=probability)
 
 
 class VACOnlineASRProcessor:
