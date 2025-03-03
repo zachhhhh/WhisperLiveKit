@@ -120,8 +120,7 @@ class SharedState:
                 remaining_time_transcription = max(0, round(current_time - self.beg_loop - self.end_buffer, 2))
                 
             # Calculate remaining time for diarization
-            if self.end_attributed_speaker > 0:
-                remaining_time_diarization = max(0, round(max(self.end_buffer, self.tokens[-1].end if self.tokens else 0) - self.end_attributed_speaker, 2))
+            remaining_time_diarization = max(0, round(max(self.end_buffer, self.tokens[-1].end if self.tokens else 0) - self.end_attributed_speaker, 2))
                 
             return {
                 "tokens": self.tokens.copy(),
@@ -420,7 +419,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         loop.run_in_executor(
                             None, ffmpeg_process.stdout.read, ffmpeg_buffer_from_duration
                         ),
-                        timeout=5.0
+                        timeout=15.0
                     )
                 except asyncio.TimeoutError:
                     logger.warning("FFmpeg read timeout. Restarting...")
