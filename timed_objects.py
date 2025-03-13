@@ -8,6 +8,7 @@ class TimedText:
     text: Optional[str] = ''
     speaker: Optional[int] = -1
     probability: Optional[float] = None
+    is_dummy: Optional[bool] = False
 
 @dataclass
 class ASRToken(TimedText):
