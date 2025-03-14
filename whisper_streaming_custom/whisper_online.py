@@ -227,34 +227,57 @@ def asr_factory(args, logfile=sys.stderr):
     online = online_factory(args, asr, tokenizer, logfile=logfile)
     return asr, online
 
-def warmup_asr(asr, warmup_file=None):
+def warmup_asr(asr, warmup_file=None, timeout=5):
     """
     Warmup the ASR model by transcribing a short audio file.
     """
-    if warmup_file:
-        warmup_file = warmup_file
-    else:
+    import os
+    import tempfile
+    
+    
+    if warmup_file is None:
         # Download JFK sample if not already present
-        import tempfile
-        import os
-
-        
         jfk_url = "https://github.com/ggerganov/whisper.cpp/raw/master/samples/jfk.wav"
         temp_dir = tempfile.gettempdir()
         warmup_file = os.path.join(temp_dir, "whisper_warmup_jfk.wav")
         
         if not os.path.exists(warmup_file):
             logger.debug(f"Downloading warmup file from {jfk_url}")
+            print(f"Downloading warmup file from {jfk_url}")
+            import time
             import urllib.request
-            urllib.request.urlretrieve(jfk_url, warmup_file)
-
-
-    # Load the warmup file
-    audio, sr = librosa.load(warmup_file, sr=16000)
-
+            import urllib.error
+            import socket
+            
+            original_timeout = socket.getdefaulttimeout()
+            socket.setdefaulttimeout(timeout)
+            
+            start_time = time.time()
+            try:
+                urllib.request.urlretrieve(jfk_url, warmup_file)
+                logger.debug(f"Download successful in {time.time() - start_time:.2f}s")
+            except (urllib.error.URLError, socket.timeout) as e:
+                logger.warning(f"Download failed: {e}. Proceeding without warmup.")
+                return False
+            finally:
+                socket.setdefaulttimeout(original_timeout)
+    elif not warmup_file:
+        return False 
+    
+    if not warmup_file or not os.path.exists(warmup_file) or os.path.getsize(warmup_file) == 0:
+        logger.warning(f"Warmup file {warmup_file} invalid or missing.")
+        return False
+    
+    print(f"Warmping up Whisper with {warmup_file}")
+    try:
+        import librosa
+        audio, sr = librosa.load(warmup_file, sr=16000)
+    except Exception as e:
+        logger.warning(f"Failed to load audio file: {e}")
+        return False
+            
     # Process the audio
     asr.transcribe(audio)
-    
 
     logger.info("Whisper is warmed up")
 

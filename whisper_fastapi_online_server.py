@@ -10,7 +10,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from whisper_streaming_custom.whisper_online import backend_factory, online_factory, add_shared_args,warmup_asr
+from whisper_streaming_custom.whisper_online import backend_factory, online_factory, add_shared_args, warmup_asr
 from timed_objects import ASRToken
 
 import math
@@ -42,8 +42,13 @@ parser.add_argument(
 parser.add_argument(
     "--warmup-file",
     type=str,
+    default=None,
     dest="warmup_file",
-    help="The path to a speech audio wav file to warm up Whisper so that the very first chunk processing is fast. It can be e.g. https://github.com/ggerganov/whisper.cpp/raw/master/samples/jfk.wav .",
+    help="""
+    The path to a speech audio wav file to warm up Whisper so that the very first chunk processing is fast.
+    If not set, uses https://github.com/ggerganov/whisper.cpp/raw/master/samples/jfk.wav.
+    If False, no warmup is performed.
+    """,
 )
 
 parser.add_argument(
