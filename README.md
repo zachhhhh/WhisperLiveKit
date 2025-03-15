@@ -1,4 +1,6 @@
-# Real-time, Fully Local Speech-to-Text and Speaker Diarization
+<h1 align="center">WhisperLiveKit</h1>
+<p align="center"><b>Real-time, Fully Local Whisper's Speech-to-Text and Speaker Diarization</b></p>
+
 
 This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. Simply launch the local server and grant microphone access. Everything runs locally on your machine ✨
 
@@ -37,7 +39,20 @@ This project is based on [Whisper Streaming](https://github.com/ufal/whisper_str
 
 1. **Dependencies**:
 
-- Install required dependences :
+- Install system dependencies:
+    ```bash
+    # Install FFmpeg on your system (required for audio processing)
+    # For Ubuntu/Debian:
+    sudo apt install ffmpeg
+    
+    # For macOS:
+    brew install ffmpeg
+    
+    # For Windows:
+    # Download from https://ffmpeg.org/download.html and add to PATH
+    ```
+
+- Install required Python dependencies:
 
     ```bash
     # Whisper streaming required dependencies
@@ -83,13 +98,29 @@ This project is based on [Whisper Streaming](https://github.com/ufal/whisper_str
 
     **Parameters**
    
-    All [Whisper Streaming](https://github.com/ufal/whisper_streaming) parameters are supported.  
-    Additional parameters:
-    - `--host` and `--port` let you specify the server’s IP/port. 
+    The following parameters are supported:
+  
+    - `--host` and `--port` let you specify the server's IP/port. 
     - `-min-chunk-size` sets the minimum chunk size for audio processing. Make sure this value aligns with the chunk size selected in the frontend. If not aligned, the system will work but may unnecessarily over-process audio data.
     - `--transcription`: Enable/disable transcription (default: True)
     - `--diarization`: Enable/disable speaker diarization (default: False)
     - `--confidence-validation`: Use confidence scores for faster validation. Transcription will be faster but punctuation might be less accurate (default: True)
+    - `--warmup-file`: The path to a speech audio wav file to warm up Whisper so that the very first chunk processing is fast. :
+      - If not set, uses https://github.com/ggerganov/whisper.cpp/raw/master/samples/jfk.wav.
+      - If False, no warmup is performed.
+    - `--min-chunk-size` Minimum audio chunk size in seconds. It waits up to this time to do processing. If the processing takes shorter time, it waits, otherwise it processes the whole segment that was received by this time.
+    - `--model` {_tiny.en, tiny, base.en, base, small.en, small, medium.en, medium, large-v1, large-v2, large-v3, large, large-v3-turbo_}
+                        Name size of the Whisper model to use (default: tiny). The model is automatically downloaded from the model hub if not present in model cache dir.
+    - `--model_cache_dir` Overriding the default model cache dir where models downloaded from the hub are saved
+    - `--model_dir` Dir where Whisper model.bin and other files are saved. This option overrides --model and --model_cache_dir parameter.
+    - `--lan`, --language Source language code, e.g. en,de,cs, or 'auto' for language detection.
+    - `--task` {_transcribe, translate_} Transcribe or translate. If translate is set, we recommend avoiding the _large-v3-turbo_ backend, as it [performs significantly worse](https://github.com/QuentinFuxa/whisper_streaming_web/issues/40#issuecomment-2652816533) than other models for translation.
+    - `--backend` {_faster-whisper, whisper_timestamped, openai-api, mlx-whisper_} Load only this backend for Whisper processing.
+    - `--vac` Use VAC = voice activity controller. Requires torch.
+    - `--vac-chunk-size` VAC sample size in seconds.
+    - `--vad` Use VAD = voice activity detection, with the default parameters.
+    - `--buffer_trimming` {_sentence, segment_} Buffer trimming strategy -- trim completed sentences marked with punctuation mark and detected by sentence segmenter, or the completed segments returned by Whisper. Sentence segmenter must be installed for "sentence" option.
+    - `--buffer_trimming_sec` Buffer trimming length threshold in seconds. If buffer length is longer, trimming sentence/segment is triggered.
 
 5. **Open the Provided HTML**:
 
@@ -118,4 +149,3 @@ No additional front-end libraries or frameworks are required. The WebSocket logi
 ## Acknowledgments
 
 This project builds upon the foundational work of the Whisper Streaming project. We extend our gratitude to the original authors for their contributions.
-
