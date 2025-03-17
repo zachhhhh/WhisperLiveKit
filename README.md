@@ -30,8 +30,8 @@ This project is based on [Whisper Streaming](https://github.com/ufal/whisper_str
 1. **Clone the Repository**:
 
    ```bash
-   git clone https://github.com/QuentinFuxa/whisper_streaming_web
-   cd whisper_streaming_web
+   git clone https://github.com/QuentinFuxa/WhisperLiveKit
+   cd WhisperLiveKit
    ```
 
 

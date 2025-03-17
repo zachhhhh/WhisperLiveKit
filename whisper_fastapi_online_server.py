@@ -190,6 +190,16 @@ app.add_middleware(
 with open("web/live_transcription.html", "r", encoding="utf-8") as f:
     html = f.read()
 
+def convert_pcm_to_float(pcm_buffer):
+    """
+    Converts a PCM buffer in s16le format to a normalized NumPy array.
+    Arg: pcm_buffer. PCM buffer containing raw audio data in s16le format
+    Returns: np.ndarray. NumPy array of float32 type normalized between -1.0 and 1.0
+    """
+    pcm_array = (np.frombuffer(pcm_buffer, dtype=np.int16).astype(np.float32) 
+                / 32768.0)
+    return pcm_array
+
 async def start_ffmpeg_decoder():
     """
     Start an FFmpeg process in async streaming mode that reads WebM from stdin
@@ -444,24 +454,23 @@ async def websocket_endpoint(websocket: WebSocket):
                     logger.info("FFmpeg stdout closed.")
                     break
                 pcm_buffer.extend(chunk)
+                        
+                if args.diarization and diarization_queue:
+                    await diarization_queue.put(convert_pcm_to_float(pcm_buffer).copy())
+
                 if len(pcm_buffer) >= BYTES_PER_SEC:
                     if len(pcm_buffer) > MAX_BYTES_PER_SEC:
                         logger.warning(
                             f"""Audio buffer is too large: {len(pcm_buffer) / BYTES_PER_SEC:.2f} seconds.
                             The model probably struggles to keep up. Consider using a smaller model.
                             """)
-                    # Convert int16 -> float32
-                    pcm_array = (
-                        np.frombuffer(pcm_buffer[:MAX_BYTES_PER_SEC], dtype=np.int16).astype(np.float32)
-                        / 32768.0
-                    )
+
+                    pcm_array = convert_pcm_to_float(pcm_buffer[:MAX_BYTES_PER_SEC])
                     pcm_buffer = pcm_buffer[MAX_BYTES_PER_SEC:]
                     
                     if args.transcription and transcription_queue:
                         await transcription_queue.put(pcm_array.copy())
                     
-                    if args.diarization and diarization_queue:
-                        await diarization_queue.put(pcm_array.copy())
                     
                     if not args.transcription and not args.diarization:
                         await asyncio.sleep(0.1)
