@@ -5,7 +5,7 @@ import numpy as np
 import logging
 
 
-from diart import SpeakerDiarization
+from diart import SpeakerDiarization, SpeakerDiarizationConfig
 from diart.inference import StreamingInference
 from diart.sources import AudioSource
 from timed_objects import SpeakerSegment
@@ -103,8 +103,8 @@ class WebSocketAudioSource(AudioSource):
 
 
 class DiartDiarization:
-    def __init__(self, sample_rate: int, use_microphone: bool = False):
-        self.pipeline = SpeakerDiarization()        
+    def __init__(self, sample_rate: int, config : SpeakerDiarizationConfig = None, use_microphone: bool = False):
+        self.pipeline = SpeakerDiarization(config=config)        
         self.observer = DiarizationObserver()
         
         if use_microphone:
