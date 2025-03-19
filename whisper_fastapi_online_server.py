@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from whisper_streaming_custom.whisper_online import backend_factory, warmup_asr
+import asyncio
 import logging
 from parse_args import parse_args
 from audio import AudioProcessor
@@ -51,6 +52,16 @@ with open("web/live_transcription.html", "r", encoding="utf-8") as f:
 async def get():
     return HTMLResponse(html)
 
+
+async def handle_websocket_results(websocket, results_generator):
+    """Consumes results from the audio processor and sends them via WebSocket."""
+    try:
+        async for response in results_generator:
+            await websocket.send_json(response)
+    except Exception as e:
+        logger.warning(f"Error in WebSocket results handler: {e}")
+
+
 @app.websocket("/asr")
 async def websocket_endpoint(websocket: WebSocket):
     audio_processor = AudioProcessor(args, asr, tokenizer)
@@ -58,14 +69,17 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     logger.info("WebSocket connection opened.")
             
-    await audio_processor.create_tasks(websocket, diarization)
+    results_generator = await audio_processor.create_tasks(diarization)
+    websocket_task = asyncio.create_task(handle_websocket_results(websocket, results_generator))
+
     try:
         while True:
             message = await websocket.receive_bytes()
-            audio_processor.process_audio(message)
+            await audio_processor.process_audio(message)
     except WebSocketDisconnect:
         logger.warning("WebSocket disconnected.")
     finally:
+        websocket_task.cancel()
         audio_processor.cleanup()
         logger.info("WebSocket endpoint cleaned up.")
 
