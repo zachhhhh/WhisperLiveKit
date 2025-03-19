@@ -8,7 +8,7 @@ from whisper_streaming_custom.whisper_online import backend_factory, warmup_asr
 import asyncio
 import logging
 from parse_args import parse_args
-from audio import AudioProcessor
+from audio_processor import AudioProcessor
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger().setLevel(logging.WARNING)
@@ -80,7 +80,7 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.warning("WebSocket disconnected.")
     finally:
         websocket_task.cancel()
-        audio_processor.cleanup()
+        await audio_processor.cleanup()
         logger.info("WebSocket endpoint cleaned up.")
 
 if __name__ == "__main__":
