@@ -26,7 +26,7 @@ This project is based on [Whisper Streaming](https://github.com/ufal/whisper_str
 
 ## Installation
 
-### Via pip
+### Via pip (recommended)
 
 ```bash
 pip install whisperlivekit
@@ -46,67 +46,75 @@ pip install whisperlivekit
 
 You need to install FFmpeg on your system:
 
-- Install system dependencies:
-    ```bash
-    # Install FFmpeg on your system (required for audio processing)
-    # For Ubuntu/Debian:
-    sudo apt install ffmpeg
-    
-    # For macOS:
-    brew install ffmpeg
-    
-    # For Windows:
-    # Download from https://ffmpeg.org/download.html and add to PATH
-    ```
+```bash
+# For Ubuntu/Debian:
+sudo apt install ffmpeg
 
-- Install required Python dependencies:
+# For macOS:
+brew install ffmpeg
 
-    ```bash
-    # Whisper streaming required dependencies
-    pip install librosa soundfile
+# For Windows:
+# Download from https://ffmpeg.org/download.html and add to PATH
+```
 
-    # Whisper streaming web required dependencies
-    pip install fastapi ffmpeg-python
-    ```
-- Install at least one whisper backend among:
+### Optional Dependencies
 
-    ```
-   whisper
-   whisper-timestamped
-   faster-whisper (faster backend on NVIDIA GPU)
-   mlx-whisper (faster backend on Apple Silicon)
-   ```
-- Optionnal dependencies
-
-    ```
-    # If you want to use VAC (Voice Activity Controller). Useful for preventing hallucinations
-    torch
+```bash
+# If you want to use VAC (Voice Activity Controller). Useful for preventing hallucinations
+pip install torch
    
-    # If you choose sentences as buffer trimming strategy
-    mosestokenizer
-    wtpsplit
-    tokenize_uk # If you work with Ukrainian text
+# If you choose sentences as buffer trimming strategy
+pip install mosestokenizer wtpsplit
+pip install tokenize_uk  # If you work with Ukrainian text
 
-    # If you want to run the server using uvicorn (recommended)
-    uvicorn
+# If you want to use diarization
+pip install diart
+```
 
-    # If you want to use diarization
-    diart
-    ```
+Diart uses [pyannote.audio](https://github.com/pyannote/pyannote-audio) models from the _huggingface hub_. To use them, please follow the steps described [here](https://github.com/juanmc2005/diart?tab=readme-ov-file#get-access-to--pyannote-models).
 
-    Diart uses by default [pyannote.audio](https://github.com/pyannote/pyannote-audio) models from the _huggingface hub_. To use them, please follow the steps described [here](https://github.com/juanmc2005/diart?tab=readme-ov-file#get-access-to--pyannote-models).
+## Usage
+
+### Using the command-line tool
+
+After installation, you can start the server using the provided command-line tool:
+
+```bash
+whisperlivekit-server --host 0.0.0.0 --port 8000 --model tiny.en
+```
+
+Then open your browser at `http://localhost:8000` (or your specified host and port).
+
+### Using the library in your code
+
+```python
+from whisperlivekit import WhisperLiveKit
+from fastapi import FastAPI, WebSocket
+
+# Initialize WhisperLiveKit with custom parameters
+kit = WhisperLiveKit(
+    model="tiny.en",
+    diarization=True,
+)
+
+# Create a FastAPI application
+app = FastAPI()
+
+@app.get("/")
+async def get():
+    # Use the built-in web interface
+    return HTMLResponse(kit.web_interface())
+
+# Your websocket endpoints for audio processing...
+```
+
+For a complete audio processing example, check [whisper_fastapi_online_server.py](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisper_fastapi_online_server.py)
 
 
-3. **Run the FastAPI Server**:
+## Configuration Options
 
-    ```bash
-    python whisper_fastapi_online_server.py --host 0.0.0.0 --port 8000
-    ```
+The following parameters are supported when initializing `WhisperLiveKit`:
 
-    **Parameters**
-   
-    The following parameters are supported:
-  
     - `--host` and `--port` let you specify the server's IP/port. 
     - `-min-chunk-size` sets the minimum chunk size for audio processing. Make sure this value aligns with the chunk size selected in the frontend. If not aligned, the system will work but may unnecessarily over-process audio data.
     - `--transcription`: Enable/disable transcription (default: True)
@@ -135,12 +143,13 @@ You need to install FFmpeg on your system:
     - Open your browser at `http://localhost:8000` (or replace `localhost` and `8000` with whatever you specified).  
     - The page uses vanilla JavaScript and the WebSocket API to capture your microphone and stream audio to the server in real time.
 
-### How the Live Interface Works
+
+## How the Live Interface Works
 
 - Once you **allow microphone access**, the page records small chunks of audio using the **MediaRecorder** API in **webm/opus** format.  
 - These chunks are sent over a **WebSocket** to the FastAPI endpoint at `/asr`.  
 - The Python server decodes `.webm` chunks on the fly using **FFmpeg** and streams them into the **whisper streaming** implementation for transcription.  
-- **Partial transcription** appears as soon as enough audio is processed. The “unvalidated” text is shown in **lighter or grey color** (i.e., an ‘aperçu’) to indicate it’s still buffered partial output. Once Whisper finalizes that segment, it’s displayed in normal text.  
+- **Partial transcription** appears as soon as enough audio is processed. The "unvalidated" text is shown in **lighter or grey color** (i.e., an 'aperçu') to indicate it's still buffered partial output. Once Whisper finalizes that segment, it's displayed in normal text.
 - You can watch the transcription update in near real time, ideal for demos, prototyping, or quick debugging.
 
 ### Deploying to a Remote Server

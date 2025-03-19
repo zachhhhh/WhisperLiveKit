@@ -1,4 +1,7 @@
-from whisperlivekit.whisper_streaming_custom.whisper_online import backend_factory, warmup_asr
+try:
+    from whisperlivekit.whisper_streaming_custom.whisper_online import backend_factory, warmup_asr
+except:
+    from whisper_streaming_custom.whisper_online import backend_factory, warmup_asr
 from argparse import Namespace, ArgumentParser
 
 def parse_args():

@@ -28,7 +28,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'whisperlivekit-server=whisperlivekit.server:run_server',
+            'whisperlivekit-server=whisperlivekit.basic_server:main',
         ],
     },
     classifiers=[
