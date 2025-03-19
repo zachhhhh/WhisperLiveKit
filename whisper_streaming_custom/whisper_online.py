@@ -71,7 +71,7 @@ def add_shared_args(parser):
     parser.add_argument(
         "--min-chunk-size",
         type=float,
-        default=1.0,
+        default=0.5,
         help="Minimum audio chunk size in seconds. It waits up to this time to do processing. If the processing takes shorter time, it waits, otherwise it processes the whole segment that was received by this time.",
     )
     parser.add_argument(
