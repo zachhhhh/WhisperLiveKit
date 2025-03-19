@@ -5,7 +5,7 @@
 This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. Simply launch the local server and grant microphone access. Everything runs locally on your machine ✨
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/demo.png" alt="Demo Screenshot" width="730">
+  <img src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/refs/heads/main/demo.png" alt="Demo Screenshot" width="730">
 </p>
 
 ### Differences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
