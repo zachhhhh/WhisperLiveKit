@@ -1,37 +1,26 @@
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from whisper_streaming_custom.whisper_online import backend_factory, warmup_asr
+from whisperlivekit import WhisperLiveKit
+from whisperlivekit.audio_processor import AudioProcessor
+
 import asyncio
 import logging
-from parse_args import parse_args
-from audio_processor import AudioProcessor
+import os
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger().setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-args = parse_args()
-
+kit = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global asr, tokenizer, diarization
-    if args.transcription:
-        asr, tokenizer = backend_factory(args)
-        warmup_asr(asr, args.warmup_file)
-    else:
-        asr, tokenizer = None, None
-
-    if args.diarization:
-        from diarization.diarization_online import DiartDiarization
-        diarization = DiartDiarization()
-    else :
-        diarization = None
+    global kit
+    kit = WhisperLiveKit()
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -44,13 +33,9 @@ app.add_middleware(
 )
 
 
-# Load demo HTML for the root endpoint
-with open("web/live_transcription.html", "r", encoding="utf-8") as f:
-    html = f.read()
-
 @app.get("/")
 async def get():
-    return HTMLResponse(html)
+    return HTMLResponse(kit.web_interface())
 
 
 async def handle_websocket_results(websocket, results_generator):
@@ -64,12 +49,12 @@ async def handle_websocket_results(websocket, results_generator):
 
 @app.websocket("/asr")
 async def websocket_endpoint(websocket: WebSocket):
-    audio_processor = AudioProcessor(args, asr, tokenizer)
+    audio_processor = AudioProcessor()
 
     await websocket.accept()
     logger.info("WebSocket connection opened.")
             
-    results_generator = await audio_processor.create_tasks(diarization)
+    results_generator = await audio_processor.create_tasks()
     websocket_task = asyncio.create_task(handle_websocket_results(websocket, results_generator))
 
     try:
@@ -85,8 +70,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
-
+    
+    temp_kit = WhisperLiveKit(transcription=False, diarization=False)
+    
     uvicorn.run(
-        "whisper_fastapi_online_server:app", host=args.host, port=args.port, reload=True,
+        "whisper_fastapi_online_server:app", 
+        host=temp_kit.args.host, 
+        port=temp_kit.args.port, 
+        reload=True,
         log_level="info"
     )

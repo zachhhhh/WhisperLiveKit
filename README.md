@@ -5,7 +5,7 @@
 This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. Simply launch the local server and grant microphone access. Everything runs locally on your machine ✨
 
 <p align="center">
-  <img src="web/demo.png" alt="Demo Screenshot" width="730">
+  <img src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/demo.png" alt="Demo Screenshot" width="730">
 </p>
 
 ### Differences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
@@ -24,20 +24,27 @@ This project is based on [Whisper Streaming](https://github.com/ufal/whisper_str
 - **FastAPI WebSocket Server** – Real-time speech-to-text processing with async FFmpeg streaming.  
 - **JavaScript Client** – Ready-to-use MediaRecorder implementation for seamless client-side integration.
 
-
 ## Installation
+
+### Via pip
+
+```bash
+pip install whisperlivekit
+```
+
+### From source
 
 1. **Clone the Repository**:
 
    ```bash
    git clone https://github.com/QuentinFuxa/WhisperLiveKit
    cd WhisperLiveKit
+   pip install -e .
    ```
 
+### System Dependencies
 
-### How to Launch the Server
-
-1. **Dependencies**:
+You need to install FFmpeg on your system:
 
 - Install system dependencies:
     ```bash

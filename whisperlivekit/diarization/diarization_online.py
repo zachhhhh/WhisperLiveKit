@@ -8,7 +8,7 @@ import logging
 from diart import SpeakerDiarization, SpeakerDiarizationConfig
 from diart.inference import StreamingInference
 from diart.sources import AudioSource
-from timed_objects import SpeakerSegment
+from whisperlivekit.timed_objects import SpeakerSegment
 from diart.sources import MicrophoneAudioSource
 from rx.core import Observer
 from typing import Tuple, Any, List

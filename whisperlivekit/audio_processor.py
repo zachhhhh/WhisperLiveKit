@@ -7,8 +7,9 @@ import logging
 import traceback
 from datetime import timedelta
 from typing import List, Dict, Any
-from timed_objects import ASRToken
-from whisper_streaming_custom.whisper_online import online_factory
+from whisperlivekit.timed_objects import ASRToken
+from whisperlivekit.whisper_streaming_custom.whisper_online import online_factory
+from whisperlivekit.core import WhisperLiveKit
 
 # Set up logging once
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -22,16 +23,19 @@ def format_time(seconds: float) -> str:
 class AudioProcessor:
     """
     Processes audio streams for transcription and diarization.
-    Handles audio processing, state management, and result formatting in a single class.
+    Handles audio processing, state management, and result formatting.
     """
     
-    def __init__(self, args, asr, tokenizer):
+    def __init__(self):
         """Initialize the audio processor with configuration, models, and state."""
+        
+        models = WhisperLiveKit()
+        
         # Audio processing settings
-        self.args = args
+        self.args = models.args
         self.sample_rate = 16000
         self.channels = 1
-        self.samples_per_sec = int(self.sample_rate * args.min_chunk_size)
+        self.samples_per_sec = int(self.sample_rate * self.args.min_chunk_size)
         self.bytes_per_sample = 2
         self.bytes_per_sec = self.samples_per_sec * self.bytes_per_sample
         self.max_bytes_per_sec = 32000 * 5  # 5 seconds of audio at 32 kHz
@@ -49,16 +53,17 @@ class AudioProcessor:
         self.last_response_content = ""
         
         # Models and processing
-        self.asr = asr
-        self.tokenizer = tokenizer
+        self.asr = models.asr
+        self.tokenizer = models.tokenizer
+        self.diarization = models.diarization
         self.ffmpeg_process = self.start_ffmpeg_decoder()
-        self.transcription_queue = asyncio.Queue() if args.transcription else None
-        self.diarization_queue = asyncio.Queue() if args.diarization else None
+        self.transcription_queue = asyncio.Queue() if self.args.transcription else None
+        self.diarization_queue = asyncio.Queue() if self.args.diarization else None
         self.pcm_buffer = bytearray()
         
         # Initialize transcription engine if enabled
-        if args.transcription:
-            self.online = online_factory(args, asr, tokenizer)
+        if self.args.transcription:
+            self.online = online_factory(self.args, models.asr, models.tokenizer)
 
     def convert_pcm_to_float(self, pcm_buffer):
         """Convert PCM buffer in s16le format to normalized NumPy array."""
@@ -362,10 +367,8 @@ class AudioProcessor:
                 logger.warning(f"Traceback: {traceback.format_exc()}")
                 await asyncio.sleep(0.5)  # Back off on error
                 
-    async def create_tasks(self, diarization=None):
+    async def create_tasks(self):
         """Create and start processing tasks."""
-        if diarization:
-            self.diarization = diarization
             
         tasks = []    
         if self.args.transcription and self.online:
