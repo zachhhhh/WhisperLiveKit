@@ -103,7 +103,7 @@ class WebSocketAudioSource(AudioSource):
 
 
 class DiartDiarization:
-    def __init__(self, sample_rate: int, config : SpeakerDiarizationConfig = None, use_microphone: bool = False):
+    def __init__(self, sample_rate: int = 16000, config : SpeakerDiarizationConfig = None, use_microphone: bool = False):
         self.pipeline = SpeakerDiarization(config=config)        
         self.observer = DiarizationObserver()
         
