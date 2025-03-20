@@ -34,13 +34,11 @@ pip install whisperlivekit
 
 ### From source
 
-1. **Clone the Repository**:
-
-   ```bash
-   git clone https://github.com/QuentinFuxa/WhisperLiveKit
-   cd WhisperLiveKit
-   pip install -e .
-   ```
+```bash
+git clone https://github.com/QuentinFuxa/WhisperLiveKit
+cd WhisperLiveKit
+pip install -e .
+```
 
 ### System Dependencies
 
@@ -71,7 +69,17 @@ pip install tokenize_uk  # If you work with Ukrainian text
 pip install diart
 ```
 
-Diart uses [pyannote.audio](https://github.com/pyannote/pyannote-audio) models from the _huggingface hub_. To use them, please follow the steps described [here](https://github.com/juanmc2005/diart?tab=readme-ov-file#get-access-to--pyannote-models).
+### Get access to 🎹 pyannote models
+
+By default, diart is based on [pyannote.audio](https://github.com/pyannote/pyannote-audio) models from the [huggingface](https://huggingface.co/) hub.
+In order to use them, please follow these steps:
+
+1) [Accept user conditions](https://huggingface.co/pyannote/segmentation) for the `pyannote/segmentation` model
+2) [Accept user conditions](https://huggingface.co/pyannote/segmentation-3.0) for the newest `pyannote/segmentation-3.0` model
+3) [Accept user conditions](https://huggingface.co/pyannote/embedding) for the `pyannote/embedding` model
+4) Install [huggingface-cli](https://huggingface.co/docs/huggingface_hub/quick-start#install-the-hub-library) and [log in](https://huggingface.co/docs/huggingface_hub/quick-start#login) with your user access token (or provide it manually in diart CLI or API).
+
+
 
 ## Usage
 
@@ -144,20 +152,12 @@ The following parameters are supported when initializing `WhisperLiveKit`:
   - `--buffer_trimming` {_sentence, segment_} Buffer trimming strategy -- trim completed sentences marked with punctuation mark and detected by sentence segmenter, or the completed segments returned by Whisper. Sentence segmenter must be installed for "sentence" option.
   - `--buffer_trimming_sec` Buffer trimming length threshold in seconds. If buffer length is longer, trimming sentence/segment is triggered.
 
-5. **Open the Provided HTML**:
-
-    - By default, the server root endpoint `/` serves a simple `live_transcription.html` page.  
-    - Open your browser at `http://localhost:8000` (or replace `localhost` and `8000` with whatever you specified).  
-    - The page uses vanilla JavaScript and the WebSocket API to capture your microphone and stream audio to the server in real time.
-
-
 ## How the Live Interface Works
 
 - Once you **allow microphone access**, the page records small chunks of audio using the **MediaRecorder** API in **webm/opus** format.  
 - These chunks are sent over a **WebSocket** to the FastAPI endpoint at `/asr`.  
 - The Python server decodes `.webm` chunks on the fly using **FFmpeg** and streams them into the **whisper streaming** implementation for transcription.  
 - **Partial transcription** appears as soon as enough audio is processed. The "unvalidated" text is shown in **lighter or grey color** (i.e., an 'aperçu') to indicate it's still buffered partial output. Once Whisper finalizes that segment, it's displayed in normal text.
-- You can watch the transcription update in near real time, ideal for demos, prototyping, or quick debugging.
 
 ### Deploying to a Remote Server
 
@@ -165,10 +165,8 @@ If you want to **deploy** this setup:
 
 1. **Host the FastAPI app** behind a production-grade HTTP(S) server (like **Uvicorn + Nginx** or Docker). If you use HTTPS, use "wss" instead of "ws" in WebSocket URL.
 2. The **HTML/JS page** can be served by the same FastAPI app or a separate static host.  
-3. Users open the page in **Chrome/Firefox** (any modern browser that supports MediaRecorder + WebSocket).  
-
-No additional front-end libraries or frameworks are required. The WebSocket logic in `live_transcription.html` is minimal enough to adapt for your own custom UI or embed in other pages.
+3. Users open the page in **Chrome/Firefox** (any modern browser that supports MediaRecorder + WebSocket). No additional front-end libraries or frameworks are required.
 
 ## Acknowledgments
 
-This project builds upon the foundational work of the Whisper Streaming project. We extend our gratitude to the original authors for their contributions.
+This project builds upon the foundational work of the Whisper Streaming and Diart projects. We extend our gratitude to the original authors for their contributions.
