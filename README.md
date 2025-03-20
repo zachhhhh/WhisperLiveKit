@@ -1,6 +1,11 @@
 <h1 align="center">WhisperLiveKit</h1>
 <p align="center"><b>Real-time, Fully Local Whisper's Speech-to-Text and Speaker Diarization</b></p>
 
+<p align="center">
+<img alt="PyPI Version" src="https://img.shields.io/pypi/v/whisperlivekit?color=g">
+<img alt="PyPI Downloads" src="https://static.pepy.tech/personalized-badge/whisperlivekit">
+<img alt="Python Versions" src="https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-dark_green">
+</p>
 
 This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. Simply launch the local server and grant microphone access. Everything runs locally on your machine ✨
 
