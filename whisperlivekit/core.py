@@ -29,23 +29,21 @@ def parse_args():
 
     parser.add_argument(
         "--confidence-validation",
-        type=bool,
-        default=False,
+        action="store_true",
         help="Accelerates validation of tokens using confidence scores. Transcription will be faster but punctuation might be less accurate.",
     )
 
     parser.add_argument(
         "--diarization",
-        type=bool,
-        default=True,
-        help="Whether to enable speaker diarization.",
+        action="store_true",
+        default=False,
+        help="Enable speaker diarization.",
     )
 
     parser.add_argument(
-        "--transcription",
-        type=bool,
-        default=True,
-        help="To disable to only see live diarization results.",
+        "--no-transcription",
+        action="store_true",
+        help="Disable transcription to only see live diarization results.",
     )
     
     parser.add_argument(
@@ -54,15 +52,14 @@ def parse_args():
         default=0.5,
         help="Minimum audio chunk size in seconds. It waits up to this time to do processing. If the processing takes shorter time, it waits, otherwise it processes the whole segment that was received by this time.",
     )
+    
     parser.add_argument(
         "--model",
         type=str,
         default="tiny",
-        choices="tiny.en,tiny,base.en,base,small.en,small,medium.en,medium,large-v1,large-v2,large-v3,large,large-v3-turbo".split(
-            ","
-        ),
-        help="Name size of the Whisper model to use (default: large-v2). The model is automatically downloaded from the model hub if not present in model cache dir.",
+        help="Name size of the Whisper model to use (default: tiny). Suggested values: tiny.en,tiny,base.en,base,small.en,small,medium.en,medium,large-v1,large-v2,large-v3,large,large-v3-turbo. The model is automatically downloaded from the model hub if not present in model cache dir.",
     )
+    
     parser.add_argument(
         "--model_cache_dir",
         type=str,
@@ -105,12 +102,13 @@ def parse_args():
     parser.add_argument(
         "--vac-chunk-size", type=float, default=0.04, help="VAC sample size in seconds."
     )
+
     parser.add_argument(
-        "--vad",
+        "--no-vad",
         action="store_true",
-        default=True,
-        help="Use VAD = voice activity detection, with the default parameters.",
+        help="Disable VAD (voice activity detection).",
     )
+    
     parser.add_argument(
         "--buffer_trimming",
         type=str,
@@ -134,6 +132,12 @@ def parse_args():
     )
 
     args = parser.parse_args()
+    
+    args.transcription = not args.no_transcription
+    args.vad = not args.no_vad    
+    delattr(args, 'no_transcription')
+    delattr(args, 'no_vad')
+    
     return args
 
 class WhisperLiveKit:
