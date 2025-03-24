@@ -72,6 +72,12 @@ pip install tokenize_uk  # If you work with Ukrainian text
 
 # If you want to use diarization
 pip install diart
+
+# Optional backends. Default is faster-whisper
+pip install whisperlivekit[whisper]           # Original Whisper backend
+pip install whisperlivekit[whisper-timestamped]  # Whisper with improved timestamps
+pip install whisperlivekit[mlx-whisper]       # Optimized for Apple Silicon
+pip install whisperlivekit[openai]            # OpenAI API backend
 ```
 
 ### Get access to 🎹 pyannote models

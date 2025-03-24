@@ -3,7 +3,10 @@ import logging
 import io
 import soundfile as sf
 import math
-import torch
+try: 
+    import torch
+except ImportError: 
+    torch = None
 from typing import List
 import numpy as np
 from whisperlivekit.timed_objects import ASRToken
@@ -102,7 +105,7 @@ class FasterWhisperASR(ASRBase):
             model_size_or_path = modelsize
         else:
             raise ValueError("Either modelsize or model_dir must be set")
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = "cuda" if torch and torch.cuda.is_available() else "cpu"
         compute_type = "float16" if device == "cuda" else "float32"
 
         model = WhisperModel(

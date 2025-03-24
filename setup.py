@@ -1,8 +1,7 @@
 from setuptools import setup, find_packages
-
 setup(
     name="whisperlivekit",
-    version="0.1.2",
+    version="0.1.3",
     description="Real-time, Fully Local Whisper's Speech-to-Text and Speaker Diarization",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
@@ -22,6 +21,10 @@ setup(
         "diarization": ["diart"],
         "vac": ["torch"],
         "sentence": ["mosestokenizer", "wtpsplit"],
+        "whisper": ["whisper"],
+        "whisper-timestamped": ["whisper-timestamped"],
+        "mlx-whisper": ["mlx-whisper"],
+        "openai": ["openai"],
     },
     package_data={
         'whisperlivekit': ['web/*.html'],
