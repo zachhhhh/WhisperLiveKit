@@ -252,8 +252,8 @@ class OpenaiApiASR(ASRBase):
         no_speech_segments = []
         if self.use_vad_opt:
             for segment in segments.segments:
-                if segment["no_speech_prob"] > 0.8:
-                    no_speech_segments.append((segment.get("start"), segment.get("end")))
+                if segment.no_speech_prob > 0.8:
+                    no_speech_segments.append((segment.start, segment.end))
         tokens = []
         for word in segments.words:
             start = word.start
