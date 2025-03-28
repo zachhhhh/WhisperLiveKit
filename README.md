@@ -1,43 +1,69 @@
 <h1 align="center">WhisperLiveKit</h1>
-<p align="center"><b>Real-time, Fully Local Whisper's Speech-to-Text and Speaker Diarization</b></p>
 
 <p align="center">
-<img alt="PyPI Version" src="https://img.shields.io/pypi/v/whisperlivekit?color=g">
-<img alt="PyPI Downloads" src="https://static.pepy.tech/personalized-badge/whisperlivekit">
-<img alt="Python Versions" src="https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-dark_green">
+  <img src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/refs/heads/main/demo.png" alt="WhisperLiveKit Demo" width="730">
 </p>
 
-This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. Simply launch the local server and grant microphone access. Everything runs locally on your machine ✨
+<p align="center"><b>Real-time, Fully Local Speech-to-Text with Speaker Diarization</b></p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/refs/heads/main/demo.png" alt="Demo Screenshot" width="730">
+  <a href="https://pypi.org/project/whisperlivekit/"><img alt="PyPI Version" src="https://img.shields.io/pypi/v/whisperlivekit?color=g"></a>
+  <a href="https://pepy.tech/project/whisperlivekit"><img alt="PyPI Downloads" src="https://static.pepy.tech/personalized-badge/whisperlivekit?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=downloads"></a>
+  <a href="https://pypi.org/project/whisperlivekit/"><img alt="Python Versions" src="https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-dark_green"></a>
+  <a href="https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/QuentinFuxa/WhisperLiveKit?color=blue"></a>
 </p>
 
-### Differences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
+## 🚀 Overview
 
-#### ⚙️ **Core Improvements**  
+This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. WhisperLiveKit provides a complete backend solution for real-time speech transcription with an example frontend that you can customize for your own needs. Everything runs locally on your machine ✨
+
+### 🔄 Architecture
+
+WhisperLiveKit consists of two main components:
+
+- **Backend (Server)**: FastAPI WebSocket server that processes audio and provides real-time transcription
+- **Frontend Example**: Basic HTML & JavaScript implementation that demonstrates how to capture and stream audio
+
+> **Note**: We recommend installing this library on the server/backend. For the frontend, you can use and adapt the provided HTML template from [whisperlivekit/web/live_transcription.html](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html) for your specific use case.
+
+### ✨ Key Features
+
+- **🎙️ Real-time Transcription** - Convert speech to text instantly as you speak
+- **👥 Speaker Diarization** - Identify different speakers in real-time using [Diart](https://github.com/juanmc2005/diart)
+- **🔒 Fully Local** - All processing happens on your machine - no data sent to external servers
+- **📱 Multi-User Support** - Handle multiple users simultaneously with a single backend/server
+ 
+### ⚙️ Differences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
+
+- **Multi-User Support** – Handles multiple users simultaneously by decoupling backend and online ASR
+- **MLX Whisper Backend** – Optimized for Apple Silicon for faster local processing
 - **Buffering Preview** – Displays unvalidated transcription segments
-- **Multi-User Support** – Handles multiple users simultaneously by decoupling backend and online asr
-- **MLX Whisper Backend** – Optimized for Apple Silicon for faster local processing.  
-- **Confidence validation** – Immediately validate high-confidence tokens for faster inference
+- **Confidence Validation** – Immediately validate high-confidence tokens for faster inference
+- **Apple Silicon Optimized** - MLX backend for faster local processing on Mac
 
-#### 🎙️ **Speaker Identification**  
-- **Real-Time Diarization** – Identify different speakers in real time using [Diart](https://github.com/juanmc2005/diart)
+## 📖 Quick Start
 
-#### 🌐 **Web & API**  
-- **Built-in Web UI** – Simple raw html browser interface with no frontend setup required
-- **FastAPI WebSocket Server** – Real-time speech-to-text processing with async FFmpeg streaming.  
-- **JavaScript Client** – Ready-to-use MediaRecorder implementation for seamless client-side integration.
+```bash
+# Install the package
+pip install whisperlivekit
 
-## Installation
+# Start the transcription server
+whisperlivekit-server --model tiny.en
 
-### Via pip (recommended)
+# Open your browser at http://localhost:8000
+```
+
+That's it! Start speaking and watch your words appear on screen.
+
+## 🛠️ Installation Options
+
+### Install from PyPI (Recommended)
 
 ```bash
 pip install whisperlivekit
 ```
 
-### From source
+### Install from Source
 
 ```bash
 git clone https://github.com/QuentinFuxa/WhisperLiveKit
@@ -47,78 +73,86 @@ pip install -e .
 
 ### System Dependencies
 
-You need to install FFmpeg on your system:
+FFmpeg is required:
 
 ```bash
-# For Ubuntu/Debian:
+# Ubuntu/Debian
 sudo apt install ffmpeg
 
-# For macOS:
+# macOS
 brew install ffmpeg
 
-# For Windows:
+# Windows
 # Download from https://ffmpeg.org/download.html and add to PATH
 ```
 
 ### Optional Dependencies
 
 ```bash
-# If you want to use VAC (Voice Activity Controller). Useful for preventing hallucinations
+# Voice Activity Controller (prevents hallucinations)
 pip install torch
-   
-# If you choose sentences as buffer trimming strategy
+
+# Sentence-based buffer trimming
 pip install mosestokenizer wtpsplit
 pip install tokenize_uk  # If you work with Ukrainian text
 
-# If you want to use diarization
+# Speaker diarization
 pip install diart
 
-# Optional backends. Default is faster-whisper
-pip install whisperlivekit[whisper]           # Original Whisper backend
-pip install whisperlivekit[whisper-timestamped]  # Whisper with improved timestamps
-pip install whisperlivekit[mlx-whisper]       # Optimized for Apple Silicon
-pip install whisperlivekit[openai]            # OpenAI API backend
+# Alternative Whisper backends (default is faster-whisper)
+pip install whisperlivekit[whisper]              # Original Whisper
+pip install whisperlivekit[whisper-timestamped]  # Improved timestamps
+pip install whisperlivekit[mlx-whisper]          # Apple Silicon optimization
+pip install whisperlivekit[openai]               # OpenAI API
 ```
 
-### Get access to 🎹 pyannote models
+### 🎹 Pyannote Models Setup
 
-By default, diart is based on [pyannote.audio](https://github.com/pyannote/pyannote-audio) models from the [huggingface](https://huggingface.co/) hub.
-In order to use them, please follow these steps:
+For diarization, you need access to pyannote.audio models:
 
-1) [Accept user conditions](https://huggingface.co/pyannote/segmentation) for the `pyannote/segmentation` model
-2) [Accept user conditions](https://huggingface.co/pyannote/segmentation-3.0) for the newest `pyannote/segmentation-3.0` model
-3) [Accept user conditions](https://huggingface.co/pyannote/embedding) for the `pyannote/embedding` model
-4) Install [huggingface-cli](https://huggingface.co/docs/huggingface_hub/quick-start#install-the-hub-library) and [log in](https://huggingface.co/docs/huggingface_hub/quick-start#login) with your user access token (or provide it manually in diart CLI or API).
+1. [Accept user conditions](https://huggingface.co/pyannote/segmentation) for the `pyannote/segmentation` model
+2. [Accept user conditions](https://huggingface.co/pyannote/segmentation-3.0) for the `pyannote/segmentation-3.0` model
+3. [Accept user conditions](https://huggingface.co/pyannote/embedding) for the `pyannote/embedding` model
+4. Login with HuggingFace:
+   ```bash
+   pip install huggingface_hub
+   huggingface-cli login
+   ```
 
+## 💻 Usage Examples
 
+### Command-line Interface
 
-## Usage
-
-### Using the command-line tool
-
-After installation, you can start the server using the provided command-line tool:
+Start the transcription server with various options:
 
 ```bash
-whisperlivekit-server --host 0.0.0.0 --port 8000 --model tiny.en
+# Basic server with English model
+whisperlivekit-server --model tiny.en
+
+# Advanced configuration with diarization
+whisperlivekit-server --host 0.0.0.0 --port 8000 --model medium --diarization --language auto
 ```
 
-Then open your browser at `http://localhost:8000` (or your specified host and port).
-
-### Using the library in your code
+### Python API Integration (Backend)
 
 ```python
 from whisperlivekit import WhisperLiveKit
 from whisperlivekit.audio_processor import AudioProcessor
 from fastapi import FastAPI, WebSocket
+import asyncio
+from fastapi.responses import HTMLResponse
 
+# Initialize components
+app = FastAPI()
 kit = WhisperLiveKit(model="medium", diarization=True)
-app = FastAPI() # Create a FastAPI application
 
+# Serve the web interface
 @app.get("/")
 async def get():
-    return HTMLResponse(kit.web_interface()) # Use the built-in web interface
+    return HTMLResponse(kit.web_interface())  # Use the built-in web interface
 
-async def handle_websocket_results(websocket, results_generator): # Sends results to frontend
+# Process WebSocket connections
+async def handle_websocket_results(websocket, results_generator):
     async for response in results_generator:
         await websocket.send_json(response)
 
@@ -127,57 +161,127 @@ async def websocket_endpoint(websocket: WebSocket):
     audio_processor = AudioProcessor()
     await websocket.accept()
     results_generator = await audio_processor.create_tasks()
-    websocket_task = asyncio.create_task(handle_websocket_results(websocket, results_generator))
+    websocket_task = asyncio.create_task(
+        handle_websocket_results(websocket, results_generator)
+    )
 
-    while True:
-        message = await websocket.receive_bytes()
-        await audio_processor.process_audio(message)
+    try:
+        while True:
+            message = await websocket.receive_bytes()
+            await audio_processor.process_audio(message)
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+        websocket_task.cancel()
 ```
 
-For a complete audio processing example, check [whisper_fastapi_online_server.py](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisper_fastapi_online_server.py)
+### Frontend Implementation
 
+The package includes a simple HTML/JavaScript implementation that you can adapt for your project. You can get in in [whisperlivekit/web/live_transcription.html](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html), or using :
 
-## Configuration Options
+```python
+kit.web_interface()
+```
 
-The following parameters are supported when initializing `WhisperLiveKit`:
+## ⚙️ Configuration Reference
 
-  - `--host` and `--port` let you specify the server's IP/port. 
-  - `--min-chunk-size` sets the minimum chunk size for audio processing. Make sure this value aligns with the chunk size selected in the frontend. If not aligned, the system will work but may unnecessarily over-process audio data.
-  - `--no-transcription`: Disable transcription (enabled by default)
-  - `--diarization`: Enable speaker diarization (disabled by default)
-  - `--confidence-validation`: Use confidence scores for faster validation. Transcription will be faster but punctuation might be less accurate (disabled by default)
-  - `--warmup-file`: The path to a speech audio wav file to warm up Whisper so that the very first chunk processing is fast:
-    - If not set, uses https://github.com/ggerganov/whisper.cpp/raw/master/samples/jfk.wav.
-    - If False, no warmup is performed.
-  - `--min-chunk-size` Minimum audio chunk size in seconds. It waits up to this time to do processing. If the processing takes shorter time, it waits, otherwise it processes the whole segment that was received by this time.
-  - `--model`: Name size of the Whisper model to use (default: tiny). Suggested values: tiny.en, tiny, base.en, base, small.en, small, medium.en, medium, large-v1, large-v2, large-v3, large, large-v3-turbo. The model is automatically downloaded from the model hub if not present in model cache dir.
-  - `--model_cache_dir`: Overriding the default model cache dir where models downloaded from the hub are saved
-  - `--model_dir`: Dir where Whisper model.bin and other files are saved. This option overrides --model and --model_cache_dir parameter.
-  - `--lan`, `--language`: Source language code, e.g. en,de,cs, or 'auto' for language detection.
-  - `--task` {_transcribe, translate_}: Transcribe or translate. If translate is set, we recommend avoiding the _large-v3-turbo_ backend, as it [performs significantly worse](https://github.com/QuentinFuxa/whisper_streaming_web/issues/40#issuecomment-2652816533) than other models for translation.
-  - `--backend` {_faster-whisper, whisper_timestamped, openai-api, mlx-whisper_}: Load only this backend for Whisper processing.
-  - `--vac`: Use VAC = voice activity controller. Requires torch. (disabled by default)
-  - `--vac-chunk-size`: VAC sample size in seconds.
-  - `--no-vad`: Disable VAD (voice activity detection), which is enabled by default.
-  - `--buffer_trimming` {_sentence, segment_}: Buffer trimming strategy -- trim completed sentences marked with punctuation mark and detected by sentence segmenter, or the completed segments returned by Whisper. Sentence segmenter must be installed for "sentence" option.
-  - `--buffer_trimming_sec`: Buffer trimming length threshold in seconds. If buffer length is longer, trimming sentence/segment is triggered.
+WhisperLiveKit offers extensive configuration options:
 
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--host` | Server host address | `localhost` |
+| `--port` | Server port | `8000` |
+| `--model` | Whisper model size | `tiny` |
+| `--language` | Source language code or `auto` | `en` |
+| `--task` | `transcribe` or `translate` | `transcribe` |
+| `--backend` | Processing backend | `faster-whisper` |
+| `--diarization` | Enable speaker identification | `False` |
+| `--confidence-validation` | Use confidence scores for faster validation | `False` |
+| `--min-chunk-size` | Minimum audio chunk size (seconds) | `1.0` |
+| `--vac` | Use Voice Activity Controller | `False` |
+| `--no-vad` | Disable Voice Activity Detection | `False` |
+| `--buffer_trimming` | Buffer trimming strategy (`sentence` or `segment`) | `segment` |
+| `--warmup-file` | Audio file path for model warmup | `jfk.wav` |
 
-## How the Live Interface Works
+## 🔧 How It Works
 
-- Once you **allow microphone access**, the page records small chunks of audio using the **MediaRecorder** API in **webm/opus** format.  
-- These chunks are sent over a **WebSocket** to the FastAPI endpoint at `/asr`.  
-- The Python server decodes `.webm` chunks on the fly using **FFmpeg** and streams them into the **whisper streaming** implementation for transcription.  
-- **Partial transcription** appears as soon as enough audio is processed. The "unvalidated" text is shown in **lighter or grey color** (i.e., an 'aperçu') to indicate it's still buffered partial output. Once Whisper finalizes that segment, it's displayed in normal text.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/refs/heads/main/demo.png" alt="WhisperLiveKit in Action" width="500">
+</p>
 
-### Deploying to a Remote Server
+1. **Audio Capture**: Browser's MediaRecorder API captures audio in webm/opus format
+2. **Streaming**: Audio chunks are sent to the server via WebSocket
+3. **Processing**: Server decodes audio with FFmpeg and streams into Whisper for transcription
+4. **Real-time Output**: 
+   - Partial transcriptions appear immediately in light gray (the 'aperçu')
+   - Finalized text appears in normal color
+   - (When enabled) Different speakers are identified and highlighted
 
-If you want to **deploy** this setup:
+## 🚀 Deployment Guide
 
-1. **Host the FastAPI app** behind a production-grade HTTP(S) server (like **Uvicorn + Nginx** or Docker). If you use HTTPS, use "wss" instead of "ws" in WebSocket URL.
-2. The **HTML/JS page** can be served by the same FastAPI app or a separate static host.  
-3. Users open the page in **Chrome/Firefox** (any modern browser that supports MediaRecorder + WebSocket). No additional front-end libraries or frameworks are required.
+To deploy WhisperLiveKit in production:
 
-## Acknowledgments
+1. **Server Setup** (Backend):
+   ```bash
+   # Install production ASGI server
+   pip install uvicorn gunicorn
 
-This project builds upon the foundational work of the Whisper Streaming and Diart projects. We extend our gratitude to the original authors for their contributions.
+   # Launch with multiple workers
+   gunicorn -k uvicorn.workers.UvicornWorker -w 4 your_app:app
+   ```
+
+2. **Frontend Integration**:
+   - Host your customized version of the example HTML/JS in your web application
+   - Ensure WebSocket connection points to your server's address
+
+3. **Nginx Configuration** (recommended for production):
+   ```nginx
+   server {
+       listen 80;
+       server_name your-domain.com;
+
+       location / {
+           proxy_pass http://localhost:8000;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection "upgrade";
+           proxy_set_header Host $host;
+       }
+   }
+   ```
+
+4. **HTTPS Support**: For secure deployments, use "wss://" instead of "ws://" in WebSocket URL
+
+## 🔮 Use Cases
+
+- **Meeting Transcription**: Capture discussions in real-time
+- **Accessibility Tools**: Help hearing-impaired users follow conversations
+- **Content Creation**: Transcribe podcasts or videos automatically
+- **Customer Service**: Transcribe support calls with speaker identification
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how to get started:
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to your branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## 🙏 Acknowledgments
+
+This project builds upon the foundational work of:
+- [Whisper Streaming](https://github.com/ufal/whisper_streaming)
+- [Diart](https://github.com/juanmc2005/diart)
+- [OpenAI Whisper](https://github.com/openai/whisper)
+
+We extend our gratitude to the original authors for their contributions.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🔗 Links
+
+- [GitHub Repository](https://github.com/QuentinFuxa/WhisperLiveKit)
+- [PyPI Package](https://pypi.org/project/whisperlivekit/)
+- [Issue Tracker](https://github.com/QuentinFuxa/WhisperLiveKit/issues)
