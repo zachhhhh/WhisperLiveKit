@@ -279,7 +279,7 @@
             </div>
             <div>
                 <label for="websocketInput">WebSocket URL:</label>
-                <input id="websocketInput" type="text" value="ws://localhost:8000/asr" />
+                <input id="websocketInput" type="text" />
             </div>
         </div>
     </div>
@@ -314,6 +314,10 @@
         const websocketInput = document.getElementById("websocketInput");
         const linesTranscriptDiv = document.getElementById("linesTranscript");
         const timerElement = document.querySelector(".timer");
+
+        const defaultWebSocketUrl = `ws://${window.location.hostname}:${window.location.port}/asr`;
+        websocketInput.value = defaultWebSocketUrl;
+        websocketUrl = defaultWebSocketUrl;
 
         chunkSelector.addEventListener("change", () => {
             chunkDuration = parseInt(chunkSelector.value);
