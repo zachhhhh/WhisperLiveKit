@@ -315,7 +315,9 @@
         const linesTranscriptDiv = document.getElementById("linesTranscript");
         const timerElement = document.querySelector(".timer");
 
-        const defaultWebSocketUrl = `ws://${window.location.hostname}:${window.location.port}/asr`;
+        const host = window.location.hostname || "localhost";
+        const port = window.location.port || "8000";
+        const defaultWebSocketUrl = `ws://${host}:${port}/asr`;
         websocketInput.value = defaultWebSocketUrl;
         websocketUrl = defaultWebSocketUrl;
 
