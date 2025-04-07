@@ -105,8 +105,9 @@ class FasterWhisperASR(ASRBase):
             model_size_or_path = modelsize
         else:
             raise ValueError("Either modelsize or model_dir must be set")
-        device = "cuda" if torch and torch.cuda.is_available() else "cpu"
-        compute_type = "float16" if device == "cuda" else "float32"
+        device = "auto" # Allow CTranslate2 to decide available device
+        compute_type = "auto" # Allow CTranslate2 to decide faster compute type
+                              
 
         model = WhisperModel(
             model_size_or_path,
