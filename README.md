@@ -250,6 +250,35 @@ To deploy WhisperLiveKit in production:
 
 4. **HTTPS Support**: For secure deployments, use "wss://" instead of "ws://" in WebSocket URL
 
+### 🐋 Docker
+
+A basic Dockerfile is provided which allows re-use of python package installation options. See below useage examples:
+
+***NOTE:** For **larger** models, ensure that your **docker runtime** has enough **memory** available.*
+
+#### All defaults
+- Create a reuseable image with only the basics and then run as a named container.
+```bash
+docker build -t whisperlivekit-defaults .
+docker create --gpus all --name whisperlivekit -p 8000:8000 whisperlivekit-defaults
+docker start -i whisperlivekit
+```
+
+> **Note**: If you're running on a system without NVIDIA GPU support (such as Mac with Apple Silicon or any system without CUDA capabilities), you need to **remove the `--gpus all` flag** from the `docker create` command. Without GPU acceleration, transcription will use CPU only, which may be significantly slower. Consider using small models for better performance on CPU-only systems.
+
+#### Customization
+- Customise the container options.
+```bash
+docker build -t whisperlivekit-defaults .
+docker create --gpus all --name whisperlivekit-base -p 8000:8000 whisperlivekit-defaults --model base
+docker start -i whisperlivekit-base
+```
+
+- `--build-arg` Options
+  - `EXTRAS="whisper-timestamped"` - Add extras to the image's installation (no spaces). Remember to set necessary container options!
+  - `HF_PRECACHE_DIR=./.cache/` - Pre-load a model cache for faster first-time start
+  - `HF_TOKEN=./token` - Add your Hugging Face Hub access token to download gated models
+
 ## 🔮 Use Cases
 
 - **Meeting Transcription**: Capture discussions in real-time
