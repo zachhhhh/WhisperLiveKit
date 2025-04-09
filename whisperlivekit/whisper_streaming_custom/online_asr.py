@@ -216,31 +216,54 @@ class OnlineASRProcessor:
         """
         If the committed tokens form at least two sentences, chunk the audio
         buffer at the end time of the penultimate sentence.
+        Also ensures chunking happens if audio buffer exceeds a time limit.
         """
+        buffer_duration = len(self.audio_buffer) / self.SAMPLING_RATE        
         if not self.committed:
+            if buffer_duration > self.buffer_trimming_sec:
+                chunk_time = self.buffer_time_offset + (buffer_duration / 2)
+                logger.debug(f"--- No speech detected, forced chunking at {chunk_time:.2f}")
+                self.chunk_at(chunk_time)
             return
+        
         logger.debug("COMPLETED SENTENCE: " + " ".join(token.text for token in self.committed))
         sentences = self.words_to_sentences(self.committed)
         for sentence in sentences:
             logger.debug(f"\tSentence: {sentence.text}")
-        if len(sentences) < 2:
-            return
-        # Keep the last two sentences.
-        while len(sentences) > 2:
-            sentences.pop(0)
-        chunk_time = sentences[-2].end
-        logger.debug(f"--- Sentence chunked at {chunk_time:.2f}")
-        self.chunk_at(chunk_time)
+        
+        chunk_done = False
+        if len(sentences) >= 2:
+            while len(sentences) > 2:
+                sentences.pop(0)
+            chunk_time = sentences[-2].end
+            logger.debug(f"--- Sentence chunked at {chunk_time:.2f}")
+            self.chunk_at(chunk_time)
+            chunk_done = True
+        
+        if not chunk_done and buffer_duration > self.buffer_trimming_sec:
+            last_committed_time = self.committed[-1].end
+            logger.debug(f"--- Not enough sentences, chunking at last committed time {last_committed_time:.2f}")
+            self.chunk_at(last_committed_time)
 
     def chunk_completed_segment(self, res):
         """
         Chunk the audio buffer based on segment-end timestamps reported by the ASR.
+        Also ensures chunking happens if audio buffer exceeds a time limit.
         """
+        buffer_duration = len(self.audio_buffer) / self.SAMPLING_RATE        
         if not self.committed:
+            if buffer_duration > self.buffer_trimming_sec:
+                chunk_time = self.buffer_time_offset + (buffer_duration / 2)
+                logger.debug(f"--- No speech detected, forced chunking at {chunk_time:.2f}")
+                self.chunk_at(chunk_time)
             return
+        
+        logger.debug("Processing committed tokens for segmenting")
         ends = self.asr.segments_end_ts(res)
-        last_committed_time = self.committed[-1].end
+        last_committed_time = self.committed[-1].end        
+        chunk_done = False
         if len(ends) > 1:
+            logger.debug("Multiple segments available for chunking")
             e = ends[-2] + self.buffer_time_offset
             while len(ends) > 2 and e > last_committed_time:
                 ends.pop(-1)
@@ -248,11 +271,18 @@ class OnlineASRProcessor:
             if e <= last_committed_time:
                 logger.debug(f"--- Segment chunked at {e:.2f}")
                 self.chunk_at(e)
+                chunk_done = True
             else:
                 logger.debug("--- Last segment not within committed area")
         else:
             logger.debug("--- Not enough segments to chunk")
-
+        
+        if not chunk_done and buffer_duration > self.buffer_trimming_sec:
+            logger.debug(f"--- Buffer too large, chunking at last committed time {last_committed_time:.2f}")
+            self.chunk_at(last_committed_time)
+        
+        logger.debug("Segment chunking complete")
+        
     def chunk_at(self, time: float):
         """
         Trim both the hypothesis and audio buffer at the given time.
