@@ -388,7 +388,7 @@ class VACOnlineASRProcessor:
         # Load a VAD model (e.g. Silero VAD)
         import torch
         model, _ = torch.hub.load(repo_or_dir="snakers4/silero-vad", model="silero_vad")
-        from silero_vad_iterator import FixedVADIterator
+        from .silero_vad_iterator import FixedVADIterator
 
         self.vac = FixedVADIterator(model)
         self.logfile = self.online.logfile
