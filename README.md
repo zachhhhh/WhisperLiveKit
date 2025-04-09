@@ -264,6 +264,8 @@ docker create --gpus all --name whisperlivekit -p 8000:8000 whisperlivekit-defau
 docker start -i whisperlivekit
 ```
 
+> **Note**: If you're running on a system without NVIDIA GPU support (such as Mac with Apple Silicon or any system without CUDA capabilities), you need to **remove the `--gpus all` flag** from the `docker create` command. Without GPU acceleration, transcription will use CPU only, which may be significantly slower. Consider using small models for better performance on CPU-only systems.
+
 #### Customization
 - Customise the container options.
 ```bash
