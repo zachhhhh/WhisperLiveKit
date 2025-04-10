@@ -8,7 +8,8 @@ from whisperlivekit.audio_processor import AudioProcessor
 
 import asyncio
 import logging
-import os
+import os, sys
+import argparse
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger().setLevel(logging.WARNING)
@@ -71,16 +72,37 @@ async def websocket_endpoint(websocket: WebSocket):
 def main():
     """Entry point for the CLI command."""
     import uvicorn
-    
+
+    parser = argparse.ArgumentParser(description="Run the WhisperLiveKit server.")
+    parser.add_argument("--ssl-certfile", type=str, help="Path to the SSL certificate file.")
+    parser.add_argument("--ssl-keyfile", type=str, help="Path to the SSL private key file.")
+    args, unknown = parser.parse_known_args()
+
+    ssl_kwargs = {}
+    if args.ssl_certfile or args.ssl_keyfile:
+        if not (args.ssl_certfile and args.ssl_keyfile):
+            raise ValueError("Both --ssl-certfile and --ssl-keyfile must be specified together.")
+        ssl_kwargs = {
+            "ssl_certfile": args.ssl_certfile,
+            "ssl_keyfile": args.ssl_keyfile
+        }
+    # Remove uvicorn-specific args from the context to avoid tripping up other parts of the stack
+    sys.argv = [sys.argv[0]] + unknown
+
     temp_kit = WhisperLiveKit(transcription=False, diarization=False)
-    
-    uvicorn.run(
-        "whisperlivekit.basic_server:app", 
-        host=temp_kit.args.host, 
-        port=temp_kit.args.port, 
-        reload=True,
-        log_level="info"
-    )
+
+    uvicorn_kwargs = {
+        "app": "whisperlivekit.basic_server:app",
+        "host":temp_kit.args.host, 
+        "port":temp_kit.args.port, 
+        "reload": True,
+        "log_level": "info",
+    }
+
+    if ssl_kwargs:
+        uvicorn_kwargs = {**uvicorn_kwargs, **ssl_kwargs}
+
+    uvicorn.run(**uvicorn_kwargs)
 
 if __name__ == "__main__":
     main()
