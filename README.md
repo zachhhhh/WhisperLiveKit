@@ -53,6 +53,14 @@ whisperlivekit-server --model tiny.en
 # Open your browser at http://localhost:8000
 ```
 
+### Quick Start with SSL
+```bash
+# You must provide a certificate and key
+whisperlivekit-server -ssl-certfile public.crt --ssl-keyfile private.key
+
+# Open your browser at https://localhost:8000
+```
+
 That's it! Start speaking and watch your words appear on screen.
 
 ## 🛠️ Installation Options
