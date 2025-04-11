@@ -130,6 +130,9 @@ def parse_args():
         help="Set the log level",
         default="DEBUG",
     )
+    parser.add_argument("--ssl-certfile", type=str, help="Path to the SSL certificate file.", default=None)
+    parser.add_argument("--ssl-keyfile", type=str, help="Path to the SSL private key file.", default=None)
+
 
     args = parser.parse_args()
     
