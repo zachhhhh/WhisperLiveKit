@@ -8,7 +8,8 @@ from whisperlivekit.audio_processor import AudioProcessor
 
 import asyncio
 import logging
-import os
+import os, sys
+import argparse
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger().setLevel(logging.WARNING)
@@ -74,14 +75,29 @@ def main():
     
     args = parse_args()
     
-    uvicorn.run(
-        "whisperlivekit.basic_server:app", 
-        host=args.host, 
-        port=args.port, 
-        reload=False,
-        log_level="info",
-        lifespan="on",
-    )
+    uvicorn_kwargs = {
+        "app": "whisperlivekit.basic_server:app",
+        "host":args.host, 
+        "port":args.port, 
+        "reload": False,
+        "log_level": "info",
+        "lifespan": "on",
+    }
+    
+    ssl_kwargs = {}
+    if args.ssl_certfile or args.ssl_keyfile:
+        if not (args.ssl_certfile and args.ssl_keyfile):
+            raise ValueError("Both --ssl-certfile and --ssl-keyfile must be specified together.")
+        ssl_kwargs = {
+            "ssl_certfile": args.ssl_certfile,
+            "ssl_keyfile": args.ssl_keyfile
+        }
+
+
+    if ssl_kwargs:
+        uvicorn_kwargs = {**uvicorn_kwargs, **ssl_kwargs}
+
+    uvicorn.run(**uvicorn_kwargs)
 
 if __name__ == "__main__":
     main()

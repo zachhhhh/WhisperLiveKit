@@ -53,6 +53,14 @@ whisperlivekit-server --model tiny.en
 # Open your browser at http://localhost:8000
 ```
 
+### Quick Start with SSL
+```bash
+# You must provide a certificate and key
+whisperlivekit-server -ssl-certfile public.crt --ssl-keyfile private.key
+
+# Open your browser at https://localhost:8000
+```
+
 That's it! Start speaking and watch your words appear on screen.
 
 ## 🛠️ Installation Options
@@ -201,6 +209,8 @@ WhisperLiveKit offers extensive configuration options:
 | `--no-vad` | Disable Voice Activity Detection | `False` |
 | `--buffer_trimming` | Buffer trimming strategy (`sentence` or `segment`) | `segment` |
 | `--warmup-file` | Audio file path for model warmup | `jfk.wav` |
+| `--ssl-certfile` | Path to the SSL certificate file (for HTTPS support) | `None` |
+| `--ssl-keyfile` | Path to the SSL private key file (for HTTPS support) | `None` |
 
 ## 🔧 How It Works
 
