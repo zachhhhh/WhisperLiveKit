@@ -3,7 +3,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from whisperlivekit import WhisperLiveKit
+from whisperlivekit import WhisperLiveKit, parse_args
 from whisperlivekit.audio_processor import AudioProcessor
 
 import asyncio
@@ -71,12 +71,13 @@ async def websocket_endpoint(websocket: WebSocket):
 if __name__ == "__main__":
     import uvicorn
     
-    temp_kit = WhisperLiveKit(transcription=False, diarization=False)
+    args = parse_args()
     
     uvicorn.run(
         "whisper_fastapi_online_server:app", 
-        host=temp_kit.args.host, 
-        port=temp_kit.args.port, 
-        reload=True,
-        log_level="info"
+        host=args.host, 
+        port=args.port, 
+        reload=False,
+        log_level="info",
+        lifespan="on",
     )

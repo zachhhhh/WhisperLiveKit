@@ -179,7 +179,7 @@ def warmup_asr(asr, warmup_file=None, timeout=5):
         logger.warning(f"Warmup file {warmup_file} invalid or missing.")
         return False
     
-    print(f"Warmping up Whisper with {warmup_file}")
+    print(f"Warming up Whisper with {warmup_file}")
     try:
         import librosa
         audio, sr = librosa.load(warmup_file, sr=16000)
