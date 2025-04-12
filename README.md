@@ -15,14 +15,14 @@
 
 ## 🚀 Overview
 
-This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. WhisperLiveKit provides a complete backend solution for real-time speech transcription with an example frontend that you can customize for your own needs. Everything runs locally on your machine ✨
+This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. WhisperLiveKit provides a complete backend solution for real-time speech transcription with a functional and simple frontend that you can customize for your own needs. Everything runs locally on your machine ✨
 
 ### 🔄 Architecture
 
 WhisperLiveKit consists of two main components:
 
 - **Backend (Server)**: FastAPI WebSocket server that processes audio and provides real-time transcription
-- **Frontend Example**: Basic HTML & JavaScript implementation that demonstrates how to capture and stream audio
+- **Frontend Example**: Basic HTML & JavaScript implementation to capture and stream audio
 
 > **Note**: We recommend installing this library on the server/backend. For the frontend, you can use and adapt the provided HTML template from [whisperlivekit/web/live_transcription.html](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html) for your specific use case.
 
@@ -33,13 +33,13 @@ WhisperLiveKit consists of two main components:
 - **🔒 Fully Local** - All processing happens on your machine - no data sent to external servers
 - **📱 Multi-User Support** - Handle multiple users simultaneously with a single backend/server
  
-### ⚙️ Differences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
+### ⚙️ Core ifferences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
 
+- **Automatic Silence Chunking** – Automatically chunks when no audio is detected to limit buffer size
 - **Multi-User Support** – Handles multiple users simultaneously by decoupling backend and online ASR
+- **Confidence Validation** – Immediately validate high-confidence tokens for faster inference
 - **MLX Whisper Backend** – Optimized for Apple Silicon for faster local processing
 - **Buffering Preview** – Displays unvalidated transcription segments
-- **Confidence Validation** – Immediately validate high-confidence tokens for faster inference
-- **Apple Silicon Optimized** - MLX backend for faster local processing on Mac
 
 ## 📖 Quick Start
 
