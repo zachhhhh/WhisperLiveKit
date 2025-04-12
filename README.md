@@ -33,7 +33,7 @@ WhisperLiveKit consists of two main components:
 - **🔒 Fully Local** - All processing happens on your machine - no data sent to external servers
 - **📱 Multi-User Support** - Handle multiple users simultaneously with a single backend/server
  
-### ⚙️ Core ifferences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
+### ⚙️ Core differences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
 
 - **Automatic Silence Chunking** – Automatically chunks when no audio is detected to limit buffer size
 - **Multi-User Support** – Handles multiple users simultaneously by decoupling backend and online ASR
