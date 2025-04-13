@@ -19,12 +19,12 @@ This project is based on [Whisper Streaming](https://github.com/ufal/whisper_str
 
 ### 🔄 Architecture
 
-WhisperLiveKit consists of two main components:
+WhisperLiveKit consists of three main components:
 
-- **Backend (Server)**: FastAPI WebSocket server that processes audio and provides real-time transcription
-- **Frontend Example**: Basic HTML & JavaScript implementation to capture and stream audio
+- **Frontend**: A basic HTML & JavaScript interface that captures microphone audio and streams it to the backend via WebSockets. You can use and adapt the provided template at [whisperlivekit/web/live_transcription.html](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html) for your specific use case.
+- **Backend (Web Server)**: A FastAPI-based WebSocket server that receives streamed audio data, processes it in real time, and returns transcriptions to the frontend. This is where the WebSocket logic and routing live.
+- **Core Backend (Library Logic)**: A server-agnostic core that handles audio processing, ASR, and diarization. It exposes reusable components that take in audio bytes and return transcriptions. This makes it easy to plug into any WebSocket or audio stream pipeline.
 
-> **Note**: We recommend installing this library on the server/backend. For the frontend, you can use and adapt the provided HTML template from [whisperlivekit/web/live_transcription.html](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html) for your specific use case.
 
 ### ✨ Key Features
 
