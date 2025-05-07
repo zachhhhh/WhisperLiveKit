@@ -44,6 +44,11 @@ async def handle_websocket_results(websocket, results_generator):
     try:
         async for response in results_generator:
             await websocket.send_json(response)
+        # when the results_generator finishes it means all audio has been processed
+        logger.info("Results generator finished. Sending 'ready_to_stop' to client.")
+        await websocket.send_json({"type": "ready_to_stop"})
+    except WebSocketDisconnect:
+        logger.info("WebSocket disconnected while handling results (client likely closed connection).")
     except Exception as e:
         logger.warning(f"Error in WebSocket results handler: {e}")
 
@@ -62,12 +67,28 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             message = await websocket.receive_bytes()
             await audio_processor.process_audio(message)
+    except KeyError as e:
+        if 'bytes' in str(e):
+            logger.warning(f"Client has closed the connection.")
+        else:
+            logger.error(f"Unexpected KeyError in websocket_endpoint: {e}", exc_info=True)
     except WebSocketDisconnect:
-        logger.warning("WebSocket disconnected.")
+        logger.info("WebSocket disconnected by client during message receiving loop.")
+    except Exception as e:
+        logger.error(f"Unexpected error in websocket_endpoint main loop: {e}", exc_info=True)
     finally:
-        websocket_task.cancel()
+        logger.info("Cleaning up WebSocket endpoint...")
+        if not websocket_task.done():
+            websocket_task.cancel()
+        try:
+            await websocket_task
+        except asyncio.CancelledError:
+            logger.info("WebSocket results handler task was cancelled.")
+        except Exception as e:
+            logger.warning(f"Exception while awaiting websocket_task completion: {e}")
+            
         await audio_processor.cleanup()
-        logger.info("WebSocket endpoint cleaned up.")
+        logger.info("WebSocket endpoint cleaned up successfully.")
 
 def main():
     """Entry point for the CLI command."""
