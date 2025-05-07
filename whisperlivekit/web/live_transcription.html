@@ -308,6 +308,7 @@
         let waveCtx = waveCanvas.getContext("2d");
         let animationFrame = null;
         let waitingForStop = false;
+        let lastReceivedData = null;
         waveCanvas.width = 60 * (window.devicePixelRatio || 1);
         waveCanvas.height = 30 * (window.devicePixelRatio || 1);
         waveCtx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
@@ -357,18 +358,31 @@
 
                 websocket.onclose = () => {
                     if (userClosing) {
-                        if (!statusText.textContent.includes("Recording stopped. Processing final audio")) { // This is a bit of a hack. We should have a better way to handle this. eg. using a status code.
-                            statusText.textContent = "Finished processing audio! Ready to record again.";
+                        if (waitingForStop) {
+                            statusText.textContent = "Processing finalized or connection closed.";
+                            if (lastReceivedData) {
+                                renderLinesWithBuffer(
+                                    lastReceivedData.lines || [],
+                                    lastReceivedData.buffer_diarization || "",
+                                    lastReceivedData.buffer_transcription || "",
+                                    0, 0, true // isFinalizing = true
+                                );
+                            }
                         }
-                        waitingForStop = false;
+                        // If ready_to_stop was received, statusText is already "Finished processing..."
+                        // and waitingForStop is false.
                     } else {
-                        statusText.textContent =
-                            "Disconnected from the WebSocket server. (Check logs if model is loading.)";
+                        statusText.textContent = "Disconnected from the WebSocket server. (Check logs if model is loading.)";
                         if (isRecording) {
-                            stopRecording();
+                            stopRecording(); 
                         }
                     }
-                    userClosing = false;
+                    isRecording = false;  
+                    waitingForStop = false; 
+                    userClosing = false;  
+                    lastReceivedData = null;  
+                    websocket = null;    
+                    updateUI();  
                 };
 
                 websocket.onerror = () => {
@@ -382,23 +396,30 @@
                     
                     // Check for status messages
                     if (data.type === "ready_to_stop") {
-                        console.log("Ready to stop, closing WebSocket");
-
-                        // signal that we are not waiting for stop anymore
+                        console.log("Ready to stop received, finalizing display and closing WebSocket.");
                         waitingForStop = false;
-                        recordButton.disabled = false; // this should be elsewhere
-                        console.log("Record button enabled");
 
-                        //Now we can close the WebSocket
-                        if (websocket) {
-                            websocket.close();
-                            websocket = null;
+                        if (lastReceivedData) {
+                            renderLinesWithBuffer(
+                                lastReceivedData.lines || [],
+                                lastReceivedData.buffer_diarization || "",
+                                lastReceivedData.buffer_transcription || "",
+                                0, // No more lag
+                                0, // No more lag
+                                true // isFinalizing = true
+                            );
                         }
-
-
+                        statusText.textContent = "Finished processing audio! Ready to record again.";
+                        recordButton.disabled = false;
                         
+                        if (websocket) {
+                            websocket.close(); // will trigger onclose
+                            // websocket = null; // onclose handle setting websocket to null
+                        }
                         return;
                     }
+                    
+                    lastReceivedData = data; 
                     
                     // Handle normal transcription updates
                     const { 
@@ -414,13 +435,14 @@
                         buffer_diarization, 
                         buffer_transcription, 
                         remaining_time_diarization,
-                        remaining_time_transcription
+                        remaining_time_transcription,
+                        false // isFinalizing = false for normal updates
                     );
                 };
             });
         }
 
-        function renderLinesWithBuffer(lines, buffer_diarization, buffer_transcription, remaining_time_diarization, remaining_time_transcription) {
+        function renderLinesWithBuffer(lines, buffer_diarization, buffer_transcription, remaining_time_diarization, remaining_time_transcription, isFinalizing = false) {
             const linesHtml = lines.map((item, idx) => {
                 let timeInfo = "";
                 if (item.beg !== undefined && item.end !== undefined) {
@@ -430,30 +452,46 @@
                 let speakerLabel = "";
                 if (item.speaker === -2) {
                     speakerLabel = `<span class="silence">Silence<span id='timeInfo'>${timeInfo}</span></span>`;
-                } else if (item.speaker == 0) {
+                } else if (item.speaker == 0 && !isFinalizing) {
                     speakerLabel = `<span class='loading'><span class="spinner"></span><span id='timeInfo'>${remaining_time_diarization} second(s) of audio are undergoing diarization</span></span>`;
                 } else if (item.speaker == -1) {
-                    speakerLabel = `<span id="speaker"><span id='timeInfo'>${timeInfo}</span></span>`;
-                } else if (item.speaker !== -1) {
+                    speakerLabel = `<span id="speaker">Speaker 1<span id='timeInfo'>${timeInfo}</span></span>`;
+                } else if (item.speaker !== -1 && item.speaker !== 0) {
                     speakerLabel = `<span id="speaker">Speaker ${item.speaker}<span id='timeInfo'>${timeInfo}</span></span>`;
                 }
 
-                let textContent = item.text;
-                if (idx === lines.length - 1) {
-                    speakerLabel += `<span class="label_transcription"><span class="spinner"></span>Transcription lag <span id='timeInfo'>${remaining_time_transcription}s</span></span>`
-                }
-                if (idx === lines.length - 1 && buffer_diarization) {
-                    speakerLabel += `<span class="label_diarization"><span class="spinner"></span>Diarization lag<span id='timeInfo'>${remaining_time_diarization}s</span></span>`
-                    textContent += `<span class="buffer_diarization">${buffer_diarization}</span>`;
-                }
-                if (idx === lines.length - 1) {
-                    textContent += `<span class="buffer_transcription">${buffer_transcription}</span>`;
+
+                let currentLineText = item.text || "";
+
+                if (idx === lines.length - 1) { 
+                    if (!isFinalizing) {
+                        if (remaining_time_transcription > 0) {
+                             speakerLabel += `<span class="label_transcription"><span class="spinner"></span>Transcription lag <span id='timeInfo'>${remaining_time_transcription}s</span></span>`;
+                        }
+                        if (buffer_diarization && remaining_time_diarization > 0) {
+                             speakerLabel += `<span class="label_diarization"><span class="spinner"></span>Diarization lag<span id='timeInfo'>${remaining_time_diarization}s</span></span>`;
+                        }
+                    }
+
+                    if (buffer_diarization) {
+                        if (isFinalizing) {
+                            currentLineText += (currentLineText.length > 0 && buffer_diarization.trim().length > 0 ? " " : "") + buffer_diarization.trim();
+                        } else {
+                            currentLineText += `<span class="buffer_diarization">${buffer_diarization}</span>`;
+                        }
+                    }
+                    if (buffer_transcription) {
+                        if (isFinalizing) {
+                            currentLineText += (currentLineText.length > 0 && buffer_transcription.trim().length > 0 ? " " : "") + buffer_transcription.trim();
+                        } else {
+                            currentLineText += `<span class="buffer_transcription">${buffer_transcription}</span>`;
+                        }
+                    }
                 }
                 
-
-                return textContent
-                    ? `<p>${speakerLabel}<br/><div class='textcontent'>${textContent}</div></p>`
-                    : `<p>${speakerLabel}<br/></p>`;
+                return currentLineText.trim().length > 0 || speakerLabel.length > 0
+                    ? `<p>${speakerLabel}<br/><div class='textcontent'>${currentLineText}</div></p>`
+                    : `<p>${speakerLabel}<br/></p>`; 
             }).join("");
 
             linesTranscriptDiv.innerHTML = linesHtml;
@@ -578,20 +616,6 @@
             timerElement.textContent = "00:00";
             startTime = null;
             
-            if (websocket && websocket.readyState === WebSocket.OPEN) {
-                try {
-                    await websocket.send(JSON.stringify({
-                        type: "stop",
-                        message: "User stopped recording"
-                    }));
-                    statusText.textContent = "Recording stopped. Processing final audio...";
-                } catch (e) {
-                    console.error("Could not send stop message:", e);
-                    statusText.textContent = "Recording stopped. Error during final audio processing.";
-                    websocket.close();
-                    websocket = null;
-                }
-            }
             
             isRecording = false;
             updateUI();	
@@ -625,19 +649,22 @@
 
         function updateUI() {
             recordButton.classList.toggle("recording", isRecording);
-            
+            recordButton.disabled = waitingForStop;
+
             if (waitingForStop) {
-                statusText.textContent = "Please wait for processing to complete...";
-                recordButton.disabled = true;  // Optionally disable the button while waiting
-                console.log("Record button disabled");
+                if (statusText.textContent !== "Recording stopped. Processing final audio...") {
+                     statusText.textContent = "Please wait for processing to complete...";
+                }
             } else if (isRecording) {
                 statusText.textContent = "Recording...";
-                recordButton.disabled = false;
-                console.log("Record button enabled");
             } else {
-                statusText.textContent = "Click to start transcription";
+                if (statusText.textContent !== "Finished processing audio! Ready to record again." &&
+                    statusText.textContent !== "Processing finalized or connection closed.") {
+                    statusText.textContent = "Click to start transcription";
+                }
+            }
+            if (!waitingForStop) {
                 recordButton.disabled = false;
-                console.log("Record button enabled");
             }
         }
 
