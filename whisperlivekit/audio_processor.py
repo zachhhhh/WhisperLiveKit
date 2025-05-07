@@ -283,7 +283,13 @@ class AudioProcessor:
                     self.transcription_queue.task_done()
                     continue
 
-                logger.info(f"{len(self.online.audio_buffer) / self.online.SAMPLING_RATE} seconds of audio to process.")
+                asr_internal_buffer_duration_s = len(self.online.audio_buffer) / self.online.SAMPLING_RATE
+                transcription_lag_s = max(0.0, time() - self.beg_loop - self.end_buffer)
+
+                logger.info(
+                    f"ASR processing: internal_buffer={asr_internal_buffer_duration_s:.2f}s, "
+                    f"lag={transcription_lag_s:.2f}s."
+                )
                 
                 # Process transcription
                 self.online.insert_audio_chunk(pcm_array)
