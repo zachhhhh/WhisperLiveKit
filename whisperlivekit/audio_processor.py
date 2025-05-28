@@ -83,10 +83,33 @@ class AudioProcessor:
 
     def start_ffmpeg_decoder(self):
         """Start FFmpeg process for WebM to PCM conversion."""
-        return (ffmpeg.input("pipe:0", format="webm")
-                .output("pipe:1", format="s16le", acodec="pcm_s16le", 
-                        ac=self.channels, ar=str(self.sample_rate))
-                .run_async(pipe_stdin=True, pipe_stdout=True, pipe_stderr=True))
+        try:
+            return (ffmpeg.input("pipe:0", format="webm")
+                    .output("pipe:1", format="s16le", acodec="pcm_s16le", 
+                            ac=self.channels, ar=str(self.sample_rate))
+                    .run_async(pipe_stdin=True, pipe_stdout=True, pipe_stderr=True))
+        except FileNotFoundError:
+            error = """
+            FFmpeg is not installed or not found in your system's PATH.
+            Please install FFmpeg to enable audio processing.
+
+            Installation instructions:
+
+            # Ubuntu/Debian:
+            sudo apt update && sudo apt install ffmpeg
+
+            # macOS (using Homebrew):
+            brew install ffmpeg
+
+            # Windows:
+            # 1. Download the latest static build from https://ffmpeg.org/download.html
+            # 2. Extract the archive (e.g., to C:\\FFmpeg).
+            # 3. Add the 'bin' directory (e.g., C:\\FFmpeg\\bin) to your system's PATH environment variable.
+
+            After installation, please restart the application.
+            """
+            logger.error(error)
+            raise FileNotFoundError(error)
 
     async def restart_ffmpeg(self):
         """Restart the FFmpeg process after failure."""
