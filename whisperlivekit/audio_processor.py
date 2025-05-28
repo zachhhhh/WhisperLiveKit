@@ -453,31 +453,38 @@ class AudioProcessor:
                     await self.update_diarization(end_attributed_speaker, combined)
                     buffer_diarization = combined
                 
-                # Create response object
-                if not lines:
-                    lines = [{
+                response_status = "active_transcription"
+                final_lines_for_response = lines.copy()
+
+                if not tokens and not buffer_transcription and not buffer_diarization:
+                    response_status = "no_audio_detected"
+                    final_lines_for_response = []
+                elif response_status == "active_transcription" and not final_lines_for_response:
+                    final_lines_for_response = [{
                         "speaker": 1,
                         "text": "",
-                        "beg": format_time(0),
-                        "end": format_time(tokens[-1].end if tokens else 0),
+                        "beg": format_time(state.get("end_buffer", 0)),
+                        "end": format_time(state.get("end_buffer", 0)),
                         "diff": 0
                     }]
                 
                 response = {
-                    "lines": lines, 
+                    "status": response_status,
+                    "lines": final_lines_for_response,
                     "buffer_transcription": buffer_transcription,
                     "buffer_diarization": buffer_diarization,
                     "remaining_time_transcription": state["remaining_time_transcription"],
                     "remaining_time_diarization": state["remaining_time_diarization"]
                 }
                 
-                # Only yield if content has changed
-                response_content = ' '.join([f"{line['speaker']} {line['text']}" for line in lines]) + \
-                                  f" | {buffer_transcription} | {buffer_diarization}"
+                current_response_signature = f"{response_status} | " + \
+                                           ' '.join([f"{line['speaker']} {line['text']}" for line in final_lines_for_response]) + \
+                                           f" | {buffer_transcription} | {buffer_diarization}"
                 
-                if response_content != self.last_response_content and (lines or buffer_transcription or buffer_diarization):
+                if current_response_signature != self.last_response_content and \
+                   (final_lines_for_response or buffer_transcription or buffer_diarization or response_status == "no_audio_detected"):
                     yield response
-                    self.last_response_content = response_content
+                    self.last_response_content = current_response_signature
                 
                 # Check for termination condition
                 if self.is_stopping:
