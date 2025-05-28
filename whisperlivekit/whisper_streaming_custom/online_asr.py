@@ -144,7 +144,11 @@ class OnlineASRProcessor:
         self.transcript_buffer.last_committed_time = self.buffer_time_offset
         self.committed: List[ASRToken] = []
 
-    def insert_audio_chunk(self, audio: np.ndarray):
+    def get_audio_buffer_end_time(self) -> float:
+        """Returns the absolute end time of the current audio_buffer."""
+        return self.buffer_time_offset + (len(self.audio_buffer) / self.SAMPLING_RATE)
+
+    def insert_audio_chunk(self, audio: np.ndarray, audio_stream_end_time: Optional[float] = None):
         """Append an audio chunk (a numpy array) to the current audio buffer."""
         self.audio_buffer = np.append(self.audio_buffer, audio)
 
@@ -179,18 +183,19 @@ class OnlineASRProcessor:
         return self.concatenate_tokens(self.transcript_buffer.buffer)
         
 
-    def process_iter(self) -> Transcript:
+    def process_iter(self) -> Tuple[List[ASRToken], float]:
         """
         Processes the current audio buffer.
 
-        Returns a Transcript object representing the committed transcript.
+        Returns a tuple: (list of committed ASRToken objects, float representing the audio processed up to time).
         """
+        current_audio_processed_upto = self.get_audio_buffer_end_time()
         prompt_text, _ = self.prompt()
         logger.debug(
             f"Transcribing {len(self.audio_buffer)/self.SAMPLING_RATE:.2f} seconds from {self.buffer_time_offset:.2f}"
         )
         res = self.asr.transcribe(self.audio_buffer, init_prompt=prompt_text)
-        tokens = self.asr.ts_words(res)  # Expecting List[ASRToken]
+        tokens = self.asr.ts_words(res)
         self.transcript_buffer.insert(tokens, self.buffer_time_offset)
         committed_tokens = self.transcript_buffer.flush()
         self.committed.extend(committed_tokens)
@@ -210,7 +215,7 @@ class OnlineASRProcessor:
         logger.debug(
             f"Length of audio buffer now: {len(self.audio_buffer)/self.SAMPLING_RATE:.2f} seconds"
         )
-        return committed_tokens
+        return committed_tokens, current_audio_processed_upto
 
     def chunk_completed_sentence(self):
         """
@@ -344,14 +349,16 @@ class OnlineASRProcessor:
                 sentences.append(sentence)
         return sentences
     
-    def finish(self) -> List[ASRToken]:
+    def finish(self) -> Tuple[List[ASRToken], float]:
         """
         Flush the remaining transcript when processing ends.
+        Returns a tuple: (list of remaining ASRToken objects, float representing the final audio processed up to time).
         """
         remaining_tokens = self.transcript_buffer.buffer
         logger.debug(f"Final non-committed tokens: {remaining_tokens}")
-        self.buffer_time_offset += len(self.audio_buffer) / self.SAMPLING_RATE
-        return remaining_tokens
+        final_processed_upto = self.buffer_time_offset + (len(self.audio_buffer) / self.SAMPLING_RATE)
+        self.buffer_time_offset = final_processed_upto
+        return remaining_tokens, final_processed_upto
 
     def concatenate_tokens(
         self,
@@ -393,28 +400,35 @@ class VACOnlineASRProcessor:
 
         self.vac = FixedVADIterator(model)
         self.logfile = self.online.logfile
+        self.last_input_audio_stream_end_time: float = 0.0
         self.init()
 
     def init(self):
         self.online.init()
         self.vac.reset_states()
         self.current_online_chunk_buffer_size = 0
+        self.last_input_audio_stream_end_time = self.online.buffer_time_offset
         self.is_currently_final = False
         self.status: Optional[str] = None  # "voice" or "nonvoice"
         self.audio_buffer = np.array([], dtype=np.float32)
         self.buffer_offset = 0  # in frames
 
+    def get_audio_buffer_end_time(self) -> float:
+        """Returns the absolute end time of the audio processed by the underlying OnlineASRProcessor."""
+        return self.online.get_audio_buffer_end_time()
+
     def clear_buffer(self):
         self.buffer_offset += len(self.audio_buffer)
         self.audio_buffer = np.array([], dtype=np.float32)
 
-    def insert_audio_chunk(self, audio: np.ndarray):
+    def insert_audio_chunk(self, audio: np.ndarray, audio_stream_end_time: float):
         """
         Process an incoming small audio chunk:
           - run VAD on the chunk,
           - decide whether to send the audio to the online ASR processor immediately,
           - and/or to mark the current utterance as finished.
         """
+        self.last_input_audio_stream_end_time = audio_stream_end_time
         res = self.vac(audio)
         self.audio_buffer = np.append(self.audio_buffer, audio)
 
@@ -456,10 +470,11 @@ class VACOnlineASRProcessor:
                 self.buffer_offset += max(0, len(self.audio_buffer) - self.SAMPLING_RATE)
                 self.audio_buffer = self.audio_buffer[-self.SAMPLING_RATE:]
 
-    def process_iter(self) -> List[ASRToken]:
+    def process_iter(self) -> Tuple[List[ASRToken], float]:
         """
         Depending on the VAD status and the amount of accumulated audio,
         process the current audio chunk.
+        Returns a tuple: (list of committed ASRToken objects, float representing the audio processed up to time).
         """
         if self.is_currently_final:
             return self.finish()
@@ -468,14 +483,17 @@ class VACOnlineASRProcessor:
             return self.online.process_iter()
         else:
             logger.debug("No online update, only VAD")
-            return []
+            return [], self.last_input_audio_stream_end_time
 
-    def finish(self) -> List[ASRToken]:
-        """Finish processing by flushing any remaining text."""
-        result = self.online.finish()
+    def finish(self) -> Tuple[List[ASRToken], float]:
+        """
+        Finish processing by flushing any remaining text.
+        Returns a tuple: (list of remaining ASRToken objects, float representing the final audio processed up to time).
+        """
+        result_tokens, processed_upto = self.online.finish()
         self.current_online_chunk_buffer_size = 0
         self.is_currently_final = False
-        return result
+        return result_tokens, processed_upto
     
     def get_buffer(self):
         """

@@ -292,6 +292,7 @@ class AudioProcessor:
         """Process audio chunks for transcription."""
         self.full_transcription = ""
         self.sep = self.online.asr.sep
+        cumulative_pcm_duration_stream_time = 0.0
         
         while True:
             try:
@@ -315,25 +316,38 @@ class AudioProcessor:
                 )
                 
                 # Process transcription
-                self.online.insert_audio_chunk(pcm_array)
-                new_tokens = self.online.process_iter()
+                duration_this_chunk = len(pcm_array) / self.sample_rate if isinstance(pcm_array, np.ndarray) else 0
+                cumulative_pcm_duration_stream_time += duration_this_chunk
+                stream_time_end_of_current_pcm = cumulative_pcm_duration_stream_time
+
+                self.online.insert_audio_chunk(pcm_array, stream_time_end_of_current_pcm)
+                new_tokens, current_audio_processed_upto = self.online.process_iter()
                 
                 if new_tokens:
                     self.full_transcription += self.sep.join([t.text for t in new_tokens])
                     
                 # Get buffer information
-                _buffer = self.online.get_buffer()
-                buffer = _buffer.text
-                end_buffer = _buffer.end if _buffer.end else (
-                    new_tokens[-1].end if new_tokens else 0
-                )
+                _buffer_transcript_obj = self.online.get_buffer()
+                buffer_text = _buffer_transcript_obj.text
+                
+                candidate_end_times = [self.end_buffer]
+
+                if new_tokens:
+                    candidate_end_times.append(new_tokens[-1].end)
+                
+                if _buffer_transcript_obj.end is not None:
+                    candidate_end_times.append(_buffer_transcript_obj.end)
+                
+                candidate_end_times.append(current_audio_processed_upto)
+                
+                new_end_buffer = max(candidate_end_times)
                 
                 # Avoid duplicating content
-                if buffer in self.full_transcription:
-                    buffer = ""
+                if buffer_text in self.full_transcription:
+                    buffer_text = ""
                     
                 await self.update_transcription(
-                    new_tokens, buffer, end_buffer, self.full_transcription, self.sep
+                    new_tokens, buffer_text, new_end_buffer, self.full_transcription, self.sep
                 )
                 self.transcription_queue.task_done()
                 
