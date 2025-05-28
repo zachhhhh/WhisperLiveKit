@@ -1,10 +1,6 @@
 MIT License
 
 Copyright (c) 2025 Quentin Fuxa.  
-Based on:
-- The original work by ÚFAL. License: https://github.com/ufal/whisper_streaming/blob/main/LICENSE  
-- The work by Snakers4 (silero-vad). License: https://github.com/snakers4/silero-vad/blob/f6b1294cb27590fb2452899df98fb234dfef1134/LICENSE  
-- The work in Diart by juanmc2005. License: https://github.com/juanmc2005/diart/blob/main/LICENSE
 
 Permission is hereby granted, free of charge, to any person obtaining a copy  
 of this software and associated documentation files (the "Software"), to deal  
@@ -26,8 +22,7 @@ SOFTWARE.
 
 ---
 
-Third-party components included in this software:
-
-- **whisper_streaming** by ÚFAL – MIT License – https://github.com/ufal/whisper_streaming  
-- **silero-vad** by Snakers4 – MIT License – https://github.com/snakers4/silero-vad  
-- **Diart** by juanmc2005 – MIT License – https://github.com/juanmc2005/diart
+Based on:
+- **whisper_streaming** by ÚFAL – MIT License – https://github.com/ufal/whisper_streaming. The original work by ÚFAL. License: https://github.com/ufal/whisper_streaming/blob/main/LICENSE  
+- **silero-vad** by Snakers4 – MIT License – https://github.com/snakers4/silero-vad. The work by Snakers4 (silero-vad). License: https://github.com/snakers4/silero-vad/blob/f6b1294cb27590fb2452899df98fb234dfef1134/LICENSE  
+- **Diart** by juanmc2005 – MIT License – https://github.com/juanmc2005/diart. The work in Diart by juanmc2005. License: https://github.com/juanmc2005/diart/blob/main/LICENSE
