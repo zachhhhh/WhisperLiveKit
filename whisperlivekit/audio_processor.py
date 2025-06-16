@@ -8,7 +8,7 @@ import traceback
 from datetime import timedelta
 from whisperlivekit.timed_objects import ASRToken
 from whisperlivekit.whisper_streaming_custom.whisper_online import online_factory
-from whisperlivekit.core import WhisperLiveKit
+from whisperlivekit.core import TranscriptionEngine
 
 # Set up logging once
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -27,10 +27,13 @@ class AudioProcessor:
     Handles audio processing, state management, and result formatting.
     """
     
-    def __init__(self):
+    def __init__(self, **kwargs):
         """Initialize the audio processor with configuration, models, and state."""
         
-        models = WhisperLiveKit()
+        if 'transcription_engine' in kwargs and isinstance(kwargs['transcription_engine'], TranscriptionEngine):
+            models = kwargs['transcription_engine']
+        else:
+            models = TranscriptionEngine(**kwargs)
         
         # Audio processing settings
         self.args = models.args

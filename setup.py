@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name="whisperlivekit",
-    version="0.1.7",
+    version="0.1.8",
     description="Real-time, Fully Local Whisper's Speech-to-Text and Speaker Diarization",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",

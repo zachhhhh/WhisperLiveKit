@@ -2,26 +2,24 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-
-from whisperlivekit import WhisperLiveKit, parse_args
-from whisperlivekit.audio_processor import AudioProcessor
-
+from whisperlivekit import TranscriptionEngine, AudioProcessor, get_web_interface_html, parse_args
 import asyncio
 import logging
-import os, sys
-import argparse
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger().setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-kit = None
+args = parse_args()
+transcription_engine = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global kit
-    kit = WhisperLiveKit()
+    global transcription_engine
+    transcription_engine = TranscriptionEngine(
+        **vars(args),
+    )
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -33,10 +31,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 async def get():
-    return HTMLResponse(kit.web_interface())
+    return HTMLResponse(get_web_interface_html())
 
 
 async def handle_websocket_results(websocket, results_generator):
@@ -55,8 +52,10 @@ async def handle_websocket_results(websocket, results_generator):
 
 @app.websocket("/asr")
 async def websocket_endpoint(websocket: WebSocket):
-    audio_processor = AudioProcessor()
-
+    global transcription_engine
+    audio_processor = AudioProcessor(
+        transcription_engine=transcription_engine,
+    )
     await websocket.accept()
     logger.info("WebSocket connection opened.")
             
@@ -94,8 +93,6 @@ def main():
     """Entry point for the CLI command."""
     import uvicorn
     
-    args = parse_args()
-    
     uvicorn_kwargs = {
         "app": "whisperlivekit.basic_server:app",
         "host":args.host, 
@@ -113,7 +110,6 @@ def main():
             "ssl_certfile": args.ssl_certfile,
             "ssl_keyfile": args.ssl_keyfile
         }
-
 
     if ssl_kwargs:
         uvicorn_kwargs = {**uvicorn_kwargs, **ssl_kwargs}

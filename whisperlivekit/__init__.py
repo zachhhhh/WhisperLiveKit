@@ -1,4 +1,5 @@
-from .core import WhisperLiveKit, parse_args
+from .core import TranscriptionEngine
 from .audio_processor import AudioProcessor
-
-__all__ = ['WhisperLiveKit', 'AudioProcessor', 'parse_args']
+from .web.web_interface import get_web_interface_html
+from .parse_args import parse_args
+__all__ = ['TranscriptionEngine', 'AudioProcessor', 'get_web_interface_html', 'parse_args']
