@@ -142,52 +142,79 @@ whisperlivekit-server --host 0.0.0.0 --port 8000 --model medium --diarization --
 ```
 
 ### Python API Integration (Backend)
+Check [basic_server.py](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/basic_server.py) for a complete example.
 
 ```python
-from whisperlivekit import WhisperLiveKit
-from whisperlivekit.audio_processor import AudioProcessor
-from fastapi import FastAPI, WebSocket
-import asyncio
+from whisperlivekit import TranscriptionEngine, AudioProcessor, get_web_interface_html, parse_args
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
+from contextlib import asynccontextmanager
+import asyncio
 
-# Initialize components
-app = FastAPI()
-kit = WhisperLiveKit(model="medium", diarization=True)
+# Global variable for the transcription engine
+transcription_engine = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global transcription_engine
+    # Example: Initialize with specific parameters directly
+    # You can also load from command-line arguments using parse_args()
+    # args = parse_args()
+    # transcription_engine = TranscriptionEngine(**vars(args))
+    transcription_engine = TranscriptionEngine(model="medium", diarization=True, lan="en")
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 # Serve the web interface
 @app.get("/")
 async def get():
-    return HTMLResponse(kit.web_interface())  # Use the built-in web interface
+    return HTMLResponse(get_web_interface_html())
 
 # Process WebSocket connections
-async def handle_websocket_results(websocket, results_generator):
-    async for response in results_generator:
-        await websocket.send_json(response)
+async def handle_websocket_results(websocket: WebSocket, results_generator):
+    try:
+        async for response in results_generator:
+            await websocket.send_json(response)
+        await websocket.send_json({"type": "ready_to_stop"})
+    except WebSocketDisconnect:
+        print("WebSocket disconnected during results handling.")
 
 @app.websocket("/asr")
 async def websocket_endpoint(websocket: WebSocket):
-    audio_processor = AudioProcessor()
-    await websocket.accept()
-    results_generator = await audio_processor.create_tasks()
-    websocket_task = asyncio.create_task(
-        handle_websocket_results(websocket, results_generator)
-    )
+    global transcription_engine
 
+    # Create a new AudioProcessor for each connection, passing the shared engine
+    audio_processor = AudioProcessor(transcription_engine=transcription_engine)    
+    results_generator = await audio_processor.create_tasks()
+    send_results_to_client = handle_websocket_results(websocket, results_generator)
+    results_task = asyncio.create_task(send_results_to_client)
+    await websocket.accept()
     try:
         while True:
             message = await websocket.receive_bytes()
-            await audio_processor.process_audio(message)
+            await audio_processor.process_audio(message)        
+    except WebSocketDisconnect:
+        print(f"Client disconnected: {websocket.client}")
     except Exception as e:
-        print(f"WebSocket error: {e}")
-        websocket_task.cancel()
+        await websocket.close(code=1011, reason=f"Server error: {e}")
+    finally:
+        results_task.cancel()
+        try:
+            await results_task
+        except asyncio.CancelledError:
+            logger.info("Results task successfully cancelled.")
 ```
 
 ### Frontend Implementation
 
-The package includes a simple HTML/JavaScript implementation that you can adapt for your project. You can get in in [whisperlivekit/web/live_transcription.html](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html), or using :
+The package includes a simple HTML/JavaScript implementation that you can adapt for your project. You can find it in `whisperlivekit/web/live_transcription.html`, or load its content using the `get_web_interface_html()` function from `whisperlivekit`:
 
 ```python
-kit.web_interface()
+from whisperlivekit import get_web_interface_html
+
+# ... later in your code where you need the HTML string ...
+html_content = get_web_interface_html()
 ```
 
 ## ⚙️ Configuration Reference
