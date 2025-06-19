@@ -240,8 +240,8 @@ WhisperLiveKit offers extensive configuration options:
 | `--warmup-file` | Audio file path for model warmup | `jfk.wav` |
 | `--ssl-certfile` | Path to the SSL certificate file (for HTTPS support) | `None` |
 | `--ssl-keyfile` | Path to the SSL private key file (for HTTPS support) | `None` |
-| `--segmentation-model` | Hugging Face model ID for pyannote.audio segmentation model | `pyannote/segmentation-3.0` |
-| `--embedding-model` | Hugging Face model ID for pyannote.audio embedding model | `speechbrain/spkrec-ecapa-voxceleb` |
+| `--segmentation-model` | Hugging Face model ID for pyannote.audio segmentation model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `pyannote/segmentation-3.0` |
+| `--embedding-model` | Hugging Face model ID for pyannote.audio embedding model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `speechbrain/spkrec-ecapa-voxceleb` |
 
 ## 🔧 How It Works
 
