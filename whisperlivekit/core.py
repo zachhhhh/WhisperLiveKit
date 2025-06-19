@@ -24,7 +24,7 @@ class TranscriptionEngine:
             "warmup_file": None,
             "confidence_validation": False,
             "diarization": False,
-            "punctuation_split": True,
+            "punctuation_split": False,
             "min_chunk_size": 0.5,
             "model": "tiny",
             "model_cache_dir": None,

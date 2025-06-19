@@ -26,4 +26,7 @@ class Transcript(TimedText):
 
 @dataclass
 class SpeakerSegment(TimedText):
+    """Represents a segment of audio attributed to a specific speaker.
+    No text nor probability is associated with this segment.
+    """
     pass
