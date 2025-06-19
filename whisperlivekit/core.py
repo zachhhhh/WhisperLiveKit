@@ -24,6 +24,7 @@ class TranscriptionEngine:
             "warmup_file": None,
             "confidence_validation": False,
             "diarization": False,
+            "punctuation_split": True,
             "min_chunk_size": 0.5,
             "model": "tiny",
             "model_cache_dir": None,
@@ -68,6 +69,6 @@ class TranscriptionEngine:
 
         if self.args.diarization:
             from whisperlivekit.diarization.diarization_online import DiartDiarization
-            self.diarization = DiartDiarization()
+            self.diarization = DiartDiarization(block_duration=self.args.min_chunk_size)
             
         TranscriptionEngine._initialized = True

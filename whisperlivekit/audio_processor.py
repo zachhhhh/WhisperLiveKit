@@ -377,13 +377,16 @@ class AudioProcessor:
                 # Process diarization
                 await diarization_obj.diarize(pcm_array)
                 
-                # Get current state and update speakers
-                state = await self.get_current_state()
-                new_end = diarization_obj.assign_speakers_to_tokens(
-                    state["end_attributed_speaker"], state["tokens"]
-                )
+                async with self.lock:
+                    new_end = diarization_obj.assign_speakers_to_tokens(
+                        self.end_attributed_speaker, 
+                        self.tokens,
+                        use_punctuation_split=self.args.punctuation_split
+                    )
+                    self.end_attributed_speaker = new_end
+                    if buffer_diarization:
+                        self.buffer_diarization = buffer_diarization
                 
-                await self.update_diarization(new_end, buffer_diarization)
                 self.diarization_queue.task_done()
                 
             except Exception as e:

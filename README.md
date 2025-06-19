@@ -32,6 +32,7 @@ WhisperLiveKit consists of three main components:
 - **👥 Speaker Diarization** - Identify different speakers in real-time using [Diart](https://github.com/juanmc2005/diart)
 - **🔒 Fully Local** - All processing happens on your machine - no data sent to external servers
 - **📱 Multi-User Support** - Handle multiple users simultaneously with a single backend/server
+- **📝 Punctuation-Based Speaker Splitting [BETA] ** - Align speaker changes with natural sentence boundaries for more readable transcripts
  
 ### ⚙️ Core differences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
 
@@ -230,6 +231,7 @@ WhisperLiveKit offers extensive configuration options:
 | `--task` | `transcribe` or `translate` | `transcribe` |
 | `--backend` | Processing backend | `faster-whisper` |
 | `--diarization` | Enable speaker identification | `False` |
+| `--punctuation-split` | Use punctuation to improve speaker boundaries | `True` |
 | `--confidence-validation` | Use confidence scores for faster validation | `False` |
 | `--min-chunk-size` | Minimum audio chunk size (seconds) | `1.0` |
 | `--vac` | Use Voice Activity Controller | `False` |

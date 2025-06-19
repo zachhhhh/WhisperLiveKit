@@ -38,6 +38,13 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--punctuation-split",
+        action="store_true",
+        default=False,
+        help="Use punctuation marks from transcription to improve speaker boundary detection. Requires both transcription and diarization to be enabled.",
+    )
+
+    parser.add_argument(
         "--no-transcription",
         action="store_true",
         help="Disable transcription to only see live diarization results.",
