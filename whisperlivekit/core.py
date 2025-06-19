@@ -39,8 +39,10 @@ class TranscriptionEngine:
             "log_level": "DEBUG",
             "ssl_certfile": None,
             "ssl_keyfile": None,
-            "transcription": True, 
+            "transcription": True,
             "vad": True,
+            "segmentation_model": "pyannote/segmentation-3.0",
+            "embedding_model": "pyannote/embedding",
         }
 
         config_dict = {**defaults, **kwargs}
@@ -69,6 +71,10 @@ class TranscriptionEngine:
 
         if self.args.diarization:
             from whisperlivekit.diarization.diarization_online import DiartDiarization
-            self.diarization = DiartDiarization(block_duration=self.args.min_chunk_size)
+            self.diarization = DiartDiarization(
+                block_duration=self.args.min_chunk_size,
+                segmentation_model_name=self.args.segmentation_model,
+                embedding_model_name=self.args.embedding_model
+            )
             
         TranscriptionEngine._initialized = True

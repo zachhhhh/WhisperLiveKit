@@ -45,6 +45,20 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--segmentation-model",
+        type=str,
+        default="pyannote/segmentation-3.0",
+        help="Hugging Face model ID for pyannote.audio segmentation model.",
+    )
+
+    parser.add_argument(
+        "--embedding-model",
+        type=str,
+        default="pyannote/embedding",
+        help="Hugging Face model ID for pyannote.audio embedding model.",
+    )
+
+    parser.add_argument(
         "--no-transcription",
         action="store_true",
         help="Disable transcription to only see live diarization results.",

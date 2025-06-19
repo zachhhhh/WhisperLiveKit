@@ -16,9 +16,6 @@ from typing import Tuple, Any, List
 from pyannote.core import Annotation
 import diart.models as m
 
-segmentation = m.SegmentationModel.from_pretrained("pyannote/segmentation-3.0")
-embedding = m.EmbeddingModel.from_pretrained("speechbrain/spkrec-ecapa-voxceleb")
-
 logger = logging.getLogger(__name__)
 
 def extract_number(s: str) -> int:
@@ -168,7 +165,16 @@ class WebSocketAudioSource(AudioSource):
 
 
 class DiartDiarization:
-    def __init__(self, sample_rate: int = 16000, config : SpeakerDiarizationConfig = None, use_microphone: bool = False, block_duration: float = 0.5):
+    def __init__(self, sample_rate: int = 16000, config : SpeakerDiarizationConfig = None, use_microphone: bool = False, block_duration: float = 0.5, segmentation_model_name: str = "pyannote/segmentation-3.0", embedding_model_name: str = "speechbrain/spkrec-ecapa-voxceleb"):
+        segmentation_model = m.SegmentationModel.from_pretrained(segmentation_model_name)
+        embedding_model = m.EmbeddingModel.from_pretrained(embedding_model_name)
+        
+        if config is None:
+            config = SpeakerDiarizationConfig(
+                segmentation=segmentation_model,
+                embedding=embedding_model,
+            )
+        
         self.pipeline = SpeakerDiarization(config=config)        
         self.observer = DiarizationObserver()
         self.lag_diart = None
