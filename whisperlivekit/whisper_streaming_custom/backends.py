@@ -337,7 +337,7 @@ class SimulStreamingASR(ASRBase):
         
         if model_dir is not None:
             self.model_path = model_dir
-        elif modelsize is not None:
+        elif modelsize is not None: #For the moment the .en.pt models do not work!
             model_mapping = {
                 'tiny': './tiny.pt',
                 'base': './base.pt',

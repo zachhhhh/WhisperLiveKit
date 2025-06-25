@@ -77,7 +77,6 @@ def backend_factory(args):
                 "See the documentation for installation instructions."
             )
         
-        # Extract SimulStreaming-specific arguments
         simulstreaming_kwargs = {}
         for attr in ['frame_threshold', 'beams', 'decoder_type', 'audio_max_len', 'audio_min_len', 
                      'cif_ckpt_path', 'never_fire', 'init_prompt', 'static_init_prompt', 

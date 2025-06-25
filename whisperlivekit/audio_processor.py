@@ -453,12 +453,11 @@ class AudioProcessor:
                 
                 # Handle undiarized text
                 if undiarized_text:
-                    combined_undiarized = sep.join(undiarized_text)
+                    combined = sep.join(undiarized_text)
                     if buffer_transcription:
-                        buffer_transcription = combined_undiarized + sep + buffer_transcription
-                    else:
-                        buffer_transcription = combined_undiarized
-                buffer_diarization = ""
+                        combined += sep
+                    await self.update_diarization(end_attributed_speaker, combined)
+                    buffer_diarization = combined
                 
                 response_status = "active_transcription"
                 final_lines_for_response = lines.copy()

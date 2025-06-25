@@ -545,11 +545,8 @@ class SimulStreamingOnlineProcessor:
         self.end = self.offset
         self.cumulative_audio_duration = 0.0
         
-        # Keep track of committed tokens for compatibility with existing interface
         self.committed: List[ASRToken] = []
-        self.last_result_tokens: List[ASRToken] = []
-        
-        # Buffer for unvalidated content
+        self.last_result_tokens: List[ASRToken] = []        
         self.buffer_content = ""
 
     def get_audio_buffer_end_time(self) -> float:
