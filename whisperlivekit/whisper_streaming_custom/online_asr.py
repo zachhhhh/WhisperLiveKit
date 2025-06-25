@@ -6,6 +6,17 @@ from whisperlivekit.timed_objects import ASRToken, Sentence, Transcript
 
 logger = logging.getLogger(__name__)
 
+# simulStreaming imports - we check if the files are here
+try:
+    import torch
+    from simul_whisper.config import AlignAttConfig
+    SIMULSTREAMING_AVAILABLE = True
+except ImportError:
+    logger.warning("SimulStreaming dependencies not available for online processor.")
+    SIMULSTREAMING_AVAILABLE = False
+    OnlineProcessorInterface = None
+    torch = None
+
 
 class HypothesisBuffer:
     """
@@ -500,3 +511,195 @@ class VACOnlineASRProcessor:
         Get the unvalidated buffer in string format.
         """
         return self.online.concatenate_tokens(self.online.transcript_buffer.buffer)
+
+
+class SimulStreamingOnlineProcessor:
+    SAMPLING_RATE = 16000
+
+    def __init__(
+        self,
+        asr,
+        tokenize_method: Optional[callable] = None,
+        buffer_trimming: Tuple[str, float] = ("segment", 15),
+        confidence_validation = False,
+        logfile=sys.stderr,
+    ):
+        if not SIMULSTREAMING_AVAILABLE:
+            raise ImportError("SimulStreaming dependencies are not available.")
+        
+        self.asr = asr
+        self.tokenize = tokenize_method
+        self.logfile = logfile
+        self.confidence_validation = confidence_validation
+        self.init()
+        
+        # buffer does not work yet
+        self.buffer_trimming_way, self.buffer_trimming_sec = buffer_trimming
+
+    def init(self, offset: Optional[float] = None):
+        """Initialize or reset the processing state."""
+        self.audio_chunks = []
+        self.offset = offset if offset is not None else 0.0
+        self.is_last = False
+        self.beg = self.offset
+        self.end = self.offset
+        self.cumulative_audio_duration = 0.0
+        
+        # Keep track of committed tokens for compatibility with existing interface
+        self.committed: List[ASRToken] = []
+        self.last_result_tokens: List[ASRToken] = []
+        
+        # Buffer for unvalidated content
+        self.buffer_content = ""
+
+    def get_audio_buffer_end_time(self) -> float:
+        """Returns the absolute end time of the current audio buffer."""
+        return self.end
+
+    def insert_audio_chunk(self, audio: np.ndarray, audio_stream_end_time: Optional[float] = None):
+        """Append an audio chunk to be processed by SimulStreaming."""
+        if torch is None:
+            raise ImportError("PyTorch is required for SimulStreaming but not available")
+            
+        # Convert numpy array to torch tensor
+        audio_tensor = torch.from_numpy(audio).float()
+        self.audio_chunks.append(audio_tensor)
+        
+        # Update timing
+        chunk_duration = len(audio) / self.SAMPLING_RATE
+        self.cumulative_audio_duration += chunk_duration
+        self.end = self.offset + self.cumulative_audio_duration
+
+    def prompt(self) -> Tuple[str, str]:
+        """
+        Returns a tuple: (prompt, context).
+        SimulStreaming handles prompting internally, so we return empty strings.
+        """
+        return "", ""
+
+    def get_buffer(self):
+        """
+        Get the unvalidated buffer content.
+        """
+        return Transcript(
+            start=None, 
+            end=None, 
+            text=self.buffer_content, 
+            probability=None
+        )
+
+    def process_iter(self) -> Tuple[List[ASRToken], float]:
+        """
+        Process accumulated audio chunks using SimulStreaming.
+        
+        Returns a tuple: (list of committed ASRToken objects, float representing the audio processed up to time).
+        """
+        if not self.audio_chunks:
+            return [], self.end
+
+        try:
+            # concatenate all audio chunks
+            if len(self.audio_chunks) == 1:
+                audio = self.audio_chunks[0]
+            else:
+                audio = torch.cat(self.audio_chunks, dim=0)
+            
+            if audio.shape[0] > 0:
+                self.end = self.offset + (audio.shape[0] / self.SAMPLING_RATE)
+            
+            self.audio_chunks = []
+            
+            logger.debug(f"SimulStreaming processing audio shape: {audio.shape}")
+            
+            result = self.asr.model.infer(audio, is_last=self.is_last)
+            
+            if torch.is_tensor(result):
+                # we filter out padding tokens as it s done in simul whisper
+                from simul_whisper.simul_whisper import DEC_PAD
+                result = result[result < DEC_PAD]
+                
+                # C/P from simul_whisper.simul_whisper.py
+                if len(result) > 0:
+                    decoded_text = self.asr.model.tokenizer.decode(result.cpu().numpy())
+                    logger.debug(f"SimulStreaming decoded: {decoded_text}")
+                    
+                    if decoded_text.strip():
+                        words = decoded_text.strip().split()
+                        new_tokens = []
+                        
+                        current_time = self.beg
+                        word_duration = 0.3  # Not great should be improved.
+                        
+                        for word in words:
+                            token_start = current_time
+                            token_end = current_time + word_duration
+                            token = ASRToken(
+                                start=token_start,
+                                end=token_end,
+                                text=word,
+                                probability=0.95  # fake prob. Maybe we can extract it from the model?
+                            )
+                            new_tokens.append(token)
+                            current_time = token_end
+                        
+                        self.beg = self.end
+                        
+                        self.committed.extend(new_tokens)
+                        self.last_result_tokens = new_tokens
+                        
+                        logger.debug(f"SimulStreaming generated {len(new_tokens)} tokens")
+                        return new_tokens, self.end
+            
+            return [], self.end
+            
+        except Exception as e:
+            logger.error(f"SimulStreaming processing error: {e}")
+            logger.error(f"Error details: {type(e).__name__}: {str(e)}")
+            return [], self.end
+
+    def finish(self) -> Tuple[List[ASRToken], float]:
+        logger.debug("SimulStreaming finish() called")
+        self.is_last = True        
+        final_tokens, final_time = self.process_iter()
+        self.is_last = False
+        return final_tokens, final_time
+
+    def concatenate_tokens(
+        self,
+        tokens: List[ASRToken],
+        sep: Optional[str] = None,
+        offset: float = 0
+    ) -> Transcript:
+        """Concatenate tokens into a Transcript object."""
+        sep = sep if sep is not None else self.asr.sep
+        text = sep.join(token.text for token in tokens)
+        probability = sum(token.probability for token in tokens if token.probability) / len(tokens) if tokens else None
+        if tokens:
+            start = offset + tokens[0].start
+            end = offset + tokens[-1].end
+        else:
+            start = None
+            end = None
+        return Transcript(start, end, text, probability=probability)
+
+    def chunk_at(self, time: float):
+        """
+        useless but kept for compatibility
+        """
+        logger.debug(f"SimulStreaming chunk_at({time:.2f}) - handled internally")
+        pass
+
+    def words_to_sentences(self, tokens: List[ASRToken]) -> List[Sentence]:
+        """
+        Create simple sentences.
+        """
+        if not tokens:
+            return []
+        
+        full_text = " ".join(token.text for token in tokens)
+        sentence = Sentence(
+            start=tokens[0].start,
+            end=tokens[-1].end,
+            text=full_text
+        )
+        return [sentence]

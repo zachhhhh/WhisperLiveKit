@@ -43,6 +43,18 @@ class TranscriptionEngine:
             "vad": True,
             "segmentation_model": "pyannote/segmentation-3.0",
             "embedding_model": "pyannote/embedding",
+            # simulstreaming params:
+            "frame_threshold": 25,
+            "beams": 1,
+            "decoder_type": None,
+            "audio_max_len": 30.0,
+            "audio_min_len": 0.0,
+            "cif_ckpt_path": None,
+            "never_fire": False,
+            "init_prompt": None,
+            "static_init_prompt": None,
+            "max_context_tokens": None,
+            "model_path": './base.pt',
         }
 
         config_dict = {**defaults, **kwargs}

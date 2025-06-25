@@ -5,8 +5,8 @@ import librosa
 from functools import lru_cache
 import time
 import logging
-from .backends import FasterWhisperASR, MLXWhisper, WhisperTimestampedASR, OpenaiApiASR
-from .online_asr import OnlineASRProcessor, VACOnlineASRProcessor
+from .backends import FasterWhisperASR, MLXWhisper, WhisperTimestampedASR, OpenaiApiASR, SimulStreamingASR, SIMULSTREAMING_AVAILABLE
+from .online_asr import OnlineASRProcessor, VACOnlineASRProcessor, SimulStreamingOnlineProcessor, SIMULSTREAMING_AVAILABLE as SIMULSTREAMING_ONLINE_AVAILABLE
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,38 @@ def backend_factory(args):
     if backend == "openai-api":
         logger.debug("Using OpenAI API.")
         asr = OpenaiApiASR(lan=args.lan)
+    elif backend == "simulstreaming-whisper":
+        logger.debug("Using SimulStreaming backend.")
+        if not SIMULSTREAMING_AVAILABLE:
+            raise ImportError(
+                "SimulStreaming backend is not available. Please install SimulStreaming dependencies. "
+                "See the documentation for installation instructions."
+            )
+        
+        # Extract SimulStreaming-specific arguments
+        simulstreaming_kwargs = {}
+        for attr in ['frame_threshold', 'beams', 'decoder_type', 'audio_max_len', 'audio_min_len', 
+                     'cif_ckpt_path', 'never_fire', 'init_prompt', 'static_init_prompt', 
+                     'max_context_tokens', 'model_path']:
+            if hasattr(args, attr):
+                simulstreaming_kwargs[attr] = getattr(args, attr)
+        
+        # Add segment_length from min_chunk_size
+        simulstreaming_kwargs['segment_length'] = getattr(args, 'min_chunk_size', 0.5)
+        simulstreaming_kwargs['task'] = args.task
+        
+        size = args.model
+        t = time.time()
+        logger.info(f"Loading SimulStreaming {size} model for language {args.lan}...")
+        asr = SimulStreamingASR(
+            modelsize=size,
+            lan=args.lan,
+            cache_dir=getattr(args, 'model_cache_dir', None),
+            model_dir=getattr(args, 'model_dir', None),
+            **simulstreaming_kwargs
+        )
+        e = time.time()
+        logger.info(f"done. It took {round(e-t,2)} seconds.")
     else:
         if backend == "faster-whisper":
             asr_cls = FasterWhisperASR
@@ -84,8 +116,8 @@ def backend_factory(args):
         asr = asr_cls(
             modelsize=size,
             lan=args.lan,
-            cache_dir=args.model_cache_dir,
-            model_dir=args.model_dir,
+            cache_dir=getattr(args, 'model_cache_dir', None),
+            model_dir=getattr(args, 'model_dir', None),
         )
         e = time.time()
         logger.info(f"done. It took {round(e-t,2)} seconds.")
@@ -97,21 +129,33 @@ def backend_factory(args):
 
     language = args.lan
     if args.task == "translate":
-        asr.set_translate_task()
+        if backend != "simulstreaming-whisper":
+            asr.set_translate_task()
         tgt_language = "en"  # Whisper translates into English
     else:
         tgt_language = language  # Whisper transcribes in this language
 
     # Create the tokenizer
     if args.buffer_trimming == "sentence":
-
         tokenizer = create_tokenizer(tgt_language)
     else:
         tokenizer = None
     return asr, tokenizer
 
 def online_factory(args, asr, tokenizer, logfile=sys.stderr):
-    if args.vac:
+    if args.backend == "simulstreaming-whisper":
+        if not SIMULSTREAMING_ONLINE_AVAILABLE:
+            raise ImportError("SimulStreaming online processor is not available.")
+        
+        logger.debug("Creating SimulStreaming online processor")
+        online = SimulStreamingOnlineProcessor(
+            asr,
+            tokenizer,
+            logfile=logfile,
+            buffer_trimming=(args.buffer_trimming, args.buffer_trimming_sec),
+            confidence_validation=args.confidence_validation
+        )
+    elif args.vac:
         online = VACOnlineASRProcessor(
             args.min_chunk_size,
             asr,
@@ -145,6 +189,7 @@ def warmup_asr(asr, warmup_file=None, timeout=5):
     import os
     import tempfile
     
+    is_simulstreaming = hasattr(asr, 'warmup') and callable(getattr(asr, 'warmup'))
     
     if warmup_file is None:
         # Download JFK sample if not already present
@@ -179,16 +224,23 @@ def warmup_asr(asr, warmup_file=None, timeout=5):
         logger.warning(f"Warmup file {warmup_file} invalid or missing.")
         return False
     
-    print(f"Warming up Whisper with {warmup_file}")
+    print(f"Warming up {'SimulStreaming' if is_simulstreaming else 'Whisper'} with {warmup_file}")
     try:
         import librosa
         audio, sr = librosa.load(warmup_file, sr=16000)
     except Exception as e:
         logger.warning(f"Failed to load audio file: {e}")
         return False
-            
-    # Process the audio
-    asr.transcribe(audio)
-
-    logger.info("Whisper is warmed up")
-
+    
+    try:
+        if is_simulstreaming:
+            asr.warmup(audio)
+        else:
+            asr.transcribe(audio)
+        
+        logger.info(f"{'SimulStreaming' if is_simulstreaming else 'Whisper'} is warmed up")
+        return True
+        
+    except Exception as e:
+        logger.warning(f"Warmup failed: {e}")
+        return False

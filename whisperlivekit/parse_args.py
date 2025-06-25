@@ -108,7 +108,7 @@ def parse_args():
         "--backend",
         type=str,
         default="faster-whisper",
-        choices=["faster-whisper", "whisper_timestamped", "mlx-whisper", "openai-api"],
+        choices=["faster-whisper", "whisper_timestamped", "mlx-whisper", "openai-api", "simulstreaming-whisper"],
         help="Load only this backend for Whisper processing.",
     )
     parser.add_argument(
@@ -151,6 +151,97 @@ def parse_args():
     parser.add_argument("--ssl-certfile", type=str, help="Path to the SSL certificate file.", default=None)
     parser.add_argument("--ssl-keyfile", type=str, help="Path to the SSL private key file.", default=None)
 
+    # SimulStreaming-specific arguments
+    simulstreaming_group = parser.add_argument_group('SimulStreaming arguments (only used with --backend simulstreaming-whisper)')
+    
+    simulstreaming_group.add_argument(
+        "--frame-threshold",
+        type=int,
+        default=25,
+        dest="frame_threshold",
+        help="Threshold for the attention-guided decoding. The AlignAtt policy will decode only until this number of frames from the end of audio. In frames: one frame is 0.02 seconds for large-v3 model.",
+    )
+    
+    simulstreaming_group.add_argument(
+        "--beams",
+        "-b",
+        type=int,
+        default=1,
+        help="Number of beams for beam search decoding. If 1, GreedyDecoder is used.",
+    )
+    
+    simulstreaming_group.add_argument(
+        "--decoder",
+        type=str,
+        default=None,
+        dest="decoder_type",
+        choices=["beam", "greedy"],
+        help="Override automatic selection of beam or greedy decoder. If beams > 1 and greedy: invalid.",
+    )
+    
+    simulstreaming_group.add_argument(
+        "--audio-max-len",
+        type=float,
+        default=30.0,
+        dest="audio_max_len",
+        help="Max length of the audio buffer, in seconds.",
+    )
+    
+    simulstreaming_group.add_argument(
+        "--audio-min-len",
+        type=float,
+        default=0.0,
+        dest="audio_min_len",
+        help="Skip processing if the audio buffer is shorter than this length, in seconds. Useful when the --min-chunk-size is small.",
+    )
+    
+    simulstreaming_group.add_argument(
+        "--cif-ckpt-path",
+        type=str,
+        default=None,
+        dest="cif_ckpt_path",
+        help="The file path to the Simul-Whisper's CIF model checkpoint that detects whether there is end of word at the end of the chunk. If not, the last decoded space-separated word is truncated because it is often wrong -- transcribing a word in the middle. The CIF model adapted for the Whisper model version should be used. Find the models in https://github.com/backspacetg/simul_whisper/tree/main/cif_models . Note that there is no model for large-v3.",
+    )
+    
+    simulstreaming_group.add_argument(
+        "--never-fire",
+        action="store_true",
+        default=False,
+        dest="never_fire",
+        help="Override the CIF model. If True, the last word is NEVER truncated, no matter what the CIF model detects. If False: if CIF model path is set, the last word is SOMETIMES truncated, depending on the CIF detection. Otherwise, if the CIF model path is not set, the last word is ALWAYS trimmed.",
+    )
+    
+    simulstreaming_group.add_argument(
+        "--init-prompt",
+        type=str,
+        default=None,
+        dest="init_prompt",
+        help="Init prompt for the model. It should be in the target language.",
+    )
+    
+    simulstreaming_group.add_argument(
+        "--static-init-prompt",
+        type=str,
+        default=None,
+        dest="static_init_prompt",
+        help="Do not scroll over this text. It can contain terminology that should be relevant over all document.",
+    )
+    
+    simulstreaming_group.add_argument(
+        "--max-context-tokens",
+        type=int,
+        default=None,
+        dest="max_context_tokens",
+        help="Max context tokens for the model. Default is 0.",
+    )
+    
+    simulstreaming_group.add_argument(
+        "--model-path",
+        type=str,
+        default=None,
+        dest="model_path",
+        help="Direct path to the SimulStreaming Whisper .pt model file. Overrides --model for SimulStreaming backend.",
+    )
 
     args = parser.parse_args()
     

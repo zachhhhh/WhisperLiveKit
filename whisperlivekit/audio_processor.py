@@ -310,7 +310,7 @@ class AudioProcessor:
                     self.transcription_queue.task_done()
                     continue
 
-                asr_internal_buffer_duration_s = len(self.online.audio_buffer) / self.online.SAMPLING_RATE
+                asr_internal_buffer_duration_s = len(getattr(self.online, 'audio_buffer', [])) / self.online.SAMPLING_RATE
                 transcription_lag_s = max(0.0, time() - self.beg_loop - self.end_buffer)
 
                 logger.info(
@@ -326,13 +326,17 @@ class AudioProcessor:
                 self.online.insert_audio_chunk(pcm_array, stream_time_end_of_current_pcm)
                 new_tokens, current_audio_processed_upto = self.online.process_iter()
                 
-                if new_tokens:
-                    self.full_transcription += self.sep.join([t.text for t in new_tokens])
-                    
                 # Get buffer information
                 _buffer_transcript_obj = self.online.get_buffer()
                 buffer_text = _buffer_transcript_obj.text
-                
+
+                if new_tokens:
+                    validated_text = self.sep.join([t.text for t in new_tokens])
+                    self.full_transcription += validated_text
+                    
+                    if buffer_text.startswith(validated_text):
+                        buffer_text = buffer_text[len(validated_text):].lstrip()
+
                 candidate_end_times = [self.end_buffer]
 
                 if new_tokens:
@@ -345,10 +349,6 @@ class AudioProcessor:
                 
                 new_end_buffer = max(candidate_end_times)
                 
-                # Avoid duplicating content
-                if buffer_text in self.full_transcription:
-                    buffer_text = ""
-                    
                 await self.update_transcription(
                     new_tokens, buffer_text, new_end_buffer, self.full_transcription, self.sep
                 )
@@ -453,11 +453,12 @@ class AudioProcessor:
                 
                 # Handle undiarized text
                 if undiarized_text:
-                    combined = sep.join(undiarized_text)
+                    combined_undiarized = sep.join(undiarized_text)
                     if buffer_transcription:
-                        combined += sep
-                    await self.update_diarization(end_attributed_speaker, combined)
-                    buffer_diarization = combined
+                        buffer_transcription = combined_undiarized + sep + buffer_transcription
+                    else:
+                        buffer_transcription = combined_undiarized
+                buffer_diarization = ""
                 
                 response_status = "active_transcription"
                 final_lines_for_response = lines.copy()

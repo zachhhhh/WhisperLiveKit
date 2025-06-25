@@ -1,46 +1,42 @@
 <h1 align="center">WhisperLiveKit</h1>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/refs/heads/main/demo.png" alt="WhisperLiveKit Demo" width="730">
+<img src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/refs/heads/main/demo.png" alt="WhisperLiveKit Demo" width="730">
 </p>
 
 <p align="center"><b>Real-time, Fully Local Speech-to-Text with Speaker Diarization</b></p>
 
 <p align="center">
-  <a href="https://pypi.org/project/whisperlivekit/"><img alt="PyPI Version" src="https://img.shields.io/pypi/v/whisperlivekit?color=g"></a>
-  <a href="https://pepy.tech/project/whisperlivekit"><img alt="PyPI Downloads" src="https://static.pepy.tech/personalized-badge/whisperlivekit?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=downloads"></a>
-  <a href="https://pypi.org/project/whisperlivekit/"><img alt="Python Versions" src="https://img.shields.io/badge/python-3.9--3.13-dark_green"></a>
-  <a href="https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-dark_green"></a>
+<a href="https://pypi.org/project/whisperlivekit/"><img alt="PyPI Version" src="https://img.shields.io/pypi/v/whisperlivekit?color=g"></a>
+<a href="https://pepy.tech/project/whisperlivekit"><img alt="PyPI Downloads" src="https://static.pepy.tech/personalized-badge/whisperlivekit?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=downloads"></a>
+<a href="https://pypi.org/project/whisperlivekit/"><img alt="Python Versions" src="https://img.shields.io/badge/python-3.9--3.13-dark_green"></a>
+<a href="https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-dark_green"></a>
 </p>
 
 ## 🚀 Overview
 
-This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and lets you transcribe audio directly from your browser. WhisperLiveKit provides a complete backend solution for real-time speech transcription with a functional and simple frontend that you can customize for your own needs. Everything runs locally on your machine ✨
+This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and [SimulStreaming](https://github.com/ufal/SimulStreaming) (**BETA** - ultra-low latency alternative), allowing you to transcribe audio directly from your browser. WhisperLiveKit provides a complete backend solution for real-time speech transcription with a functional, simple and customizable frontend. Everything runs locally on your machine ✨
 
 ### 🔄 Architecture
 
 WhisperLiveKit consists of three main components:
 
-- **Frontend**: A basic HTML & JavaScript interface that captures microphone audio and streams it to the backend via WebSockets. You can use and adapt the provided template at [whisperlivekit/web/live_transcription.html](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html) for your specific use case.
+- **Frontend**: A basic html + JS interface that captures microphone audio and streams it to the backend via WebSockets. You can use and adapt the provided template at [whisperlivekit/web/live_transcription.html](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html).
 - **Backend (Web Server)**: A FastAPI-based WebSocket server that receives streamed audio data, processes it in real time, and returns transcriptions to the frontend. This is where the WebSocket logic and routing live.
-- **Core Backend (Library Logic)**: A server-agnostic core that handles audio processing, ASR, and diarization. It exposes reusable components that take in audio bytes and return transcriptions. This makes it easy to plug into any WebSocket or audio stream pipeline.
+- **Core Backend (Library Logic)**: A server-agnostic core that handles audio processing, ASR, and diarization. It exposes reusable components that take in audio bytes and return transcriptions.
 
 
 ### ✨ Key Features
 
-- **🎙️ Real-time Transcription** - Convert speech to text instantly as you speak
+- **🎙️ Real-time Transcription** - Locally (or on-prem) convert speech to text instantly as you speak
 - **👥 Speaker Diarization** - Identify different speakers in real-time using [Diart](https://github.com/juanmc2005/diart)
-- **🔒 Fully Local** - All processing happens on your machine - no data sent to external servers
-- **📱 Multi-User Support** - Handle multiple users simultaneously with a single backend/server
-- **📝 Punctuation-Based Speaker Splitting [BETA] ** - Align speaker changes with natural sentence boundaries for more readable transcripts
- 
-### ⚙️ Core differences from [Whisper Streaming](https://github.com/ufal/whisper_streaming)
+- **🌐 Multi-User Support** - Handle multiple users simultaneously with a single backend/server
+- **🔇 Automatic Silence Chunking** – Automatically chunks when no audio is detected to limit buffer size
+- **✅ Confidence Validation** – Immediately validate high-confidence tokens for faster inference (WhisperStreaming only)
+- **👁️ Buffering Preview** – Displays unvalidated transcription segments (not compatible with SimulStreaming yet)
+- **✒️ Punctuation-Based Speaker Splitting [BETA]** - Align speaker changes with natural sentence boundaries for more readable transcripts
+- **⚡ SimulStreaming Backend [BETA]** - Ultra-low latency transcription using state-of-the-art AlignAtt policy. To use, please copy [simul_whisper](https://github.com/ufal/SimulStreaming/tree/main/simul_whisper) content into `whisperlivekit/simul_whisper` . You must comply with the [Polyform license](https://github.com/ufal/SimulStreaming/blob/main/LICENCE.txt) !!
 
-- **Automatic Silence Chunking** – Automatically chunks when no audio is detected to limit buffer size
-- **Multi-User Support** – Handles multiple users simultaneously by decoupling backend and online ASR
-- **Confidence Validation** – Immediately validate high-confidence tokens for faster inference
-- **MLX Whisper Backend** – Optimized for Apple Silicon for faster local processing
-- **Buffering Preview** – Displays unvalidated transcription segments
 
 ## 📖 Quick Start
 
@@ -51,15 +47,8 @@ pip install whisperlivekit
 # Start the transcription server
 whisperlivekit-server --model tiny.en
 
-# Open your browser at http://localhost:8000
-```
-
-### Quick Start with SSL
-```bash
-# You must provide a certificate and key
-whisperlivekit-server -ssl-certfile public.crt --ssl-keyfile private.key
-
-# Open your browser at https://localhost:8000
+# Open your browser at http://localhost:8000 to see the interface.
+# Use  -ssl-certfile public.crt --ssl-keyfile private.key parameters to use SSL
 ```
 
 That's it! Start speaking and watch your words appear on screen.
@@ -113,6 +102,7 @@ pip install whisperlivekit[whisper]              # Original Whisper
 pip install whisperlivekit[whisper-timestamped]  # Improved timestamps
 pip install whisperlivekit[mlx-whisper]          # Apple Silicon optimization
 pip install whisperlivekit[openai]               # OpenAI API
+pip install whisperlivekit[simulstreaming]
 ```
 
 ### 🎹 Pyannote Models Setup
@@ -123,10 +113,10 @@ For diarization, you need access to pyannote.audio models:
 2. [Accept user conditions](https://huggingface.co/pyannote/segmentation-3.0) for the `pyannote/segmentation-3.0` model
 3. [Accept user conditions](https://huggingface.co/pyannote/embedding) for the `pyannote/embedding` model
 4. Login with HuggingFace:
-   ```bash
-   pip install huggingface_hub
-   huggingface-cli login
-   ```
+```bash
+pip install huggingface_hub
+huggingface-cli login
+```
 
 ## 💻 Usage Examples
 
@@ -140,7 +130,11 @@ whisperlivekit-server --model tiny.en
 
 # Advanced configuration with diarization
 whisperlivekit-server --host 0.0.0.0 --port 8000 --model medium --diarization --language auto
+
+# SimulStreaming backend for ultra-low latency
+whisperlivekit-server --backend simulstreaming-whisper --model large-v3 --frame-threshold 20
 ```
+
 
 ### Python API Integration (Backend)
 Check [basic_server.py](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/basic_server.py) for a complete example.
@@ -243,11 +237,23 @@ WhisperLiveKit offers extensive configuration options:
 | `--segmentation-model` | Hugging Face model ID for pyannote.audio segmentation model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `pyannote/segmentation-3.0` |
 | `--embedding-model` | Hugging Face model ID for pyannote.audio embedding model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `speechbrain/spkrec-ecapa-voxceleb` |
 
-## 🔧 How It Works
+**SimulStreaming-specific Options:**
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/refs/heads/main/demo.png" alt="WhisperLiveKit in Action" width="500">
-</p>
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--frame-threshold` | AlignAtt frame threshold (lower = faster, higher = more accurate) | `25` |
+| `--beams` | Number of beams for beam search (1 = greedy decoding) | `1` |
+| `--decoder` | Force decoder type (`beam` or `greedy`) | `auto` |
+| `--audio-max-len` | Maximum audio buffer length (seconds) | `30.0` |
+| `--audio-min-len` | Minimum audio length to process (seconds) | `0.0` |
+| `--cif-ckpt-path` | Path to CIF model for word boundary detection | `None` |
+| `--never-fire` | Never truncate incomplete words | `False` |
+| `--init-prompt` | Initial prompt for the model | `None` |
+| `--static-init-prompt` | Static prompt that doesn't scroll | `None` |
+| `--max-context-tokens` | Maximum context tokens | `None` |
+| `--model-path` | Direct path to .pt model file. Download it if not found | `./base.pt` |
+
+## 🔧 How It Works
 
 1. **Audio Capture**: Browser's MediaRecorder API captures audio in webm/opus format
 2. **Streaming**: Audio chunks are sent to the server via WebSocket
@@ -280,14 +286,14 @@ To deploy WhisperLiveKit in production:
        listen 80;
        server_name your-domain.com;
 
-       location / {
-           proxy_pass http://localhost:8000;
-           proxy_set_header Upgrade $http_upgrade;
-           proxy_set_header Connection "upgrade";
-           proxy_set_header Host $host;
-       }
-   }
-   ```
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}
+```
 
 4. **HTTPS Support**: For secure deployments, use "wss://" instead of "ws://" in WebSocket URL
 
@@ -327,6 +333,12 @@ docker start -i whisperlivekit-base
 - **Content Creation**: Transcribe podcasts or videos automatically
 - **Customer Service**: Transcribe support calls with speaker identification
 
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+**⚠️ Important**: When using the SimulStreaming backend, you must also comply with the **PolyForm Noncommercial License 1.0.0** that governs SimulStreaming. For commercial use of the SimulStreaming backend, obtain a commercial license from the [SimulStreaming authors](https://github.com/ufal/SimulStreaming#-licence-and-contributions).
+
 ## 🤝 Contributing
 
 Contributions are welcome! Here's how to get started:
@@ -341,14 +353,11 @@ Contributions are welcome! Here's how to get started:
 
 This project builds upon the foundational work of:
 - [Whisper Streaming](https://github.com/ufal/whisper_streaming)
+- [SimulStreaming](https://github.com/ufal/SimulStreaming) (BETA backend)
 - [Diart](https://github.com/juanmc2005/diart)
 - [OpenAI Whisper](https://github.com/openai/whisper)
 
 We extend our gratitude to the original authors for their contributions.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🔗 Links
 

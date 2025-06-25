@@ -25,6 +25,12 @@ setup(
         "whisper-timestamped": ["whisper-timestamped"],
         "mlx-whisper": ["mlx-whisper"],
         "openai": ["openai"],
+        "simulstreaming": [
+            "torch",
+            "tqdm",
+            "tiktoken",
+            "triton>=2.0.0,<3;platform_machine==\"x86_64\" and sys_platform==\"linux\" or sys_platform==\"linux2\"",
+        ],
     },
     package_data={
         'whisperlivekit': ['web/*.html'],
