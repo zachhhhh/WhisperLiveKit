@@ -425,8 +425,10 @@ class SimulStreamingASR(ASRBase):
             # We dont have word-level timestamps here. 1rst approach, should be improved later.
             words = text.strip().split()
             if not words:
-                return tokens                
-            duration_per_word = 0.5  # rough estimate of 0.5 seconds per word... Not so great
+                return tokens
+            
+            duration_per_word = 0.1  # this will be modified based on actual audio duration 
+            #with the SimulStreamingOnlineProcessor
             
             for i, word in enumerate(words):
                 start_time = i * duration_per_word
