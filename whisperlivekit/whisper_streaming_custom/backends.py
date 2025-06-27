@@ -14,9 +14,9 @@ from whisperlivekit.timed_objects import ASRToken
 logger = logging.getLogger(__name__)
 
 try:
-    from simul_whisper.config import AlignAttConfig
-    from simul_whisper.simul_whisper import PaddedAlignAttWhisper, DEC_PAD
-    from simul_whisper.whisper import tokenizer
+    from whisperlivekit.simul_whisper.config import AlignAttConfig
+    from whisperlivekit.simul_whisper.simul_whisper import PaddedAlignAttWhisper, DEC_PAD
+    from whisperlivekit.simul_whisper.whisper import tokenizer
     SIMULSTREAMING_AVAILABLE = True
 except ImportError:
     logger.warning("SimulStreaming dependencies not available. SimulStreaming backend will not be available.")
@@ -315,7 +315,7 @@ class SimulStreamingASR(ASRBase):
 
     def __init__(self, lan, modelsize=None, cache_dir=None, model_dir=None, logfile=sys.stderr, **kwargs):
         if not SIMULSTREAMING_AVAILABLE:
-            raise ImportError("SimulStreaming dependencies are not available. Please install SimulStreaming requirements.")
+            raise ImportError("""SimulStreaming dependencies are not available. Please install WhisperLiveKit using pip install "whisperlivekit[simulstreaming]". If you are building from source, you should also copy the content of the simul_whisper directory from the SimulStreaming repository into whisperlivekit/simul_whisper.""")
         with open("whisperlivekit/simul_whisper/dual_license_simulstreaming.md", "r") as f:
             print("*"*80 + f.read() + "*"*80)
         self.logfile = logfile

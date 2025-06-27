@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name="whisperlivekit",
-    version="0.1.9",
+    version="0.2.1",
     description="Real-time, Fully Local Whisper's Speech-to-Text and Speaker Diarization",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
@@ -34,6 +34,7 @@ setup(
     },
     package_data={
         'whisperlivekit': ['web/*.html'],
+        'whisperlivekit.simul_whisper': ['dual_license_simulstreaming.md'],
     },
     entry_points={
         'console_scripts': [
