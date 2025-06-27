@@ -316,7 +316,8 @@ class SimulStreamingASR(ASRBase):
     def __init__(self, lan, modelsize=None, cache_dir=None, model_dir=None, logfile=sys.stderr, **kwargs):
         if not SIMULSTREAMING_AVAILABLE:
             raise ImportError("SimulStreaming dependencies are not available. Please install SimulStreaming requirements.")
-        
+        with open("whisperlivekit/simul_whisper/dual_license_simulstreaming.md", "r") as f:
+            print("*"*80 + f.read() + "*"*80)
         self.logfile = logfile
         self.transcribe_kargs = {}
         self.original_language = None if lan == "auto" else lan

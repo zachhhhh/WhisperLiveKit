@@ -69,7 +69,7 @@ def backend_factory(args):
     if backend == "openai-api":
         logger.debug("Using OpenAI API.")
         asr = OpenaiApiASR(lan=args.lan)
-    elif backend == "simulstreaming-whisper":
+    elif backend == "simulstreaming":
         logger.debug("Using SimulStreaming backend.")
         if not SIMULSTREAMING_AVAILABLE:
             raise ImportError(
@@ -128,7 +128,7 @@ def backend_factory(args):
 
     language = args.lan
     if args.task == "translate":
-        if backend != "simulstreaming-whisper":
+        if backend != "simulstreaming":
             asr.set_translate_task()
         tgt_language = "en"  # Whisper translates into English
     else:
@@ -142,7 +142,7 @@ def backend_factory(args):
     return asr, tokenizer
 
 def online_factory(args, asr, tokenizer, logfile=sys.stderr):
-    if args.backend == "simulstreaming-whisper":
+    if args.backend == "simulstreaming":
         if not SIMULSTREAMING_ONLINE_AVAILABLE:
             raise ImportError("SimulStreaming online processor is not available.")
         

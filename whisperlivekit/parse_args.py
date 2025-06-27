@@ -108,7 +108,7 @@ def parse_args():
         "--backend",
         type=str,
         default="faster-whisper",
-        choices=["faster-whisper", "whisper_timestamped", "mlx-whisper", "openai-api", "simulstreaming-whisper"],
+        choices=["faster-whisper", "whisper_timestamped", "mlx-whisper", "openai-api", "simulstreaming"],
         help="Load only this backend for Whisper processing.",
     )
     parser.add_argument(
@@ -152,7 +152,7 @@ def parse_args():
     parser.add_argument("--ssl-keyfile", type=str, help="Path to the SSL private key file.", default=None)
 
     # SimulStreaming-specific arguments
-    simulstreaming_group = parser.add_argument_group('SimulStreaming arguments (only used with --backend simulstreaming-whisper)')
+    simulstreaming_group = parser.add_argument_group('SimulStreaming arguments (only used with --backend simulstreaming)')
     
     simulstreaming_group.add_argument(
         "--frame-threshold",

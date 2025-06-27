@@ -15,7 +15,7 @@
 
 ## 🚀 Overview
 
-This project is based on [Whisper Streaming](https://github.com/ufal/whisper_streaming) and [SimulStreaming](https://github.com/ufal/SimulStreaming), allowing you to transcribe audio directly from your browser. WhisperLiveKit provides a complete backend solution for real-time speech transcription with a functional, simple and customizable frontend. Everything runs locally on your machine ✨
+This project is based on [WhisperStreaming](https://github.com/ufal/whisper_streaming) and [SimulStreaming](https://github.com/ufal/SimulStreaming), allowing you to transcribe audio directly from your browser. WhisperLiveKit provides a complete backend solution for real-time speech transcription with a functional, simple and customizable frontend. Everything runs locally on your machine ✨
 
 ### 🔄 Architecture
 
@@ -35,7 +35,7 @@ WhisperLiveKit consists of three main components:
 - **✅ Confidence Validation** – Immediately validate high-confidence tokens for faster inference (WhisperStreaming only)
 - **👁️ Buffering Preview** – Displays unvalidated transcription segments (not compatible with SimulStreaming yet)
 - **✒️ Punctuation-Based Speaker Splitting [BETA]** - Align speaker changes with natural sentence boundaries for more readable transcripts
-- **⚡ SimulStreaming Backend** - Ultra-low latency transcription using state-of-the-art AlignAtt policy. To use, please copy [simul_whisper](https://github.com/ufal/SimulStreaming/tree/main/simul_whisper) content into `whisperlivekit/simul_whisper` . You must comply with the [Polyform license](https://github.com/ufal/SimulStreaming/blob/main/LICENCE.txt) !!
+- **⚡ SimulStreaming Backend** - Ultra-low latency transcription using state-of-the-art AlignAtt policy. The code is not directly included in the repo : To use, please copy [simul_whisper](https://github.com/ufal/SimulStreaming/tree/main/simul_whisper) content into `whisperlivekit/simul_whisper` . ⚠️ You must comply with the [Polyform license](https://github.com/ufal/SimulStreaming/blob/main/LICENCE.txt)
 
 
 ## 📖 Quick Start
@@ -132,7 +132,7 @@ whisperlivekit-server --model tiny.en
 whisperlivekit-server --host 0.0.0.0 --port 8000 --model medium --diarization --language auto
 
 # SimulStreaming backend for ultra-low latency
-whisperlivekit-server --backend simulstreaming-whisper --model large-v3 --frame-threshold 20
+whisperlivekit-server --backend simulstreaming --model large-v3 --frame-threshold 20
 ```
 
 
