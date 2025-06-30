@@ -154,6 +154,7 @@ class OnlineASRProcessor:
         self.buffer_time_offset = offset if offset is not None else 0.0
         self.transcript_buffer.last_committed_time = self.buffer_time_offset
         self.committed: List[ASRToken] = []
+        self.time_of_last_asr_output = 0.0
 
     def get_audio_buffer_end_time(self) -> float:
         """Returns the absolute end time of the current audio_buffer."""
@@ -210,10 +211,25 @@ class OnlineASRProcessor:
         self.transcript_buffer.insert(tokens, self.buffer_time_offset)
         committed_tokens = self.transcript_buffer.flush()
         self.committed.extend(committed_tokens)
+
+        if committed_tokens:
+            self.time_of_last_asr_output = self.committed[-1].end
+
         completed = self.concatenate_tokens(committed_tokens)
         logger.debug(f">>>> COMPLETE NOW: {completed.text}")
         incomp = self.concatenate_tokens(self.transcript_buffer.buffer)
         logger.debug(f"INCOMPLETE: {incomp.text}")
+
+        buffer_duration = len(self.audio_buffer) / self.SAMPLING_RATE
+        if not committed_tokens and buffer_duration > self.buffer_trimming_sec:
+            time_since_last_output = self.get_audio_buffer_end_time() - self.time_of_last_asr_output
+            if time_since_last_output > self.buffer_trimming_sec:
+                logger.warning(
+                    f"No ASR output for {time_since_last_output:.2f}s. "
+                    f"Resetting buffer to prevent freezing."
+                )
+                self.init(offset=self.get_audio_buffer_end_time())
+                return [], current_audio_processed_upto
 
         if committed_tokens and self.buffer_trimming_way == "sentence":
             if len(self.audio_buffer) / self.SAMPLING_RATE > self.buffer_trimming_sec:

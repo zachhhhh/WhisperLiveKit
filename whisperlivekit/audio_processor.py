@@ -233,14 +233,6 @@ class AudioProcessor:
                 buffer_size = max(int(32000 * elapsed_time), 4096)
                 beg = current_time
 
-                # Detect idle state much more quickly
-                if current_time - self.last_ffmpeg_activity > self.ffmpeg_max_idle_time:
-                    logger.warning(f"FFmpeg process idle for {current_time - self.last_ffmpeg_activity:.2f}s. Restarting...")
-                    await self.restart_ffmpeg()
-                    beg = time()
-                    self.last_ffmpeg_activity = time()
-                    continue
-
                 chunk = await loop.run_in_executor(None, self.ffmpeg_process.stdout.read, buffer_size)
                 if chunk:
                     self.last_ffmpeg_activity = time()
@@ -554,9 +546,9 @@ class AudioProcessor:
                             logger.info(f"{task_name} completed normally.")
                 
                 ffmpeg_idle_time = current_time - self.last_ffmpeg_activity
-                if ffmpeg_idle_time > 15:
+                if ffmpeg_idle_time > 10:
                     logger.warning(f"FFmpeg idle for {ffmpeg_idle_time:.2f}s - may need attention.")
-                    if ffmpeg_idle_time > 30 and not self.is_stopping:
+                    if ffmpeg_idle_time > 15 and not self.is_stopping:
                         logger.error("FFmpeg idle for too long and not in stopping phase, forcing restart.")
                         await self.restart_ffmpeg()
             except asyncio.CancelledError:
