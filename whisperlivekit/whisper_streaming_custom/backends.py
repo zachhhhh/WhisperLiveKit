@@ -12,6 +12,11 @@ import numpy as np
 from whisperlivekit.timed_objects import ASRToken
 
 logger = logging.getLogger(__name__)
+SIMULSTREAMING_ERROR_AND_INSTALLATION_INSTRUCTIONS = ImportError(
+"""SimulStreaming dependencies are not available.
+Please install WhisperLiveKit using pip install "whisperlivekit[simulstreaming]".
+If you are building from source, you should also copy the content of the https://github.com/ufal/SimulStreaming/tree/main/simul_whisper directory into whisperlivekit/simul_whisper.
+""")
 
 try:
     from whisperlivekit.simul_whisper.config import AlignAttConfig
@@ -315,7 +320,7 @@ class SimulStreamingASR(ASRBase):
 
     def __init__(self, lan, modelsize=None, cache_dir=None, model_dir=None, logfile=sys.stderr, **kwargs):
         if not SIMULSTREAMING_AVAILABLE:
-            raise ImportError("""SimulStreaming dependencies are not available. Please install WhisperLiveKit using pip install "whisperlivekit[simulstreaming]". If you are building from source, you should also copy the content of the simul_whisper directory from the SimulStreaming repository into whisperlivekit/simul_whisper.""")
+            raise SIMULSTREAMING_ERROR_AND_INSTALLATION_INSTRUCTIONS
         with open("whisperlivekit/simul_whisper/dual_license_simulstreaming.md", "r") as f:
             print("*"*80 + f.read() + "*"*80)
         self.logfile = logfile

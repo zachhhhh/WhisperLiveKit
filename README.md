@@ -13,32 +13,32 @@
 <a href="https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-dark_green"></a>
 </p>
 
-## 🚀 Overview
+## Overview
 
 This project is based on [WhisperStreaming](https://github.com/ufal/whisper_streaming) and [SimulStreaming](https://github.com/ufal/SimulStreaming), allowing you to transcribe audio directly from your browser. WhisperLiveKit provides a complete backend solution for real-time speech transcription with a functional, simple and customizable frontend. Everything runs locally on your machine ✨
 
-### 🔄 Architecture
+### Architecture
 
 WhisperLiveKit consists of three main components:
 
-- **Frontend**: A basic html + JS interface that captures microphone audio and streams it to the backend via WebSockets. You can use and adapt the provided template at [whisperlivekit/web/live_transcription.html](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html).
+- **Frontend**: A basic html + JS interface that captures microphone audio and streams it to the backend via WebSockets. You can use and adapt the [provided template](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html).
 - **Backend (Web Server)**: A FastAPI-based WebSocket server that receives streamed audio data, processes it in real time, and returns transcriptions to the frontend. This is where the WebSocket logic and routing live.
 - **Core Backend (Library Logic)**: A server-agnostic core that handles audio processing, ASR, and diarization. It exposes reusable components that take in audio bytes and return transcriptions.
 
 
-### ✨ Key Features
+### Key Features
 
-- **🎙️ Real-time Transcription** - Locally (or on-prem) convert speech to text instantly as you speak
-- **👥 Speaker Diarization** - Identify different speakers in real-time using [Diart](https://github.com/juanmc2005/diart)
-- **🌐 Multi-User Support** - Handle multiple users simultaneously with a single backend/server
-- **🔇 Automatic Silence Chunking** – Automatically chunks when no audio is detected to limit buffer size
-- **✅ Confidence Validation** – Immediately validate high-confidence tokens for faster inference (WhisperStreaming only)
-- **👁️ Buffering Preview** – Displays unvalidated transcription segments (not compatible with SimulStreaming yet)
-- **✒️ Punctuation-Based Speaker Splitting [BETA]** - Align speaker changes with natural sentence boundaries for more readable transcripts
-- **⚡ SimulStreaming Backend** - Ultra-low latency transcription using state-of-the-art AlignAtt policy. The code is not directly included in the repo : To use, please copy [simul_whisper](https://github.com/ufal/SimulStreaming/tree/main/simul_whisper) content into `whisperlivekit/simul_whisper` . ⚠️ You must comply with the [Polyform license](https://github.com/ufal/SimulStreaming/blob/main/LICENCE.txt)
+- **Real-time Transcription** - Locally (or on-prem) convert speech to text instantly as you speak
+- **Speaker Diarization** - Identify different speakers in real-time using [Diart](https://github.com/juanmc2005/diart)
+- **Multi-User Support** - Handle multiple users simultaneously with a single backend/server
+- **Automatic Silence Chunking** – Automatically chunks when no audio is detected to limit buffer size
+- **Confidence Validation** – Immediately validate high-confidence tokens for faster inference (WhisperStreaming only)
+- **Buffering Preview** – Displays unvalidated transcription segments (not compatible with SimulStreaming yet)
+- **Punctuation-Based Speaker Splitting [BETA]** - Align speaker changes with natural sentence boundaries for more readable transcripts
+- **SimulStreaming Backend** - Ultra-low latency transcription using state-of-the-art AlignAtt policy. The code is not directly included in the repo : To use, please copy [simul_whisper](https://github.com/ufal/SimulStreaming/tree/main/simul_whisper) content into `whisperlivekit/simul_whisper` . ⚠️ You must comply with the [Polyform license](https://github.com/ufal/SimulStreaming/blob/main/LICENCE.txt)
 
 
-## 📖 Quick Start
+## Quick Start
 
 ```bash
 # Install the package
@@ -53,25 +53,19 @@ whisperlivekit-server --model tiny.en
 
 That's it! Start speaking and watch your words appear on screen.
 
-## 🛠️ Installation Options
-
-### Install from PyPI (Recommended)
+## Installation
 
 ```bash
+#Install from PyPI (Recommended)
 pip install whisperlivekit
-```
 
-### Install from Source
-
-```bash
+#Install from Source
 git clone https://github.com/QuentinFuxa/WhisperLiveKit
 cd WhisperLiveKit
 pip install -e .
 ```
 
-### System Dependencies
-
-FFmpeg is required:
+### FFmpeg Dependency
 
 ```bash
 # Ubuntu/Debian
@@ -140,40 +134,30 @@ whisperlivekit-server --backend simulstreaming --model large-v3 --frame-threshol
 Check [basic_server.py](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/basic_server.py) for a complete example.
 
 ```python
-from whisperlivekit import TranscriptionEngine, AudioProcessor, get_web_interface_html, parse_args
+from whisperlivekit import TranscriptionEngine, AudioProcessor, parse_args
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from contextlib import asynccontextmanager
 import asyncio
 
-# Global variable for the transcription engine
 transcription_engine = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global transcription_engine
-    # Example: Initialize with specific parameters directly
+    transcription_engine = TranscriptionEngine(model="medium", diarization=True, lan="en")
     # You can also load from command-line arguments using parse_args()
     # args = parse_args()
     # transcription_engine = TranscriptionEngine(**vars(args))
-    transcription_engine = TranscriptionEngine(model="medium", diarization=True, lan="en")
     yield
 
 app = FastAPI(lifespan=lifespan)
 
-# Serve the web interface
-@app.get("/")
-async def get():
-    return HTMLResponse(get_web_interface_html())
-
 # Process WebSocket connections
 async def handle_websocket_results(websocket: WebSocket, results_generator):
-    try:
-        async for response in results_generator:
-            await websocket.send_json(response)
-        await websocket.send_json({"type": "ready_to_stop"})
-    except WebSocketDisconnect:
-        print("WebSocket disconnected during results handling.")
+    async for response in results_generator:
+        await websocket.send_json(response)
+    await websocket.send_json({"type": "ready_to_stop"})
 
 @app.websocket("/asr")
 async def websocket_endpoint(websocket: WebSocket):
@@ -182,33 +166,19 @@ async def websocket_endpoint(websocket: WebSocket):
     # Create a new AudioProcessor for each connection, passing the shared engine
     audio_processor = AudioProcessor(transcription_engine=transcription_engine)    
     results_generator = await audio_processor.create_tasks()
-    send_results_to_client = handle_websocket_results(websocket, results_generator)
-    results_task = asyncio.create_task(send_results_to_client)
+    results_task = asyncio.create_task(handle_websocket_results(websocket, results_generator))
     await websocket.accept()
-    try:
-        while True:
-            message = await websocket.receive_bytes()
-            await audio_processor.process_audio(message)        
-    except WebSocketDisconnect:
-        print(f"Client disconnected: {websocket.client}")
-    except Exception as e:
-        await websocket.close(code=1011, reason=f"Server error: {e}")
-    finally:
-        results_task.cancel()
-        try:
-            await results_task
-        except asyncio.CancelledError:
-            logger.info("Results task successfully cancelled.")
+    while True:
+        message = await websocket.receive_bytes()
+        await audio_processor.process_audio(message)        
 ```
 
 ### Frontend Implementation
 
-The package includes a simple HTML/JavaScript implementation that you can adapt for your project. You can find it in `whisperlivekit/web/live_transcription.html`, or load its content using the `get_web_interface_html()` function from `whisperlivekit`:
+The package includes a simple HTML/JavaScript implementation that you can adapt for your project. You can find it [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html), or load its content using `get_web_interface_html()` :
 
 ```python
 from whisperlivekit import get_web_interface_html
-
-# ... later in your code where you need the HTML string ...
 html_content = get_web_interface_html()
 ```
 
@@ -257,11 +227,8 @@ WhisperLiveKit offers extensive configuration options:
 
 1. **Audio Capture**: Browser's MediaRecorder API captures audio in webm/opus format
 2. **Streaming**: Audio chunks are sent to the server via WebSocket
-3. **Processing**: Server decodes audio with FFmpeg and streams into Whisper for transcription
-4. **Real-time Output**: 
-   - Partial transcriptions appear immediately in light gray (the 'aperçu')
-   - Finalized text appears in normal color
-   - (When enabled) Different speakers are identified and highlighted
+3. **Processing**: Server decodes audio with FFmpeg and streams into the model for transcription
+4. **Real-time Output**: Partial transcriptions appear immediately in light gray (the 'aperçu') and finalized text appears in normal color
 
 ## 🚀 Deployment Guide
 
@@ -291,17 +258,14 @@ To deploy WhisperLiveKit in production:
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
-    }
-}
-```
+    }}
 
 4. **HTTPS Support**: For secure deployments, use "wss://" instead of "ws://" in WebSocket URL
 
 ### 🐋 Docker
 
-A basic Dockerfile is provided which allows re-use of Python package installation options. See below usage examples:
+A basic Dockerfile is provided which allows re-use of Python package installation options. ⚠️ For **large** models, ensure that your **docker runtime** has enough **memory** available. See below usage examples:
 
-**NOTE:** For **larger** models, ensure that your **docker runtime** has enough **memory** available.
 
 #### All defaults
 - Create a reusable image with only the basics and then run as a named container:
@@ -327,40 +291,11 @@ docker start -i whisperlivekit-base
   - `HF_TOKEN="./token"` - Add your Hugging Face Hub access token to download gated models
 
 ## 🔮 Use Cases
-
-- **Meeting Transcription**: Capture discussions in real-time
-- **Accessibility Tools**: Help hearing-impaired users follow conversations
-- **Content Creation**: Transcribe podcasts or videos automatically
-- **Customer Service**: Transcribe support calls with speaker identification
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-**⚠️ Important**: When using the SimulStreaming backend, you must also comply with the **PolyForm Noncommercial License 1.0.0** that governs SimulStreaming. For commercial use of the SimulStreaming backend, obtain a commercial license from the [SimulStreaming authors](https://github.com/ufal/SimulStreaming#-licence-and-contributions).
-
-## 🤝 Contributing
-
-Contributions are welcome! Here's how to get started:
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to your branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+Capture discussions in real-time for meeting transcription, help hearing-impaired users follow conversations through accessibility tools, transcribe podcasts or videos automatically for content creation, transcribe support calls with speaker identification for customer service...
 
 ## 🙏 Acknowledgments
 
-This project builds upon the foundational work of:
-- [Whisper Streaming](https://github.com/ufal/whisper_streaming)
-- [SimulStreaming](https://github.com/ufal/SimulStreaming) (BETA backend)
-- [Diart](https://github.com/juanmc2005/diart)
-- [OpenAI Whisper](https://github.com/openai/whisper)
+We extend our gratitude to the original authors of:
 
-We extend our gratitude to the original authors for their contributions.
-
-## 🔗 Links
-
-- [GitHub Repository](https://github.com/QuentinFuxa/WhisperLiveKit)
-- [PyPI Package](https://pypi.org/project/whisperlivekit/)
-- [Issue Tracker](https://github.com/QuentinFuxa/WhisperLiveKit/issues)
+| [Whisper Streaming](https://github.com/ufal/whisper_streaming)  | [SimulStreaming](https://github.com/ufal/SimulStreaming) | [Diart](https://github.com/juanmc2005/diart) | [OpenAI Whisper](https://github.com/openai/whisper) |
+| -------- | ------- | -------- | ------- |

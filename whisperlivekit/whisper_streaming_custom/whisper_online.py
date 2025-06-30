@@ -5,7 +5,7 @@ import librosa
 from functools import lru_cache
 import time
 import logging
-from .backends import FasterWhisperASR, MLXWhisper, WhisperTimestampedASR, OpenaiApiASR, SimulStreamingASR, SIMULSTREAMING_AVAILABLE
+from .backends import FasterWhisperASR, MLXWhisper, WhisperTimestampedASR, OpenaiApiASR, SimulStreamingASR, SIMULSTREAMING_AVAILABLE, SIMULSTREAMING_ERROR_AND_INSTALLATION_INSTRUCTIONS
 from .online_asr import OnlineASRProcessor, VACOnlineASRProcessor, SimulStreamingOnlineProcessor, SIMULSTREAMING_AVAILABLE as SIMULSTREAMING_ONLINE_AVAILABLE
 
 logger = logging.getLogger(__name__)
@@ -72,10 +72,7 @@ def backend_factory(args):
     elif backend == "simulstreaming":
         logger.debug("Using SimulStreaming backend.")
         if not SIMULSTREAMING_AVAILABLE:
-            raise ImportError(
-                "SimulStreaming backend is not available. Please install SimulStreaming dependencies. "
-                "See the documentation for installation instructions."
-            )
+            raise SIMULSTREAMING_ERROR_AND_INSTALLATION_INSTRUCTIONS
         
         simulstreaming_kwargs = {}
         for attr in ['frame_threshold', 'beams', 'decoder_type', 'audio_max_len', 'audio_min_len', 
@@ -144,7 +141,7 @@ def backend_factory(args):
 def online_factory(args, asr, tokenizer, logfile=sys.stderr):
     if args.backend == "simulstreaming":
         if not SIMULSTREAMING_ONLINE_AVAILABLE:
-            raise ImportError("SimulStreaming online processor is not available.")
+            raise SIMULSTREAMING_ERROR_AND_INSTALLATION_INSTRUCTIONS
         
         logger.debug("Creating SimulStreaming online processor")
         online = SimulStreamingOnlineProcessor(
