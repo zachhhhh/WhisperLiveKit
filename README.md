@@ -281,7 +281,7 @@ To deploy WhisperLiveKit in production:
    - Ensure WebSocket connection points to your server's address
 
 3. **Nginx Configuration** (recommended for production):
-   ```nginx
+```nginx
    server {
        listen 80;
        server_name your-domain.com;
@@ -324,7 +324,7 @@ docker start -i whisperlivekit-base
 - `--build-arg` Options:
   - `EXTRAS="whisper-timestamped"` - Add extras to the image's installation (no spaces). Remember to set necessary container options!
   - `HF_PRECACHE_DIR="./.cache/"` - Pre-load a model cache for faster first-time start
-  - `HF_TOKEN="./token"` - Add your Hugging Face Hub access token to download gated models
+  - `HF_TKN_FILE="./token"` - Add your Hugging Face Hub access token to download gated models
 
 ## 🔮 Use Cases
 
