@@ -167,6 +167,9 @@ class AudioProcessor:
                 if state == FFmpegState.FAILED:
                     logger.error("FFmpeg is in FAILED state, cannot read data")
                     break
+                elif state == FFmpegState.STOPPED:
+                    logger.info("FFmpeg is stopped")
+                    break
                 elif state != FFmpegState.RUNNING:
                     logger.warning(f"FFmpeg is in {state} state, waiting...")
                     await asyncio.sleep(0.5)
