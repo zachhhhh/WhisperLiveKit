@@ -484,7 +484,8 @@ class SimulStreamingASR(ASRBase):
         try:
             if isinstance(audio, np.ndarray):
                 audio = torch.from_numpy(audio).float()
-            self.model.infer(audio, True)
+            self.model.insert_audio(audio)
+            self.model.infer(True)
             self.model.refresh_segment(complete=True)
             logger.info("SimulStreaming model warmed up successfully")
         except Exception as e:
