@@ -35,7 +35,7 @@ WhisperLiveKit consists of three main components:
 - **Confidence Validation** – Immediately validate high-confidence tokens for faster inference (WhisperStreaming only)
 - **Buffering Preview** – Displays unvalidated transcription segments (not compatible with SimulStreaming yet)
 - **Punctuation-Based Speaker Splitting [BETA]** - Align speaker changes with natural sentence boundaries for more readable transcripts
-- **SimulStreaming Backend** - Ultra-low latency transcription using state-of-the-art AlignAtt policy. The code is not directly included in the repo : To use, please copy [simul_whisper](https://github.com/ufal/SimulStreaming/tree/main/simul_whisper) content into `whisperlivekit/simul_whisper` . ⚠️ You must comply with the [Polyform license](https://github.com/ufal/SimulStreaming/blob/main/LICENCE.txt)
+- **SimulStreaming Backend** - Ultra-low latency transcription using state-of-the-art AlignAtt policy. The code is not directly included in the repo : To use, please copy [whisper](https://github.com/ufal/SimulStreaming/tree/main/simul_whisper/whisper) folder into `whisperlivekit/simul_whisper/` . ⚠️ You must comply with the [Polyform license](https://github.com/ufal/SimulStreaming/blob/main/LICENCE.txt)
 
 
 ## Quick Start

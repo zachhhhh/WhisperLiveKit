@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 # simulStreaming imports - we check if the files are here
 try:
     import torch
-    from simul_whisper.config import AlignAttConfig
+    from whisperlivekit.simul_whisper.config import AlignAttConfig
     SIMULSTREAMING_AVAILABLE = True
 except ImportError:
     logger.warning("SimulStreaming dependencies not available for online processor.")
