@@ -68,7 +68,7 @@ class FFmpegManager:
         self._write_queue = asyncio.Queue(maxsize=100)
         self._write_task: Optional[asyncio.Task] = None
         self._monitor_task: Optional[asyncio.Task] = None
-        
+        self._stderr_task : Optional[asyncio.Task] = None
         self.last_activity = time.time()
         self.on_data_callback: Optional[Callable] = None
         self.on_error_callback: Optional[Callable] = None
@@ -104,6 +104,7 @@ class FFmpegManager:
             # Start background tasks
             self._write_task = asyncio.create_task(self._write_worker())
             self._monitor_task = asyncio.create_task(self._monitor_health())
+            self._stderr_task = asyncio.create_task(self._read_stderr())
             
             async with self.state_lock:
                 self.state = FFmpegState.RUNNING
@@ -461,6 +462,32 @@ class FFmpegManager:
                 logger.error(f"Error in health monitor: {e}")
                 logger.error(traceback.format_exc())
                 await asyncio.sleep(5)
+    
+    async def _read_stderr(self):
+        """Reads from FFmpeg's stderr to prevent buffer overflow."""
+        logger.info("FFmpeg stderr reader started.")
+        while not self._stop_requested.is_set():
+            if not self.process or not self.process.stderr:
+                await asyncio.sleep(0.5)
+                continue
+
+            try:
+                loop = asyncio.get_event_loop()
+                line = await asyncio.wait_for(
+                    loop.run_in_executor(self.executor, self.process.stderr.readline),
+                    timeout=1.0
+                )
+                if line:
+                    logger.debug(f"FFmpeg stderr: {line.decode(errors='ignore').strip()}")
+            except asyncio.TimeoutError:
+                continue
+            except asyncio.CancelledError:
+                logger.info("FFmpeg stderr reader cancelled.")
+                break
+            except Exception as e:
+                if not self._stop_requested.is_set():
+                    logger.error(f"Error reading FFmpeg stderr: {e}")
+                await asyncio.sleep(1)
     
     def __del__(self):
         """Cleanup resources."""
