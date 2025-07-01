@@ -29,7 +29,7 @@ RUN pip install torch torchvision torchaudio --index-url https://download.pytorc
 COPY . .
 
 # Install WhisperLiveKit directly, allowing for optional dependencies
-#   Note: For gates modedls, need to add your HF toke. See README.md
+#   Note: For gates models, need to add your HF toke. See README.md
 #         for more details.
 RUN if [ -n "$EXTRAS" ]; then \
       echo "Installing with extras: [$EXTRAS]"; \
