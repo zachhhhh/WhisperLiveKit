@@ -10,7 +10,7 @@
 <a href="https://pypi.org/project/whisperlivekit/"><img alt="PyPI Version" src="https://img.shields.io/pypi/v/whisperlivekit?color=g"></a>
 <a href="https://pepy.tech/project/whisperlivekit"><img alt="PyPI Downloads" src="https://static.pepy.tech/personalized-badge/whisperlivekit?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=downloads"></a>
 <a href="https://pypi.org/project/whisperlivekit/"><img alt="Python Versions" src="https://img.shields.io/badge/python-3.9--3.13-dark_green"></a>
-<a href="https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-dark_green"></a>
+<a href="https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT/Dual Licensed-dark_green"></a>
 </p>
 
 ## Overview
@@ -35,7 +35,7 @@ WhisperLiveKit consists of three main components:
 - **Confidence Validation** – Immediately validate high-confidence tokens for faster inference (WhisperStreaming only)
 - **Buffering Preview** – Displays unvalidated transcription segments (not compatible with SimulStreaming yet)
 - **Punctuation-Based Speaker Splitting [BETA]** - Align speaker changes with natural sentence boundaries for more readable transcripts
-- **SimulStreaming Backend** - Ultra-low latency transcription using state-of-the-art AlignAtt policy. ⚠️ SimulStreaming is [dual-licensed](https://github.com/ufal/SimulStreaming#-licence-and-contributions)
+- **SimulStreaming Backend** - [Dual-licensed](https://github.com/ufal/SimulStreaming#-licence-and-contributions) - Ultra-low latency transcription using SOTA AlignAtt policy. 
 
 ## Quick Start
 
