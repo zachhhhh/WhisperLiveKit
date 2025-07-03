@@ -40,6 +40,7 @@ setup(
     entry_points={
         'console_scripts': [
             'whisperlivekit-server=whisperlivekit.basic_server:main',
+            'whisperlivekit-download-simulstreaming=whisperlivekit.download_simulstreaming_backend:main',
         ],
     },
     classifiers=[

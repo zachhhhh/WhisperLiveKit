@@ -24,7 +24,10 @@ def download_files_from_github(api_url, local_dir):
             # Recursive call for subdirectories
             download_files_from_github(item['url'], os.path.join(local_dir, item['name']))
 
-if __name__ == "__main__":
+def main():
     print(f"Downloading files into {TARGET_DIR} ...")
     download_files_from_github(GITHUB_API_URL, TARGET_DIR)
     print("✅ Download completed successfully.")
+
+if __name__ == "__main__":
+    main()
