@@ -14,8 +14,7 @@ from whisperlivekit.timed_objects import ASRToken
 logger = logging.getLogger(__name__)
 SIMULSTREAMING_ERROR_AND_INSTALLATION_INSTRUCTIONS = ImportError(
 """SimulStreaming dependencies are not available.
-Please install WhisperLiveKit using pip install "whisperlivekit[simulstreaming]".
-If you are building from source, you should also copy the content of the https://github.com/ufal/SimulStreaming/tree/main/simul_whisper directory into whisperlivekit/simul_whisper.
+Please install WhisperLiveKit using pip install "whisperlivekit[simulstreaming]"
 """)
 
 try:
@@ -24,12 +23,22 @@ try:
     from whisperlivekit.simul_whisper.whisper import tokenizer
     SIMULSTREAMING_AVAILABLE = True
 except ImportError:
-    logger.warning("SimulStreaming dependencies not available. SimulStreaming backend will not be available.")
-    SIMULSTREAMING_AVAILABLE = False
-    AlignAttConfig = None
-    PaddedAlignAttWhisper = None
-    DEC_PAD = None
-    tokenizer = None
+    logger.warning("⚠️ SimulStreaming dependencies not available. Attempting to download them.")
+    try:
+        from whisperlivekit import download_simulstreaming_backend
+        download_simulstreaming_backend()
+        from whisperlivekit.simul_whisper.config import AlignAttConfig
+        from whisperlivekit.simul_whisper.simul_whisper import PaddedAlignAttWhisper, DEC_PAD
+        from whisperlivekit.simul_whisper.whisper import tokenizer
+        SIMULSTREAMING_AVAILABLE = True
+        logger.info("SimulStreaming dependencies downloaded successfully.")
+    except Exception as e:
+        logger.error(f"Failed to download or import SimulStreaming dependencies: {e}")
+        SIMULSTREAMING_AVAILABLE = False
+        AlignAttConfig = None
+        PaddedAlignAttWhisper = None
+        DEC_PAD = None
+        tokenizer = None
 
 class ASRBase:
     sep = " "  # join transcribe words with this character (" " for whisper_timestamped,
