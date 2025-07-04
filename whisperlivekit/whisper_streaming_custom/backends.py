@@ -325,7 +325,7 @@ class OpenaiApiASR(ASRBase):
 
 class SimulStreamingASR(ASRBase):
     """SimulStreaming backend with AlignAtt policy."""
-    sep = " "
+    sep = ""
 
     def __init__(self, lan, modelsize=None, cache_dir=None, model_dir=None, logfile=sys.stderr, **kwargs):
         if not SIMULSTREAMING_AVAILABLE:
