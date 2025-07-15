@@ -325,12 +325,12 @@ class AudioProcessor:
                 await diarization_obj.diarize(pcm_array)
                 
                 async with self.lock:
-                    new_end = diarization_obj.assign_speakers_to_tokens(
-                        self.end_attributed_speaker, 
+                    self.tokens = diarization_obj.assign_speakers_to_tokens(
                         self.tokens,
                         use_punctuation_split=self.args.punctuation_split
                     )
-                    self.end_attributed_speaker = new_end
+                    if len(self.tokens) > 0:
+                        self.end_attributed_speaker = max(self.tokens[-1].end, self.end_attributed_speaker)
                     if buffer_diarization:
                         self.buffer_diarization = buffer_diarization
                 
