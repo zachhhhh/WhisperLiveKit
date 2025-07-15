@@ -23,22 +23,11 @@ try:
     from whisperlivekit.simul_whisper.whisper import tokenizer
     SIMULSTREAMING_AVAILABLE = True
 except ImportError:
-    logger.warning("⚠️ SimulStreaming dependencies not available. Attempting to download them.")
-    try:
-        from whisperlivekit import download_simulstreaming_backend
-        download_simulstreaming_backend()
-        from whisperlivekit.simul_whisper.config import AlignAttConfig
-        from whisperlivekit.simul_whisper.simul_whisper import PaddedAlignAttWhisper, DEC_PAD
-        from whisperlivekit.simul_whisper.whisper import tokenizer
-        SIMULSTREAMING_AVAILABLE = True
-        logger.info("SimulStreaming dependencies downloaded successfully.")
-    except Exception as e:
-        logger.error(f"Failed to download or import SimulStreaming dependencies: {e}")
-        SIMULSTREAMING_AVAILABLE = False
-        AlignAttConfig = None
-        PaddedAlignAttWhisper = None
-        DEC_PAD = None
-        tokenizer = None
+    SIMULSTREAMING_AVAILABLE = False
+    AlignAttConfig = None
+    PaddedAlignAttWhisper = None
+    DEC_PAD = None
+    tokenizer = None
 
 class ASRBase:
     sep = " "  # join transcribe words with this character (" " for whisper_timestamped,
