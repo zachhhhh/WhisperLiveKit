@@ -165,7 +165,7 @@ class WebSocketAudioSource(AudioSource):
 
 
 class DiartDiarization:
-    def __init__(self, sample_rate: int = 16000, config : SpeakerDiarizationConfig = None, use_microphone: bool = False, block_duration: float = 0.5, segmentation_model_name: str = "pyannote/segmentation-3.0", embedding_model_name: str = "speechbrain/spkrec-ecapa-voxceleb"):
+    def __init__(self, sample_rate: int = 16000, config : SpeakerDiarizationConfig = None, use_microphone: bool = False, block_duration: float = 1.5, segmentation_model_name: str = "pyannote/segmentation-3.0", embedding_model_name: str = "pyannote/embedding"):
         segmentation_model = m.SegmentationModel.from_pretrained(segmentation_model_name)
         embedding_model = m.EmbeddingModel.from_pretrained(embedding_model_name)
         
@@ -206,8 +206,7 @@ class DiartDiarization:
         """
         if self.custom_source:
             self.custom_source.push_audio(pcm_array)            
-        self.observer.clear_old_segments()        
-        return self.observer.get_segments()
+        # self.observer.clear_old_segments()        
 
     def close(self):
         """Close the audio source."""
@@ -231,7 +230,15 @@ class DiartDiarization:
         
         if not self.lag_diart and segments and tokens:
             self.lag_diart = segments[0].start - tokens[0].start
-        tokens = add_speaker_to_tokens(segments, tokens)
+        
+        if not use_punctuation_split:
+            for token in tokens:
+                for segment in segments:
+                    if not (segment.end <= token.start + self.lag_diart or segment.start >= token.end + self.lag_diart):
+                        token.speaker = extract_number(segment.speaker) + 1
+                        end_attributed_speaker = max(token.end, end_attributed_speaker)
+        else:
+            tokens = add_speaker_to_tokens(segments, tokens)
         return tokens
         
 def concatenate_speakers(segments):
@@ -242,16 +249,15 @@ def concatenate_speakers(segments):
             segments_concatenated.append({"speaker": speaker, "begin": segment.start, "end": segment.end})
         else:
             segments_concatenated[-1]['end'] = segment.end
-    print("Segments concatenated:")
-    for entry in segments_concatenated:
-        print(f"Speaker {entry['speaker']}: {entry['begin']:.2f}s - {entry['end']:.2f}s")   
+    # print("Segments concatenated:")
+    # for entry in segments_concatenated:
+    #     print(f"Speaker {entry['speaker']}: {entry['begin']:.2f}s - {entry['end']:.2f}s")   
     return segments_concatenated
 
 
 def add_speaker_to_tokens(segments, tokens):
     """
     Assign speakers to tokens based on diarization segments, with punctuation-aware boundary adjustment.
-    Refactored for clarity; behavior unchanged.
     """
     punctuation_marks = {'.', '!', '?'}
     punctuation_tokens = [token for token in tokens if token.text.strip() in punctuation_marks]
@@ -284,10 +290,10 @@ def add_speaker_to_tokens(segments, tokens):
             if token.end <= segment['end']:
                 token.speaker = segment['speaker']
                 ind_last_speaker = i + 1
-                print(
-                    f"Token '{token.text}' ('begin': {token.start:.2f}, 'end': {token.end:.2f}) "
-                    f"assigned to Speaker {segment['speaker']} ('segment': {segment['begin']:.2f}-{segment['end']:.2f})"
-                )
+                # print(
+                #     f"Token '{token.text}' ('begin': {token.start:.2f}, 'end': {token.end:.2f}) "
+                #     f"assigned to Speaker {segment['speaker']} ('segment': {segment['begin']:.2f}-{segment['end']:.2f})"
+                # )
             elif token.start > segment['end']:
                 break
     return tokens
