@@ -236,7 +236,6 @@ class DiartDiarization:
                 for segment in segments:
                     if not (segment.end <= token.start + self.lag_diart or segment.start >= token.end + self.lag_diart):
                         token.speaker = extract_number(segment.speaker) + 1
-                        end_attributed_speaker = max(token.end, end_attributed_speaker)
         else:
             tokens = add_speaker_to_tokens(segments, tokens)
         return tokens
