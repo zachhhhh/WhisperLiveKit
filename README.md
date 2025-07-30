@@ -247,7 +247,7 @@ To deploy WhisperLiveKit in production:
    - Ensure WebSocket connection points to your server's address
 
 3. **Nginx Configuration** (recommended for production):
-```nginx
+    ```nginx    
    server {
        listen 80;
        server_name your-domain.com;
@@ -258,6 +258,7 @@ To deploy WhisperLiveKit in production:
         proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
     }}
+    ```
 
 4. **HTTPS Support**: For secure deployments, use "wss://" instead of "ws://" in WebSocket URL
 
@@ -268,21 +269,21 @@ A basic Dockerfile is provided which allows re-use of Python package installatio
 
 #### All defaults
 - Create a reusable image with only the basics and then run as a named container:
-```bash
-docker build -t whisperlivekit-defaults .
-docker create --gpus all --name whisperlivekit -p 8000:8000 whisperlivekit-defaults
-docker start -i whisperlivekit
-```
+    ```bash
+    docker build -t whisperlivekit-defaults .
+    docker create --gpus all --name whisperlivekit -p 8000:8000 whisperlivekit-defaults
+    docker start -i whisperlivekit
+    ```
 
-> **Note**: If you're running on a system without NVIDIA GPU support (such as Mac with Apple Silicon or any system without CUDA capabilities), you need to **remove the `--gpus all` flag** from the `docker create` command. Without GPU acceleration, transcription will use CPU only, which may be significantly slower. Consider using small models for better performance on CPU-only systems.
+    > **Note**: If you're running on a system without NVIDIA GPU support (such as Mac with Apple Silicon or any system without CUDA capabilities), you need to **remove the `--gpus all` flag** from the `docker create` command. Without GPU acceleration, transcription will use CPU only, which may be significantly slower. Consider using small models for better performance on CPU-only systems.
 
 #### Customization
 - Customize the container options:
-```bash
-docker build -t whisperlivekit-defaults .
-docker create --gpus all --name whisperlivekit-base -p 8000:8000 whisperlivekit-defaults --model base
-docker start -i whisperlivekit-base
-```
+    ```bash
+    docker build -t whisperlivekit-defaults .
+    docker create --gpus all --name whisperlivekit-base -p 8000:8000 whisperlivekit-defaults --model base
+    docker start -i whisperlivekit-base
+    ```
 
 - `--build-arg` Options:
   - `EXTRAS="whisper-timestamped"` - Add extras to the image's installation (no spaces). Remember to set necessary container options!
