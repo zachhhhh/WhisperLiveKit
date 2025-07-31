@@ -481,7 +481,6 @@ class SimulStreamingASR(ASRBase):
         try:
             if isinstance(audio, np.ndarray):
                 audio = torch.from_numpy(audio).float()
-            print(audio)
             self.model.insert_audio(audio)
             self.model.infer(True)
             self.model.refresh_segment(complete=True)

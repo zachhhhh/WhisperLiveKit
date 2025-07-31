@@ -680,8 +680,7 @@ class SimulStreamingOnlineProcessor:
 
             
         except Exception as e:
-            logger.error(f"SimulStreaming processing error: {e}")
-            logger.error(f"Error details: {type(e).__name__}: {str(e)}")
+            logger.exception(f"SimulStreaming processing error: {e}")
             return [], self.end
 
     def finish(self) -> Tuple[List[ASRToken], float]:
