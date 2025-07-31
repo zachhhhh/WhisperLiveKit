@@ -263,7 +263,6 @@ class PaddedAlignAttWhisper:
             self.segments = self.segments[1:]
             if len(self.tokens) > 1: # When warming up, we can have a too long segments_len while not having any tokens yet
                 self.context.append_token_ids(self.tokens[1][0,:])
-                self.context.append_token_ids(self.tokens[1][0,:])
                 self.tokens = [self.initial_tokens] + self.tokens[2:]
         return removed_len
 
