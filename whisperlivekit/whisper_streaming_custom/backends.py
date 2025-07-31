@@ -10,7 +10,7 @@ except ImportError:
 from typing import List
 import numpy as np
 from whisperlivekit.timed_objects import ASRToken
-
+from whisperlivekit.simul_whisper.license_simulstreaming import SIMULSTREAMING_LICENSE
 logger = logging.getLogger(__name__)
 SIMULSTREAMING_ERROR_AND_INSTALLATION_INSTRUCTIONS = ImportError(
 """SimulStreaming dependencies are not available.
@@ -319,8 +319,7 @@ class SimulStreamingASR(ASRBase):
     def __init__(self, lan, modelsize=None, cache_dir=None, model_dir=None, logfile=sys.stderr, **kwargs):
         if not SIMULSTREAMING_AVAILABLE:
             raise SIMULSTREAMING_ERROR_AND_INSTALLATION_INSTRUCTIONS
-        with open("whisperlivekit/simul_whisper/dual_license_simulstreaming.md", "r") as f:
-            print("*"*80 + f.read() + "*"*80)
+        logger.warning(SIMULSTREAMING_LICENSE)
         self.logfile = logfile
         self.transcribe_kargs = {}
         self.original_language = None if lan == "auto" else lan
@@ -482,9 +481,10 @@ class SimulStreamingASR(ASRBase):
         try:
             if isinstance(audio, np.ndarray):
                 audio = torch.from_numpy(audio).float()
+            print(audio)
             self.model.insert_audio(audio)
             self.model.infer(True)
             self.model.refresh_segment(complete=True)
             logger.info("SimulStreaming model warmed up successfully")
         except Exception as e:
-            logger.warning(f"SimulStreaming warmup failed: {e}")
+            logger.exception(f"SimulStreaming warmup failed: {e}")

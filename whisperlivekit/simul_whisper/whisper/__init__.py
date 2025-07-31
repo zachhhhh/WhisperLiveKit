@@ -4,6 +4,7 @@ import os
 import urllib
 import warnings
 from typing import List, Optional, Union
+import logging
 
 import torch
 from tqdm import tqdm
@@ -13,6 +14,8 @@ from .decoding import DecodingOptions, DecodingResult, decode, detect_language
 from .model import ModelDimensions, Whisper
 from .transcribe import transcribe
 from .version import __version__
+
+logger = logging.getLogger(__name__)
 
 _MODELS = {
     "tiny.en": "https://openaipublic.azureedge.net/main/whisper/models/d3dd57d32accea0b295c96e26691aa14d8822fac7d9d27d5dc00b4ca2826dd03/tiny.en.pt",
@@ -71,6 +74,7 @@ def _download(url: str, root: str, in_memory: bool) -> Union[bytes, str]:
             )
 
     with urllib.request.urlopen(url) as source, open(download_target, "wb") as output:
+        logger.info(f'Downloading model weights to {download_target}')
         with tqdm(
             total=int(source.info().get("Content-Length")),
             ncols=80,

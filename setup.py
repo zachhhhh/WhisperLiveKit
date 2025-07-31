@@ -34,7 +34,6 @@ setup(
     },
     package_data={
         'whisperlivekit': ['web/*.html'],
-        'whisperlivekit.simul_whisper': ['dual_license_simulstreaming.md'],
         'whisperlivekit.simul_whisper.whisper.assets': ['*.tiktoken', '*.npz'],
     },
     entry_points={
