@@ -13,7 +13,8 @@
 <a href="https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT/Dual Licensed-dark_green"></a>
 </p>
 
-This project is based on [WhisperStreaming](https://github.com/ufal/whisper_streaming) and [SimulStreaming](https://github.com/ufal/SimulStreaming), allowing you to transcribe audio directly from your browser. WhisperLiveKit provides a complete backend solution for real-time speech transcription with a functional, simple and customizable frontend. Everything runs locally on your machine ✨
+Built on [WhisperStreaming](https://github.com/ufal/whisper_streaming) and [SimulStreaming](https://github.com/ufal/SimulStreaming), WhisperLiveKit provides real-time speech transcription in your browser, with a ready-to-use backend and a simple, customizable frontend. ✨
+
 
 ### Key Features
 
@@ -28,7 +29,7 @@ This project is based on [WhisperStreaming](https://github.com/ufal/whisper_stre
 
 ### Architecture
 
-<img width="3144" height="875" alt="Picture 1" src="https://github.com/user-attachments/assets/7c726753-0139-47f4-9080-e4b95c651c23" />
+<img width="3144" height="875" alt="Picture 1" src="https://github.com/user-attachments/assets/298eb422-f40e-4890-b4ce-3abb0e909de8" />
 
 
 ## Quick Start
