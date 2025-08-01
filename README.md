@@ -29,7 +29,7 @@ Built on [WhisperStreaming](https://github.com/ufal/whisper_streaming) and [Simu
 
 ### Architecture
 
-<img width="3144" height="875" alt="Picture 1" src="https://github.com/user-attachments/assets/298eb422-f40e-4890-b4ce-3abb0e909de8" />
+<img width="3093" height="875" alt="Picture 1" src="https://github.com/user-attachments/assets/c4e88138-186e-488f-8400-949875597565" />
 
 
 ## Quick Start
