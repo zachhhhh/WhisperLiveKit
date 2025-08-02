@@ -32,7 +32,9 @@ def detect_language(
         list of dictionaries containing the probability distribution over all languages.
     """
     if tokenizer is None:
-        tokenizer = get_tokenizer(model.is_multilingual)
+        tokenizer = get_tokenizer(
+            model.is_multilingual, num_languages=model.num_languages
+        )
     if (
         tokenizer.language is None
         or tokenizer.language_token not in tokenizer.sot_sequence
@@ -110,9 +112,6 @@ class DecodingOptions:
 
     # implementation details
     fp16: bool = True  # use fp16 for most of the calculation
-
-    # streaming
-    add_sot: Optional[bool] = True
 
 
 @dataclass(frozen=True)
@@ -513,19 +512,17 @@ class DecodingTask:
     logit_filters: List[LogitFilter]
 
     def __init__(self, model: "Whisper", options: DecodingOptions):
-        self.options: DecodingOptions = self._verify_options(options)
-        if self.options.fp16:
-            self.model = model.half()
-        else:
-            self.model = model
+        self.model = model
 
         language = options.language or "en"
         tokenizer = get_tokenizer(
-            model.is_multilingual, language=language, task=options.task
+            model.is_multilingual,
+            num_languages=model.num_languages,
+            language=language,
+            task=options.task,
         )
         self.tokenizer: Tokenizer = tokenizer
-       
-        # print(self.options)
+        self.options: DecodingOptions = self._verify_options(options)
 
         self.n_group: int = options.beam_size or options.best_of or 1
         self.n_ctx: int = model.dims.n_text_ctx
@@ -589,7 +586,7 @@ class DecodingTask:
 
     def _get_initial_tokens(self) -> Tuple[int]:
         tokens = list(self.sot_sequence)
-        # print("prefix", prefix)
+
         if prefix := self.options.prefix:
             prefix_tokens = (
                 self.tokenizer.encode(" " + prefix.strip())
@@ -607,15 +604,12 @@ class DecodingTask:
                 if isinstance(prompt, str)
                 else prompt
             )
-            # if self.options.add_sot:
             tokens = (
                 [self.tokenizer.sot_prev]
                 + prompt_tokens[-(self.n_ctx // 2 - 1) :]
                 + tokens
             )
-            #else:
-            #    tokens = ([self.tokenizer.sot_prev] + tokens + prompt_tokens[-(self.n_ctx // 2 - 1) :])
-        # print("return", tokens)
+
         return tuple(tokens)
 
     def _get_suppress_tokens(self) -> Tuple[int]:
@@ -663,7 +657,7 @@ class DecodingTask:
         if audio_features.dtype != (
             torch.float16 if self.options.fp16 else torch.float32
         ):
-            raise TypeError(
+            return TypeError(
                 f"audio_features has an incorrect dtype: {audio_features.dtype}"
             )
 
@@ -689,10 +683,9 @@ class DecodingTask:
         no_speech_probs = [np.nan] * n_batch
 
         try:
-            for i in range(self.sample_len): # 最多循环448次
-                # print("in decode main loop", i , tokens[0].tolist())
+            for i in range(self.sample_len):
                 logits = self.inference.logits(tokens, audio_features)
-                # print(logits)
+
                 if (
                     i == 0 and self.tokenizer.no_speech is not None
                 ):  # save no_speech_probs
@@ -724,7 +717,7 @@ class DecodingTask:
 
         audio_features: Tensor = self._get_audio_features(mel)  # encoder forward pass
         tokens: Tensor = torch.tensor([self.initial_tokens]).repeat(n_audio, 1)
-        # print("initial_tokens", self.initial_tokens)
+
         # detect language if requested, overwriting the language token
         languages, language_probs = self._detect_language(audio_features, tokens)
         if self.options.task == "lang_id":

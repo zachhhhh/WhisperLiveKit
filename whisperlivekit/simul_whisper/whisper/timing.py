@@ -56,9 +56,8 @@ def median_filter(x: torch.Tensor, filter_width: int):
 
 @numba.jit(nopython=True)
 def backtrace(trace: np.ndarray):
-    i = trace.shape[0] - 1 # trace: (N+1, M+1), i=N
-    j = trace.shape[1] - 1 # j=M
-    # 边界点其实无意义？
+    i = trace.shape[0] - 1
+    j = trace.shape[1] - 1
     trace[0, :] = 2
     trace[:, 0] = 1
 
@@ -83,8 +82,8 @@ def backtrace(trace: np.ndarray):
 @numba.jit(nopython=True, parallel=True)
 def dtw_cpu(x: np.ndarray):
     N, M = x.shape
-    cost = np.ones((N + 1, M + 1), dtype=np.float32) * np.inf # cost: x[0, 0]到x[i-1, j-1]的最小代价
-    trace = -np.ones((N + 1, M + 1), dtype=np.float32) # trace: 
+    cost = np.ones((N + 1, M + 1), dtype=np.float32) * np.inf
+    trace = -np.ones((N + 1, M + 1), dtype=np.float32)
 
     cost[0, 0] = 0
     for j in range(1, M + 1):
@@ -118,7 +117,7 @@ def dtw_cuda(x, BLOCK_SIZE=1024):
     x_skew = x_skew.T.contiguous()
     cost = torch.ones(N + M + 2, M + 2) * np.inf
     cost[0, 0] = 0
-    cost = cost.cuda()
+    cost = cost.to(x.device)
     trace = torch.zeros_like(cost, dtype=torch.int32)
 
     dtw_kernel[(1,)](
@@ -192,21 +191,19 @@ def find_alignment(
         for i, block in enumerate(model.decoder.blocks)
     ]
 
-    # 进行前传，获得token概率
-    with torch.no_grad():
+    from .model import disable_sdpa
+
+    with torch.no_grad(), disable_sdpa():
         logits = model(mel.unsqueeze(0), tokens.unsqueeze(0))[0]
         sampled_logits = logits[len(tokenizer.sot_sequence) :, : tokenizer.eot]
         token_probs = sampled_logits.softmax(dim=-1)
         text_token_probs = token_probs[np.arange(len(text_tokens)), text_tokens]
         text_token_probs = text_token_probs.tolist()
 
-    # 移除钩子
     for hook in hooks:
         hook.remove()
 
     # heads * tokens * frames
-    # print(model.alignment_heads)
-    # exit(0)
     weights = torch.stack([QKs[_l][_h] for _l, _h in model.alignment_heads.indices().T])
     weights = weights[:, :, : num_frames // 2]
     weights = (weights * qk_scale).softmax(dim=-1)
@@ -215,17 +212,8 @@ def find_alignment(
     weights = median_filter(weights, medfilt_width)
 
     matrix = weights.mean(axis=0)
-    print("attention", matrix.shape, matrix[:5, :5])
     matrix = matrix[len(tokenizer.sot_sequence) : -1]
-    print("attention", matrix.shape, matrix[:5, :5])
     text_indices, time_indices = dtw(-matrix)
-
-    print("num_frames", num_frames)
-    print("attention", matrix.shape, matrix[:5, :5])
-    print("text_indices", text_indices)
-    print("time", time_indices)
-    print("text_tokens", text_tokens, tokenizer.decode(text_tokens), len(text_tokens))
-    print("eot", tokenizer.eot)
 
     words, word_tokens = tokenizer.split_to_word_tokens(text_tokens + [tokenizer.eot])
     if len(word_tokens) <= 1:
@@ -238,9 +226,7 @@ def find_alignment(
     word_boundaries = np.pad(np.cumsum([len(t) for t in word_tokens[:-1]]), (1, 0))
 
     jumps = np.pad(np.diff(text_indices), (1, 0), constant_values=1).astype(bool)
-    # print("jumps", jumps, jumps.shape)
     jump_times = time_indices[jumps] / TOKENS_PER_SECOND
-    # print("jump_times", jump_times)
     start_times = jump_times[word_boundaries[:-1]]
     end_times = jump_times[word_boundaries[1:]]
     word_probabilities = [
@@ -315,6 +301,7 @@ def add_word_timestamps(
     word_durations = np.array([t.end - t.start for t in alignment])
     word_durations = word_durations[word_durations.nonzero()]
     median_duration = np.median(word_durations) if len(word_durations) > 0 else 0.0
+    median_duration = min(0.7, float(median_duration))
     max_duration = median_duration * 2
 
     # hack: truncate long words at sentence boundaries.
