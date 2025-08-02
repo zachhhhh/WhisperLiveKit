@@ -21,10 +21,12 @@ RUN apt-get update && \
         python3 \
         python3-pip \
         ffmpeg \
-        git && \
+        git \
+        build-essential \
+        python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
 COPY . .
 
