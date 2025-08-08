@@ -6,8 +6,7 @@ import logging
 import traceback
 from datetime import timedelta
 from whisperlivekit.timed_objects import ASRToken
-from whisperlivekit.whisper_streaming_custom.whisper_online import online_factory
-from whisperlivekit.core import TranscriptionEngine
+from whisperlivekit.core import TranscriptionEngine, online_factory
 from whisperlivekit.ffmpeg_manager import FFmpegManager, FFmpegState
 
 # Set up logging once

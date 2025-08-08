@@ -1,9 +1,12 @@
 try:
     from whisperlivekit.whisper_streaming_custom.whisper_online import backend_factory, warmup_asr
+    from whisperlivekit.whisper_streaming_custom.online_asr import VACOnlineASRProcessor, OnlineASRProcessor
 except ImportError:
     from .whisper_streaming_custom.whisper_online import backend_factory, warmup_asr
-from argparse import Namespace
+    from .whisper_streaming_custom.online_asr import VACOnlineASRProcessor, OnlineASRProcessor
 
+from argparse import Namespace
+import sys
 
 class TranscriptionEngine:
     _instance = None
@@ -78,8 +81,32 @@ class TranscriptionEngine:
         self.diarization = None
         
         if self.args.transcription:
-            self.asr, self.tokenizer = backend_factory(self.args)
-            warmup_asr(self.asr, self.args.warmup_file)
+            if self.args.backend == "simulstreaming": 
+                from simul_whisper import SimulStreamingASR
+                self.tokenizer = None
+                simulstreaming_kwargs = {}
+                for attr in ['frame_threshold', 'beams', 'decoder_type', 'audio_max_len', 'audio_min_len', 
+                            'cif_ckpt_path', 'never_fire', 'init_prompt', 'static_init_prompt', 
+                            'max_context_tokens', 'model_path']:
+                    if hasattr(self.args, attr):
+                        simulstreaming_kwargs[attr] = getattr(self.args, attr)
+        
+                # Add segment_length from min_chunk_size
+                simulstreaming_kwargs['segment_length'] = getattr(self.args, 'min_chunk_size', 0.5)
+                simulstreaming_kwargs['task'] = self.args.task
+                
+                size = self.args.model
+                self.asr = SimulStreamingASR(
+                    modelsize=size,
+                    lan=self.args.lan,
+                    cache_dir=getattr(self.args, 'model_cache_dir', None),
+                    model_dir=getattr(self.args, 'model_dir', None),
+                    **simulstreaming_kwargs
+                )
+
+            else:
+                self.asr, self.tokenizer = backend_factory(self.args)
+                warmup_asr(self.asr, self.args.warmup_file)
 
         if self.args.diarization:
             from whisperlivekit.diarization.diarization_online import DiartDiarization
@@ -90,3 +117,35 @@ class TranscriptionEngine:
             )
             
         TranscriptionEngine._initialized = True
+
+
+
+def online_factory(args, asr, tokenizer, logfile=sys.stderr):
+    if args.backend == "simulstreaming":    
+        from simul_whisper import SimulStreamingOnlineProcessor
+        online = SimulStreamingOnlineProcessor(
+            asr,
+            tokenizer,
+            logfile=logfile,
+            buffer_trimming=(args.buffer_trimming, args.buffer_trimming_sec),
+            confidence_validation=args.confidence_validation
+        )
+    elif args.vac:
+        online = VACOnlineASRProcessor(
+            args.min_chunk_size,
+            asr,
+            tokenizer,
+            logfile=logfile,
+            buffer_trimming=(args.buffer_trimming, args.buffer_trimming_sec),
+            confidence_validation = args.confidence_validation
+        )
+    else:
+        online = OnlineASRProcessor(
+            asr,
+            tokenizer,
+            logfile=logfile,
+            buffer_trimming=(args.buffer_trimming, args.buffer_trimming_sec),
+            confidence_validation = args.confidence_validation
+        )
+    return online
+  
