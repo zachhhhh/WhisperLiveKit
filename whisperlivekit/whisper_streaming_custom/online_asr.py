@@ -6,18 +6,6 @@ from whisperlivekit.timed_objects import ASRToken, Sentence, Transcript
 
 logger = logging.getLogger(__name__)
 
-# simulStreaming imports - we check if the files are here
-try:
-    import torch
-    from whisperlivekit.simul_whisper.config import AlignAttConfig
-    SIMULSTREAMING_AVAILABLE = True
-except ImportError:
-    logger.warning("SimulStreaming dependencies not available for online processor.")
-    SIMULSTREAMING_AVAILABLE = False
-    OnlineProcessorInterface = None
-    torch = None
-
-
 class HypothesisBuffer:
     """
     Buffer to store and process ASR hypothesis tokens.
