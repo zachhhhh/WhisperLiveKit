@@ -125,10 +125,7 @@ def online_factory(args, asr, tokenizer, logfile=sys.stderr):
         from simul_whisper import SimulStreamingOnlineProcessor
         online = SimulStreamingOnlineProcessor(
             asr,
-            tokenizer,
             logfile=logfile,
-            buffer_trimming=(args.buffer_trimming, args.buffer_trimming_sec),
-            confidence_validation=args.confidence_validation
         )
     elif args.vac:
         online = VACOnlineASRProcessor(
