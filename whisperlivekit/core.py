@@ -25,7 +25,6 @@ class TranscriptionEngine:
             "host": "localhost",
             "port": 8000,
             "warmup_file": None,
-            "confidence_validation": False,
             "diarization": False,
             "punctuation_split": False,
             "min_chunk_size": 0.5,
@@ -37,15 +36,15 @@ class TranscriptionEngine:
             "backend": "faster-whisper",
             "vac": False,
             "vac_chunk_size": 0.04,
-            "buffer_trimming": "segment",
-            "buffer_trimming_sec": 15,
             "log_level": "DEBUG",
             "ssl_certfile": None,
             "ssl_keyfile": None,
             "transcription": True,
             "vad": True,
-            "segmentation_model": "pyannote/segmentation-3.0",
-            "embedding_model": "pyannote/embedding",
+            # whisperstreaming params:
+            "buffer_trimming": "segment",
+            "confidence_validation": False,
+            "buffer_trimming_sec": 15,
             # simulstreaming params:
             "frame_threshold": 25,
             "beams": 1,
@@ -58,6 +57,10 @@ class TranscriptionEngine:
             "static_init_prompt": None,
             "max_context_tokens": None,
             "model_path": './base.pt',
+            # diart params:
+            "segmentation_model": "pyannote/segmentation-3.0",
+            "embedding_model": "pyannote/embedding",
+
         }
 
         config_dict = {**defaults, **kwargs}

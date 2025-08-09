@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Audio Transcription</title>
+    <title>WhisperLiveKit</title>
     <style>
         body {
             font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
@@ -221,9 +221,9 @@
             width: 8px;
             height: 8px;
             border: 2px solid #8d8d8d5c;
-            border-top: 2px solid #6c6c6ce5;
+            border-top: 2px solid #6c6c6c7d;
             border-radius: 50%;
-            animation: spin 0.6s linear infinite;
+            animation: spin 0.7s linear infinite;
             vertical-align: middle;
             margin-bottom: 2px;
             margin-right: 5px;
@@ -309,6 +309,7 @@
         let animationFrame = null;
         let waitingForStop = false;
         let lastReceivedData = null;
+        let lastSignature = null;
         waveCanvas.width = 60 * (window.devicePixelRatio || 1);
         waveCanvas.height = 30 * (window.devicePixelRatio || 1);
         waveCtx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
@@ -319,6 +320,11 @@
         const websocketInput = document.getElementById("websocketInput");
         const linesTranscriptDiv = document.getElementById("linesTranscript");
         const timerElement = document.querySelector(".timer");
+
+        function fmt1(x) {
+            const n = Number(x);
+            return Number.isFinite(n) ? n.toFixed(1) : x;
+        }
 
         const host = window.location.hostname || "localhost";
         const port = window.location.port;
@@ -450,6 +456,31 @@
                 return; 
             }
 
+            // try to keep stable DOM despite having updates every 0.1s. only update numeric lag values if structure hasn't changed
+            const showLoading = (!isFinalizing) && (lines || []).some(it => it.speaker == 0);
+            const showTransLag = !isFinalizing && remaining_time_transcription > 0;
+            const showDiaLag = !isFinalizing && !!buffer_diarization && remaining_time_diarization > 0;
+            const signature = JSON.stringify({
+                lines: (lines || []).map(it => ({ speaker: it.speaker, text: it.text, beg: it.beg, end: it.end })),
+                buffer_transcription: buffer_transcription || "",
+                buffer_diarization: buffer_diarization || "",
+                status: current_status,
+                showLoading,
+                showTransLag,
+                showDiaLag,
+                isFinalizing: !!isFinalizing
+            });
+            if (lastSignature === signature) {
+                const t = document.querySelector(".lag-transcription-value");
+                if (t) t.textContent = fmt1(remaining_time_transcription);
+                const d = document.querySelector(".lag-diarization-value");
+                if (d) d.textContent = fmt1(remaining_time_diarization);
+                const ld = document.querySelector(".loading-diarization-value");
+                if (ld) ld.textContent = fmt1(remaining_time_diarization);
+                return;
+            }
+            lastSignature = signature;
+
             const linesHtml = lines.map((item, idx) => {
                 let timeInfo = "";
                 if (item.beg !== undefined && item.end !== undefined) {
@@ -460,7 +491,7 @@
                 if (item.speaker === -2) {
                     speakerLabel = `<span class="silence">Silence<span id='timeInfo'>${timeInfo}</span></span>`;
                 } else if (item.speaker == 0 && !isFinalizing) {
-                    speakerLabel = `<span class='loading'><span class="spinner"></span><span id='timeInfo'>${remaining_time_diarization} second(s) of audio are undergoing diarization</span></span>`;
+                    speakerLabel = `<span class='loading'><span class="spinner"></span><span id='timeInfo'><span class="loading-diarization-value">${fmt1(remaining_time_diarization)}</span> second(s) of audio are undergoing diarization</span></span>`;
                 } else if (item.speaker == -1) {
                     speakerLabel = `<span id="speaker">Speaker 1<span id='timeInfo'>${timeInfo}</span></span>`;
                 } else if (item.speaker !== -1 && item.speaker !== 0) {
@@ -473,10 +504,10 @@
                 if (idx === lines.length - 1) { 
                     if (!isFinalizing) {
                         if (remaining_time_transcription > 0) {
-                             speakerLabel += `<span class="label_transcription"><span class="spinner"></span>Transcription lag <span id='timeInfo'>${remaining_time_transcription}s</span></span>`;
+                             speakerLabel += `<span class="label_transcription"><span class="spinner"></span>Transcription lag <span id='timeInfo'><span class="lag-transcription-value">${fmt1(remaining_time_transcription)}</span>s</span></span>`;
                         }
                         if (buffer_diarization && remaining_time_diarization > 0) {
-                             speakerLabel += `<span class="label_diarization"><span class="spinner"></span>Diarization lag<span id='timeInfo'>${remaining_time_diarization}s</span></span>`;
+                             speakerLabel += `<span class="label_diarization"><span class="spinner"></span>Diarization lag<span id='timeInfo'><span class="lag-diarization-value">${fmt1(remaining_time_diarization)}</span>s</span></span>`;
                         }
                     }
 

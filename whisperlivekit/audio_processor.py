@@ -128,12 +128,12 @@ class AudioProcessor:
             # Calculate remaining times
             remaining_transcription = 0
             if self.end_buffer > 0:
-                remaining_transcription = max(0, round(current_time - self.beg_loop - self.end_buffer, 2))
+                remaining_transcription = max(0, round(current_time - self.beg_loop - self.end_buffer, 1))
                 
             remaining_diarization = 0
             if self.tokens:
                 latest_end = max(self.end_buffer, self.tokens[-1].end if self.tokens else 0)
-                remaining_diarization = max(0, round(latest_end - self.end_attributed_speaker, 2))
+                remaining_diarization = max(0, round(latest_end - self.end_attributed_speaker, 1))
                 
             return {
                 "tokens": self.tokens.copy(),
@@ -343,6 +343,8 @@ class AudioProcessor:
 
     async def results_formatter(self):
         """Format processing results for output."""
+        last_sent_trans = None
+        last_sent_diar = None
         while True:
             try:
                 ffmpeg_state = await self.ffmpeg_manager.get_state()
@@ -446,10 +448,19 @@ class AudioProcessor:
                                            ' '.join([f"{line['speaker']} {line['text']}" for line in final_lines_for_response]) + \
                                            f" | {buffer_transcription} | {buffer_diarization}"
                 
-                if current_response_signature != self.last_response_content and \
-                   (final_lines_for_response or buffer_transcription or buffer_diarization or response_status == "no_audio_detected"):
+                trans = state["remaining_time_transcription"]
+                diar = state["remaining_time_diarization"]
+                should_push = (
+                    current_response_signature != self.last_response_content
+                    or last_sent_trans is None
+                    or round(trans, 1) != round(last_sent_trans, 1)
+                    or round(diar, 1) != round(last_sent_diar, 1)
+                )
+                if should_push and (final_lines_for_response or buffer_transcription or buffer_diarization or response_status == "no_audio_detected" or trans > 0 or diar > 0):
                     yield response
                     self.last_response_content = current_response_signature
+                    last_sent_trans = trans
+                    last_sent_diar = diar
                 
                 # Check for termination condition
                 if self.is_stopping:
