@@ -8,7 +8,7 @@ from datetime import timedelta
 from whisperlivekit.timed_objects import ASRToken
 from whisperlivekit.core import TranscriptionEngine, online_factory
 from whisperlivekit.ffmpeg_manager import FFmpegManager, FFmpegState
-
+from .remove_silences import handle_silences
 # Set up logging once
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -51,7 +51,6 @@ class AudioProcessor:
         self.tokens = []
         self.buffer_transcription = ""
         self.buffer_diarization = ""
-        self.full_transcription = ""
         self.end_buffer = 0
         self.end_attributed_speaker = 0
         self.lock = asyncio.Lock()
@@ -95,13 +94,12 @@ class AudioProcessor:
         """Convert PCM buffer in s16le format to normalized NumPy array."""
         return np.frombuffer(pcm_buffer, dtype=np.int16).astype(np.float32) / 32768.0
 
-    async def update_transcription(self, new_tokens, buffer, end_buffer, full_transcription, sep):
+    async def update_transcription(self, new_tokens, buffer, end_buffer, sep):
         """Thread-safe update of transcription with new data."""
         async with self.lock:
             self.tokens.extend(new_tokens)
             self.buffer_transcription = buffer
             self.end_buffer = end_buffer
-            self.full_transcription = full_transcription
             self.sep = sep
             
     async def update_diarization(self, end_attributed_speaker, buffer_diarization=""):
@@ -152,7 +150,6 @@ class AudioProcessor:
             self.tokens = []
             self.buffer_transcription = self.buffer_diarization = ""
             self.end_buffer = self.end_attributed_speaker = 0
-            self.full_transcription = self.last_response_content = ""
             self.beg_loop = time()
 
     async def ffmpeg_stdout_reader(self):
@@ -237,7 +234,6 @@ class AudioProcessor:
 
     async def transcription_processor(self):
         """Process audio chunks for transcription."""
-        self.full_transcription = ""
         self.sep = self.online.asr.sep
         cumulative_pcm_duration_stream_time = 0.0
         
@@ -249,7 +245,7 @@ class AudioProcessor:
                     self.transcription_queue.task_done()
                     break
                 
-                if not self.online: # Should not happen if queue is used
+                if not self.online:
                     logger.warning("Transcription processor: self.online not initialized.")
                     self.transcription_queue.task_done()
                     continue
@@ -276,8 +272,6 @@ class AudioProcessor:
 
                 if new_tokens:
                     validated_text = self.sep.join([t.text for t in new_tokens])
-                    self.full_transcription += validated_text
-                    
                     if buffer_text.startswith(validated_text):
                         buffer_text = buffer_text[len(validated_text):].lstrip()
 
@@ -294,7 +288,7 @@ class AudioProcessor:
                 new_end_buffer = max(candidate_end_times)
                 
                 await self.update_transcription(
-                    new_tokens, buffer_text, new_end_buffer, self.full_transcription, self.sep
+                    new_tokens, buffer_text, new_end_buffer, self.sep
                 )
                 self.transcription_queue.task_done()
                 
@@ -382,8 +376,8 @@ class AudioProcessor:
                 lines = []
                 last_end_diarized = 0
                 undiarized_text = []
-                
-                # Process each token
+                current_time = time() - self.beg_loop
+                tokens = handle_silences(tokens, current_time)
                 for token in tokens:
                     speaker = token.speaker
                     
