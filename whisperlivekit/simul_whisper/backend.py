@@ -5,6 +5,8 @@ from typing import List, Tuple, Optional
 import logging
 from whisperlivekit.timed_objects import ASRToken, Transcript
 from whisperlivekit.simul_whisper.license_simulstreaming import SIMULSTREAMING_LICENSE
+from .whisper import load_model, tokenizer
+import os
 logger = logging.getLogger(__name__)
 
 try:
@@ -34,7 +36,11 @@ class SimulStreamingOnlineProcessor:
         
         self.committed: List[ASRToken] = []
         self.last_result_tokens: List[ASRToken] = []        
-        self.buffer_content = ""
+        self.model = PaddedAlignAttWhisper(
+            cfg=asr.cfg,
+            loaded_model=asr.whisper_model)
+        if asr.tokenizer:
+            self.model.tokenizer = asr.tokenizer
 
     def insert_audio_chunk(self, audio: np.ndarray, audio_stream_end_time: Optional[float] = None):
         """Append an audio chunk to be processed by SimulStreaming."""
@@ -50,17 +56,13 @@ class SimulStreamingOnlineProcessor:
             self.end = audio_stream_end_time
         else:
             self.end = self.cumulative_audio_duration            
-        self.asr.model.insert_audio(audio_tensor)
+        self.model.insert_audio(audio_tensor)
 
     def get_buffer(self):
-        """
-        Get the unvalidated buffer content.
-        """
-        buffer_end = self.end if hasattr(self, 'end') else None
         return Transcript(
             start=None, 
-            end=buffer_end, 
-            text=self.buffer_content, 
+            end=None, 
+            text='', 
             probability=None
         )
 
@@ -68,7 +70,7 @@ class SimulStreamingOnlineProcessor:
         # From the simulstreaming repo. self.model to self.asr.model
         pr = generation["progress"]
         if "result" not in generation:
-            split_words, split_tokens = self.asr.model.tokenizer.split_to_word_tokens(tokens)
+            split_words, split_tokens = self.model.tokenizer.split_to_word_tokens(tokens)
         else:
             split_words, split_tokens = generation["result"]["split_words"], generation["result"]["split_tokens"]
 
@@ -96,7 +98,7 @@ class SimulStreamingOnlineProcessor:
         Returns a tuple: (list of committed ASRToken objects, float representing the audio processed up to time).
         """
         try:            
-            tokens, generation_progress = self.asr.model.infer(is_last=self.is_last)
+            tokens, generation_progress = self.model.infer(is_last=self.is_last)
             ts_words = self.timestamped_text(tokens, generation_progress)
             
             new_tokens = []
@@ -162,15 +164,17 @@ class SimulStreamingASR():
             }
             self.model_path = model_mapping.get(modelsize, f'./{modelsize}.pt')
         
-        self.model = self.load_model(modelsize, cache_dir, model_dir)
+        self.model = self.load_model(modelsize)
         
         # Set up tokenizer for translation if needed
         if self.task == "translate":
-            self.set_translate_task()
+            self.tokenizer = self.set_translate_task()
+        else:
+            self.tokenizer = None
 
-    def load_model(self, modelsize, cache_dir, model_dir):
-        try:
-            cfg = AlignAttConfig(
+
+    def load_model(self, modelsize):
+        self.cfg = AlignAttConfig(
                 model_path=self.model_path,
                 segment_length=self.segment_length,
                 frame_threshold=self.frame_threshold,
@@ -185,36 +189,29 @@ class SimulStreamingASR():
                 init_prompt=self.init_prompt,
                 max_context_tokens=self.max_context_tokens,
                 static_init_prompt=self.static_init_prompt,
-            )            
-            model = PaddedAlignAttWhisper(cfg)
-            return model
-            
-        except Exception as e:
-            logger.error(f"Failed to load SimulStreaming model: {e}")
-            raise
+        )   
+        model_name = os.path.basename(self.cfg.model_path).replace(".pt", "")
+        model_path = os.path.dirname(os.path.abspath(self.cfg.model_path))
+        self.whisper_model = load_model(name=model_name, download_root=model_path)
+        
 
     def set_translate_task(self):
         """Set up translation task."""
-        try:
-            self.model.tokenizer = tokenizer.get_tokenizer(
-                multilingual=True,
-                language=self.model.cfg.language,
-                num_languages=self.model.model.num_languages,
-                task="translate"
-            )
-            logger.info("SimulStreaming configured for translation task")
-        except Exception as e:
-            logger.error(f"Failed to configure SimulStreaming for translation: {e}")
-            raise
+        return tokenizer.get_tokenizer(
+            multilingual=True,
+            language=self.model.cfg.language,
+            num_languages=self.model.model.num_languages,
+            task="translate"
+        )
 
-    def warmup(self, audio, init_prompt=""):
-        """Warmup the SimulStreaming model."""
-        try:
-            if isinstance(audio, np.ndarray):
-                audio = torch.from_numpy(audio).float()
-            self.model.insert_audio(audio)
-            self.model.infer(True)
-            self.model.refresh_segment(complete=True)
-            logger.info("SimulStreaming model warmed up successfully")
-        except Exception as e:
-            logger.exception(f"SimulStreaming warmup failed: {e}")
+    # def warmup(self, audio, init_prompt=""):
+    #     """Warmup the SimulStreaming model."""
+    #     try:
+    #         if isinstance(audio, np.ndarray):
+    #             audio = torch.from_numpy(audio).float()
+    #         self.model.insert_audio(audio)
+    #         self.model.infer(True)
+    #         self.model.refresh_segment(complete=True)
+    #         logger.info("SimulStreaming model warmed up successfully")
+    #     except Exception as e:
+    #         logger.exception(f"SimulStreaming warmup failed: {e}")

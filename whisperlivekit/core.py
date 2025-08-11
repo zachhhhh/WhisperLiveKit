@@ -109,7 +109,7 @@ class TranscriptionEngine:
 
             else:
                 self.asr, self.tokenizer = backend_factory(self.args)
-                warmup_asr(self.asr, self.args.warmup_file)
+                warmup_asr(self.asr, self.args.warmup_file) #for simulstreaming, warmup should be done in the online class not here
 
         if self.args.diarization:
             from whisperlivekit.diarization.diarization_online import DiartDiarization
