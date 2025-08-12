@@ -26,6 +26,7 @@ class SimulStreamingOnlineProcessor:
         self,
         asr,
         logfile=sys.stderr,
+        warmup_file=None
     ):        
         self.asr = asr
         self.logfile = logfile
@@ -121,6 +122,19 @@ class SimulStreamingOnlineProcessor:
             logger.exception(f"SimulStreaming processing error: {e}")
             return [], self.end
 
+    def warmup(self, audio, init_prompt=""):
+        """Warmup the SimulStreaming model."""
+        try:
+            if isinstance(audio, np.ndarray):
+                audio = torch.from_numpy(audio).float()
+            self.model.insert_audio(audio)
+            self.model.infer(True)
+            self.model.refresh_segment(complete=True)
+            logger.info("SimulStreaming model warmed up successfully")
+        except Exception as e:
+            logger.exception(f"SimulStreaming warmup failed: {e}")
+
+
 class SimulStreamingASR():
     """SimulStreaming backend with AlignAtt policy."""
     sep = ""
@@ -203,15 +217,3 @@ class SimulStreamingASR():
             num_languages=self.model.model.num_languages,
             task="translate"
         )
-
-    # def warmup(self, audio, init_prompt=""):
-    #     """Warmup the SimulStreaming model."""
-    #     try:
-    #         if isinstance(audio, np.ndarray):
-    #             audio = torch.from_numpy(audio).float()
-    #         self.model.insert_audio(audio)
-    #         self.model.infer(True)
-    #         self.model.refresh_segment(complete=True)
-    #         logger.info("SimulStreaming model warmed up successfully")
-    #     except Exception as e:
-    #         logger.exception(f"SimulStreaming warmup failed: {e}")
