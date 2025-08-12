@@ -53,7 +53,7 @@ def warmup_asr(asr, warmup_file=None, timeout=5):
     Warmup the ASR model by transcribing a short audio file.
     """
     audio = load_file(warmup_file=None, timeout=5)
-    asr.warmup(audio)
+    asr.transcribe(audio)
     logger.info("ASR model is warmed up")
     
 def warmup_online(online, warmup_file=None, timeout=5):

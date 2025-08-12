@@ -125,8 +125,6 @@ class SimulStreamingOnlineProcessor:
     def warmup(self, audio, init_prompt=""):
         """Warmup the SimulStreaming model."""
         try:
-            if isinstance(audio, np.ndarray):
-                audio = torch.from_numpy(audio).float()
             self.model.insert_audio(audio)
             self.model.infer(True)
             self.model.refresh_segment(complete=True)
@@ -217,3 +215,9 @@ class SimulStreamingASR():
             num_languages=self.model.model.num_languages,
             task="translate"
         )
+
+    def transcribe(self, audio):
+        """
+        Only used for warmup. It's a direct whisper call, not a simulstreaming call
+        """
+        self.whisper_model.transcribe(audio, language=self.original_language)

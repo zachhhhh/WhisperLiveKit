@@ -2,7 +2,7 @@ try:
     from whisperlivekit.whisper_streaming_custom.whisper_online import backend_factory
     from whisperlivekit.whisper_streaming_custom.online_asr import VACOnlineASRProcessor, OnlineASRProcessor
 except ImportError:
-    from .whisper_streaming_custom.whisper_online import backend_factory, warmup_asr
+    from .whisper_streaming_custom.whisper_online import backend_factory
     from .whisper_streaming_custom.online_asr import VACOnlineASRProcessor, OnlineASRProcessor
 from whisperlivekit.warmup import warmup_asr, warmup_online
 from argparse import Namespace
@@ -109,7 +109,7 @@ class TranscriptionEngine:
 
             else:
                 self.asr, self.tokenizer = backend_factory(self.args)
-                warmup_asr(self.asr, self.args.warmup_file) #for simulstreaming, warmup should be done in the online class not here
+            warmup_asr(self.asr, self.args.warmup_file) #for simulstreaming, warmup should be done in the online class not here
 
         if self.args.diarization:
             from whisperlivekit.diarization.diarization_online import DiartDiarization
@@ -130,7 +130,7 @@ def online_factory(args, asr, tokenizer, logfile=sys.stderr):
             asr,
             logfile=logfile,
         )
-        warmup_online(online, args.warmup_file)
+        # warmup_online(online, args.warmup_file)
     elif args.vac:
         online = VACOnlineASRProcessor(
             args.min_chunk_size,
