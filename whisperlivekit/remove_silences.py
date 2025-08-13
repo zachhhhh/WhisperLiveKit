@@ -2,6 +2,7 @@ from whisperlivekit.timed_objects import ASRToken
 import re
 
 MIN_SILENCE_DURATION = 4 #in seconds
+END_SILENCE_DURATION = 8 #in seconds. you should keep it important to not have false positive when the model lag is important
 
 def blank_to_silence(tokens):
     full_string = ''.join([t.text for t in tokens])
@@ -79,7 +80,7 @@ def ends_with_silence(tokens, current_time):
     if not tokens:
         return []
     last_token = tokens[-1]
-    if tokens and current_time - last_token.end >= MIN_SILENCE_DURATION:
+    if tokens and current_time - last_token.end >= END_SILENCE_DURATION:
         if last_token.speaker == -2:
             last_token.end = current_time
         else:
