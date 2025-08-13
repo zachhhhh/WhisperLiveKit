@@ -666,6 +666,7 @@
             }).join("");
 
             linesTranscriptDiv.innerHTML = linesHtml;
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
         function updateTimer() {
