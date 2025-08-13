@@ -385,6 +385,7 @@
         let chunkDuration = 1000;
         let websocketUrl = "ws://localhost:8000/asr";
         let userClosing = false;
+        let wakeLock = null;
         let startTime = null;
         let timerInterval = null;
         let audioContext = null;
@@ -665,6 +666,7 @@
             }).join("");
 
             linesTranscriptDiv.innerHTML = linesHtml;
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
         function updateTimer() {
@@ -712,6 +714,16 @@
 
         async function startRecording() {
             try {
+
+                // https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API
+                // create an async function to request a wake lock
+                try {
+                  wakeLock = await navigator.wakeLock.request("screen");
+                } catch (err) {
+                  // The Wake Lock request has failed - usually system related, such as battery.
+                  console.log("Error acquiring wake lock.")
+                }
+
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -741,6 +753,10 @@
         }
 
         async function stopRecording() {
+            wakeLock.release().then(() => {
+              wakeLock = null;
+            });
+  
             userClosing = true;
             waitingForStop = true;
             
