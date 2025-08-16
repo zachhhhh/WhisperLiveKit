@@ -56,6 +56,7 @@ class PaddedAlignAttWhisper:
         self.max_text_len = self.model.dims.n_text_ctx
         self.num_decoder_layers = len(self.model.decoder.blocks)
         self.cfg = cfg
+        self.l_hooks = []
 
         # model to detect end-of-word boundary at the end of the segment
         self.CIFLinear, self.always_fire, self.never_fire = load_cif(cfg,
@@ -69,7 +70,8 @@ class PaddedAlignAttWhisper:
             t = F.softmax(net_output[1], dim=-1)
             self.dec_attns.append(t.squeeze(0))
         for b in self.model.decoder.blocks:
-            b.cross_attn.register_forward_hook(layer_hook)
+            hook = b.cross_attn.register_forward_hook(layer_hook)
+            self.l_hooks.append(hook)
         
         self.kv_cache = {}
         def kv_hook(module: torch.nn.Linear, _, net_output: torch.Tensor):
@@ -82,10 +84,13 @@ class PaddedAlignAttWhisper:
             return self.kv_cache[module.cache_id] 
 
         for i,b in enumerate(self.model.decoder.blocks):
-            b.attn.key.register_forward_hook(kv_hook)
-            b.attn.value.register_forward_hook(kv_hook)
-            b.cross_attn.key.register_forward_hook(kv_hook)
-            b.cross_attn.value.register_forward_hook(kv_hook)
+            hooks = [
+                b.attn.key.register_forward_hook(kv_hook),
+                b.attn.value.register_forward_hook(kv_hook),
+                b.cross_attn.key.register_forward_hook(kv_hook),
+                b.cross_attn.value.register_forward_hook(kv_hook),
+            ]
+            self.l_hooks.extend(hooks)
 
         self.align_source = {}
         self.num_align_heads = 0
@@ -139,6 +144,11 @@ class PaddedAlignAttWhisper:
             self.inference.kv_cache = self.kv_cache
 
             self.token_decoder = BeamSearchDecoder(inference=self.inference, eot=self.tokenizer.eot, beam_size=cfg.beam_size)
+            
+    def remove_hooks(self):
+        print('remove hook')
+        for hook in self.l_hooks:
+            hook.remove()
 
     def create_tokenizer(self, language=None):
         self.tokenizer = tokenizer.get_tokenizer(
