@@ -52,7 +52,7 @@ class SimulStreamingOnlineProcessor:
             cfg=self.asr.cfg,
             loaded_model=model)
 
-    def insert_silence(self, silence_duration):
+    def insert_silence(self, silence_duration, offset):
         """
         If silences are > 5s, we do a complete context clear. Otherwise, we just insert a small silence and shift the last_attend_frame
         """

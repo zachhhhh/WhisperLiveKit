@@ -153,7 +153,7 @@ class OnlineASRProcessor:
         """Append an audio chunk (a numpy array) to the current audio buffer."""
         self.audio_buffer = np.append(self.audio_buffer, audio)
 
-    def insert_silence(self, silence_duration):
+    def insert_silence(self, silence_duration, offset):
         """
         If silences are > 5s, we do a complete context clear. Otherwise, we just insert a small silence and shift the last_attend_frame
         """
@@ -161,7 +161,7 @@ class OnlineASRProcessor:
             gap_silence = np.zeros(int(16000 * silence_duration), dtype=np.int16)
             self.insert_audio_chunk(gap_silence)
         else:
-            self.init(offset=(silence_duration + self.buffer_time_offset) / self.SAMPLING_RATE)
+            self.init(offset=silence_duration + offset)
         self.global_time_offset += silence_duration
 
     def prompt(self) -> Tuple[str, str]:
@@ -244,7 +244,7 @@ class OnlineASRProcessor:
         )
         if self.global_time_offset:
             for token in committed_tokens:
-                token.with_offset(self.global_time_offset)
+                token = token.with_offset(self.global_time_offset)
         return committed_tokens, current_audio_processed_upto
 
     def chunk_completed_sentence(self):

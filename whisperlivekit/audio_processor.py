@@ -309,7 +309,7 @@ class AudioProcessor:
                 
                 if type(item) is Silence:
                     cumulative_pcm_duration_stream_time += item.duration
-                    self.online.insert_silence(item.duration)
+                    self.online.insert_silence(item.duration, self.tokens[-1].end)
                     continue
                 
                 if isinstance(item, np.ndarray):
@@ -438,7 +438,7 @@ class AudioProcessor:
                 last_end_diarized = 0
                 undiarized_text = []
                 current_time = time() - self.beg_loop
-                tokens = handle_silences(tokens, current_time)
+                tokens = handle_silences(tokens, current_time, self.silence)
                 for token in tokens:
                     speaker = token.speaker
                     
