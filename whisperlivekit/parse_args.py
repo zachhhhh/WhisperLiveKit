@@ -113,8 +113,8 @@ def parse_args():
     )
     parser.add_argument(
         "--vac",
-        action="store_true",
-        default=False,
+        # action="store_true",
+        default=True,
         help="Use VAC = voice activity controller. Recommended. Requires torch.",
     )
     parser.add_argument(

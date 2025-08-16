@@ -66,10 +66,12 @@ class AudioProcessor:
         self.asr = models.asr
         self.tokenizer = models.tokenizer
         self.diarization = models.diarization
-        import torch
-        model, _ = torch.hub.load(repo_or_dir="snakers4/silero-vad", model="silero_vad")
-        self.vac = FixedVADIterator(model)
-        self.vac.reset_states()
+        self.vac_model = models.vac_model
+        if self.args.vac:
+            self.vac = FixedVADIterator(models.vac_model)
+        else:
+            self.vac = None
+            
         self.ffmpeg_manager = FFmpegManager(
             sample_rate=self.sample_rate,
             channels=self.channels
@@ -218,10 +220,13 @@ class AudioProcessor:
                     # Process audio chunk
                     pcm_array = self.convert_pcm_to_float(self.pcm_buffer[:self.max_bytes_per_sec])
                     self.pcm_buffer = self.pcm_buffer[self.max_bytes_per_sec:]
-                    res = self.vac(pcm_array)
-
+                    
+                    res = None
                     end_of_audio = False
                     silence_buffer = None
+                    
+                    if self.args.vac:
+                        res = self.vac(pcm_array)
                     
                     if self.silence:
                         print('NO AUDIO')
