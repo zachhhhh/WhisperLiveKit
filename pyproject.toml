@@ -27,23 +27,20 @@ dependencies = [
     "soundfile",
     "faster-whisper",
     "uvicorn",
-    "websockets"
-]
-
-[project.optional-dependencies]
-diarization = ["diart"]
-vac = ["torch"]
-sentence = ["mosestokenizer", "wtpsplit"]
-whisper = ["whisper"]
-whisper-timestamped = ["whisper-timestamped"]
-mlx-whisper = ["mlx-whisper"]
-openai = ["openai"]
-simulstreaming = [
+    "websockets",
     "torch",
     "tqdm",
     "tiktoken",
     'triton>=2.0.0,<3; platform_machine == "x86_64" and (sys_platform == "linux" or sys_platform == "linux2")'
 ]
+
+[project.optional-dependencies]
+diarization = ["diart"]
+sentence = ["mosestokenizer", "wtpsplit"]
+whisper = ["whisper"]
+whisper-timestamped = ["whisper-timestamped"]
+mlx-whisper = ["mlx-whisper"]
+openai = ["openai"]
 
 [project.urls]
 Homepage = "https://github.com/QuentinFuxa/WhisperLiveKit"

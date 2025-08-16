@@ -78,9 +78,6 @@ brew install ffmpeg
 ### Optional Dependencies
 
 ```bash
-# Voice Activity Controller (prevents hallucinations)
-pip install torch
-
 # Sentence-based buffer trimming
 pip install mosestokenizer wtpsplit
 pip install tokenize_uk  # If you work with Ukrainian text
@@ -93,7 +90,6 @@ pip install whisperlivekit[whisper]              # Original Whisper
 pip install whisperlivekit[whisper-timestamped]  # Improved timestamps
 pip install whisperlivekit[mlx-whisper]          # Apple Silicon optimization
 pip install whisperlivekit[openai]               # OpenAI API
-pip install whisperlivekit[simulstreaming]
 ```
 
 ### 🎹 Pyannote Models Setup
@@ -195,7 +191,7 @@ WhisperLiveKit offers extensive configuration options:
 | `--punctuation-split` | Use punctuation to improve speaker boundaries | `True` |
 | `--confidence-validation` | Use confidence scores for faster validation | `False` |
 | `--min-chunk-size` | Minimum audio chunk size (seconds) | `1.0` |
-| `--vac` | Use Voice Activity Controller | `False` |
+| `--vac` | Use Voice Activity Controller | `True` |
 | `--no-vad` | Disable Voice Activity Detection | `False` |
 | `--buffer_trimming` | Buffer trimming strategy (`sentence` or `segment`) | `segment` |
 | `--warmup-file` | Audio file path for model warmup | `jfk.wav` |
