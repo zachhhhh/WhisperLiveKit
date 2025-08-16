@@ -38,7 +38,7 @@ class SimulStreamingOnlineProcessor:
         self.logfile = logfile
         self.is_last = False
         self.end = 0.0
-        self.cumulative_audio_duration = 0.0
+        self.global_time_offset = 0.0
         
         self.committed: List[ASRToken] = []
         self.last_result_tokens: List[ASRToken] = []
@@ -59,10 +59,9 @@ class SimulStreamingOnlineProcessor:
         if silence_duration < 5:
             gap_silence = torch.zeros(int(16000*min(silence_duration, 1.0)))
             self.model.insert_audio(gap_silence)
-            self.model.last_attend_frame += int(TOKENS_PER_SECOND * (min(silence_duration, 1.0) - 1.0))
         else:
             self.model.refresh_segment(complete=True)
-            self.model.last_attend_frame += int(TOKENS_PER_SECOND * silence_duration)
+        self.global_time_offset += silence_duration
 
 
         
@@ -83,29 +82,51 @@ class SimulStreamingOnlineProcessor:
         )
 
     def timestamped_text(self, tokens, generation):
-        # From the simulstreaming repo. self.model to self.asr.model
-        pr = generation["progress"]
-        if "result" not in generation:
-            split_words, split_tokens = self.model.tokenizer.split_to_word_tokens(tokens)
+        """
+        generate timestamped text from tokens and generation data.
+        
+        args:
+            tokens: List of tokens to process
+            generation: Dictionary containing generation progress and optionally results
+            
+        returns:
+            List of tuples containing (start_time, end_time, word) for each word
+        """
+        FRAME_DURATION = 0.02    
+        if "result" in generation:
+            split_words = generation["result"]["split_words"]
+            split_tokens = generation["result"]["split_tokens"]
         else:
-            split_words, split_tokens = generation["result"]["split_words"], generation["result"]["split_tokens"]
-
-        frames = [p["most_attended_frames"][0] for p in pr]
-        tokens = tokens.copy()
-        ret = []
-        for sw,st in zip(split_words, split_tokens):
-            b = None
-            for stt in st:
-                t,f = tokens.pop(0), frames.pop(0)
-                if t != stt:
-                    raise ValueError(f"Token mismatch: {t} != {stt} at frame {f}.")
-                if b is None:
-                    b = f
-            e = f
-            out = (b*0.02, e*0.02, sw)
-            ret.append(out)
-            logger.debug(f"TS-WORD:\t{' '.join(map(str, out))}")
-        return ret
+            split_words, split_tokens = self.model.tokenizer.split_to_word_tokens(tokens)
+        progress = generation["progress"]
+        frames = [p["most_attended_frames"][0] for p in progress]
+        tokens_queue = tokens.copy()
+        timestamped_words = []
+        
+        for word, word_tokens in zip(split_words, split_tokens):
+            start_frame = None
+            end_frame = None
+            for expected_token in word_tokens:
+                if not tokens_queue or not frames:
+                    raise ValueError(f"Insufficient tokens or frames for word '{word}'")
+                    
+                actual_token = tokens_queue.pop(0)
+                current_frame = frames.pop(0)
+                if actual_token != expected_token:
+                    raise ValueError(
+                        f"Token mismatch: expected '{expected_token}', "
+                        f"got '{actual_token}' at frame {current_frame}"
+                    )
+                if start_frame is None:
+                    start_frame = current_frame
+                end_frame = current_frame
+            start_time = start_frame * FRAME_DURATION
+            end_time = end_frame * FRAME_DURATION
+            
+            timestamp_entry = (start_time, end_time, word)
+            timestamped_words.append(timestamp_entry)
+            logger.debug(f"TS-WORD:\t{start_time:.2f}\t{end_time:.2f}\t{word}")
+        return timestamped_words
 
     def process_iter(self) -> Tuple[List[ASRToken], float]:
         """
@@ -126,6 +147,8 @@ class SimulStreamingOnlineProcessor:
                     end=end,
                     text=word,
                     probability=0.95  # fake prob. Maybe we can extract it from the model?
+                ).with_offset(
+                    self.global_time_offset
                 )
                 new_tokens.append(token)
                 
