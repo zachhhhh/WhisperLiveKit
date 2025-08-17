@@ -16,19 +16,19 @@
 
 WhisperLiveKit brings real-time speech transcription directly to your browser, with a ready-to-use backend+server and a simple frontend. ✨
 
-Built on [SimulStreaming](https://github.com/ufal/SimulStreaming) (SOTA 2025) and [WhisperStreaming](https://github.com/ufal/whisper_streaming) (SOTA 2023) for transcription, plus [Streaming Sortformer](https://arxiv.org/abs/2507.18446) (SOTA 2025) and [Diart](https://github.com/juanmc2005/diart) (SOTA 2021) for diarization.
+Built on [SimulStreaming](https://github.com/ufal/SimulStreaming) (SOTA 2025) and [WhisperStreaming](https://github.com/ufal/whisper_streaming) (SOTA 2023) for transcription. [Streaming Sortformer](https://arxiv.org/abs/2507.18446) (SOTA 2025) and [Diart](https://github.com/juanmc2005/diart) (SOTA 2021) for diarization. [Silero VAD](https://github.com/snakers4/silero-vad) (2024) for Voice Activiy Detection.
 
 
 ### Key Features
 
 - **Real-time Transcription** - Locally (or on-prem) convert speech to text instantly as you speak
-- **Speaker Diarization** - Identify different speakers in real-time. (⚠️ backend Streaming Sortformer in developement)
-- **Multi-User Support** - Handle multiple users simultaneously with a single backend/server
-- **Automatic Silence Chunking** – Automatically chunks when no audio is detected to limit buffer size
-- **Confidence Validation** – Immediately validate high-confidence tokens for faster inference (WhisperStreaming only)
-- **Buffering Preview** – Displays unvalidated transcription segments (not compatible with SimulStreaming yet)
-- **Punctuation-Based Speaker Splitting [BETA]** - Align speaker changes with natural sentence boundaries for more readable transcripts
+- **Speaker Diarization** - Identify different speakers in real-time.
+- **Voice Activity Detection** – Reduce processing overhead when no voice is detected.
+- **Punctuation-Based Speaker Splitting** - Align speaker changes with natural sentence boundaries.
+- **Confidence Validation** – Immediately validate high-confidence tokens (WhisperStreaming only)
 - **SimulStreaming Backend** - [Dual-licensed](https://github.com/ufal/SimulStreaming#-licence-and-contributions) - Ultra-low latency transcription using SOTA AlignAtt policy. 
+- **Multi-User Support** - Handle multiple users simultaneously with a single backend/server
+
 
 ### Architecture
 
@@ -191,7 +191,7 @@ WhisperLiveKit offers extensive configuration options:
 | `--punctuation-split` | Use punctuation to improve speaker boundaries | `True` |
 | `--confidence-validation` | Use confidence scores for faster validation | `False` |
 | `--min-chunk-size` | Minimum audio chunk size (seconds) | `1.0` |
-| `--vac` | Use Voice Activity Controller | `True` |
+| `--no-vac` | Disable Voice Activity Controller | `False` |
 | `--no-vad` | Disable Voice Activity Detection | `False` |
 | `--buffer_trimming` | Buffer trimming strategy (`sentence` or `segment`) | `segment` |
 | `--warmup-file` | Audio file path for model warmup | `jfk.wav` |
