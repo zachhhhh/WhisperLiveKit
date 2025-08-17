@@ -59,9 +59,10 @@ class SimulStreamingOnlineProcessor:
         if silence_duration < 5:
             gap_silence = torch.zeros(int(16000*min(silence_duration, 1.0)))
             self.model.insert_audio(gap_silence)
+            self.global_time_offset = silence_duration - 1.0
         else:
             self.model.refresh_segment(complete=True)
-        self.global_time_offset += silence_duration
+            self.global_time_offset += silence_duration
 
 
         
@@ -100,29 +101,32 @@ class SimulStreamingOnlineProcessor:
             split_words, split_tokens = self.model.tokenizer.split_to_word_tokens(tokens)
         progress = generation["progress"]
         frames = [p["most_attended_frames"][0] for p in progress]
+        absolute_timestamps = [p["absolute_timestamps"][0] for p in progress]
         tokens_queue = tokens.copy()
         timestamped_words = []
         
         for word, word_tokens in zip(split_words, split_tokens):
-            start_frame = None
-            end_frame = None
+            # start_frame = None
+            # end_frame = None
             for expected_token in word_tokens:
                 if not tokens_queue or not frames:
                     raise ValueError(f"Insufficient tokens or frames for word '{word}'")
                     
                 actual_token = tokens_queue.pop(0)
                 current_frame = frames.pop(0)
+                current_timestamp = absolute_timestamps.pop(0)
                 if actual_token != expected_token:
                     raise ValueError(
                         f"Token mismatch: expected '{expected_token}', "
                         f"got '{actual_token}' at frame {current_frame}"
                     )
-                if start_frame is None:
-                    start_frame = current_frame
-                end_frame = current_frame
-            start_time = start_frame * FRAME_DURATION
-            end_time = end_frame * FRAME_DURATION
-            
+                # if start_frame is None:
+                #     start_frame = current_frame
+                # end_frame = current_frame
+            # start_time = start_frame * FRAME_DURATION
+            # end_time = end_frame * FRAME_DURATION
+            start_time = current_timestamp
+            end_time = current_timestamp + 0.1
             timestamp_entry = (start_time, end_time, word)
             timestamped_words.append(timestamp_entry)
             logger.debug(f"TS-WORD:\t{start_time:.2f}\t{end_time:.2f}\t{word}")
@@ -134,7 +138,7 @@ class SimulStreamingOnlineProcessor:
         
         Returns a tuple: (list of committed ASRToken objects, float representing the audio processed up to time).
         """
-        try:            
+        try:
             tokens, generation_progress = self.model.infer(is_last=self.is_last)
             ts_words = self.timestamped_text(tokens, generation_progress)
             
@@ -212,7 +216,7 @@ class SimulStreamingASR():
         
         self.model_path = kwargs.get('model_path', './large-v3.pt')
         self.frame_threshold = kwargs.get('frame_threshold', 25)
-        self.audio_max_len = kwargs.get('audio_max_len', 30.0)
+        self.audio_max_len = kwargs.get('audio_max_len', 20.0)
         self.audio_min_len = kwargs.get('audio_min_len', 0.0)
         self.segment_length = kwargs.get('segment_length', 0.5)
         self.beams = kwargs.get('beams', 1)

@@ -125,6 +125,7 @@ class PaddedAlignAttWhisper:
         self.init_tokens()
         
         self.last_attend_frame = -self.cfg.rewind_threshold
+        self.cumulative_time_offset = 0.0
 
         if self.cfg.max_context_tokens is None:
             self.max_context_tokens = self.max_text_len
@@ -220,6 +221,7 @@ class PaddedAlignAttWhisper:
         self.init_tokens()
         self.last_attend_frame = -self.cfg.rewind_threshold       
         self.detected_language = None
+        self.cumulative_time_offset = 0.0
         self.init_context()
         logger.debug(f"Context: {self.context}")
         if not complete and len(self.segments) > 2:
@@ -287,8 +289,9 @@ class PaddedAlignAttWhisper:
             removed_len = self.segments[0].shape[0] / 16000
             segments_len -= removed_len
             self.last_attend_frame -= int(TOKENS_PER_SECOND*removed_len)
+            self.cumulative_time_offset += removed_len  # Track cumulative time removed
             self.segments = self.segments[1:]
-            logger.debug(f"remove segments: {len(self.segments)} {len(self.tokens)}")
+            logger.debug(f"remove segments: {len(self.segments)} {len(self.tokens)}, cumulative offset: {self.cumulative_time_offset:.2f}s")
             if len(self.tokens) > 1:
                 self.context.append_token_ids(self.tokens[1][0,:])
                 self.tokens = [self.initial_tokens] + self.tokens[2:]
@@ -504,7 +507,13 @@ class PaddedAlignAttWhisper:
             # for each beam, the most attended frame is:
             most_attended_frames = torch.argmax(attn_of_alignment_heads[:,-1,:], dim=-1)
             generation_progress_loop.append(("most_attended_frames",most_attended_frames.clone().tolist()))
+            
+            # Calculate absolute timestamps accounting for cumulative offset
+            absolute_timestamps = [(frame * 0.02 + self.cumulative_time_offset) for frame in most_attended_frames.tolist()]
+            generation_progress_loop.append(("absolute_timestamps", absolute_timestamps))
+            
             logger.debug(str(most_attended_frames.tolist()) + " most att frames")
+            logger.debug(f"Absolute timestamps: {absolute_timestamps} (offset: {self.cumulative_time_offset:.2f}s)")
 
             most_attended_frame = most_attended_frames[0].item()
 
