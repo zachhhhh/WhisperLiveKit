@@ -49,7 +49,7 @@ class TranscriptionEngine:
             "frame_threshold": 25,
             "beams": 1,
             "decoder_type": None,
-            "audio_max_len": 30.0,
+            "audio_max_len": 20.0,
             "audio_min_len": 0.0,
             "cif_ckpt_path": None,
             "never_fire": False,
@@ -69,6 +69,8 @@ class TranscriptionEngine:
             config_dict['transcription'] = not kwargs['no_transcription']
         if 'no_vad' in kwargs:
             config_dict['vad'] = not kwargs['no_vad']
+        if 'no_vac' in kwargs:
+            config_dict['vac'] = not kwargs['no_vac']
         
         config_dict.pop('no_transcription', None)
         config_dict.pop('no_vad', None)
