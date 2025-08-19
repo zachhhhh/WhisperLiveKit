@@ -8,9 +8,9 @@ from datetime import timedelta
 from whisperlivekit.timed_objects import ASRToken, Silence
 from whisperlivekit.core import TranscriptionEngine, online_factory
 from whisperlivekit.ffmpeg_manager import FFmpegManager, FFmpegState
-from .remove_silences import handle_silences
-from trail_repetition import trim_tail_repetition
-from silero_vad_iterator import FixedVADIterator
+from whisperlivekit.remove_silences import handle_silences
+from whisperlivekit.trail_repetition import trim_tail_repetition
+from whisperlivekit.silero_vad_iterator import FixedVADIterator
 # Set up logging once
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -228,9 +228,6 @@ class AudioProcessor:
                     if self.args.vac:
                         res = self.vac(pcm_array)
                     
-                    if self.silence:
-                        print('NO AUDIO')
-                    
                     if res is not None:
                         if res.get('end', 0) > res.get('start', 0):
                             end_of_audio = True
@@ -364,14 +361,24 @@ class AudioProcessor:
     async def diarization_processor(self, diarization_obj):
         """Process audio chunks for speaker diarization."""
         buffer_diarization = ""
-        
+        cumulative_pcm_duration_stream_time = 0.0
         while True:
             try:
-                pcm_array = await self.diarization_queue.get()
-                if pcm_array is SENTINEL:
+                item = await self.diarization_queue.get()
+                if item is SENTINEL:
                     logger.debug("Diarization processor received sentinel. Finishing.")
                     self.diarization_queue.task_done()
                     break
+                
+                if type(item) is Silence:
+                    cumulative_pcm_duration_stream_time += item.duration
+                    # self.diarization_obj.insert_silence(item.duration, self.tokens[-1].end)
+                    continue
+    
+                if isinstance(item, np.ndarray):
+                    pcm_array = item
+                else:
+                    raise Exception('item should be pcm_array') 
                 
                 # Process diarization
                 await diarization_obj.diarize(pcm_array)
