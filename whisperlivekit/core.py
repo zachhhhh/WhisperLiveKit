@@ -92,7 +92,7 @@ class TranscriptionEngine:
         
         if self.args.transcription:
             if self.args.backend == "simulstreaming": 
-                from simul_whisper import SimulStreamingASR
+                from whisperlivekit.simul_whisper import SimulStreamingASR
                 self.tokenizer = None
                 simulstreaming_kwargs = {}
                 for attr in ['frame_threshold', 'beams', 'decoder_type', 'audio_max_len', 'audio_min_len', 
@@ -132,13 +132,17 @@ class TranscriptionEngine:
 
 def online_factory(args, asr, tokenizer, logfile=sys.stderr):
     if args.backend == "simulstreaming":    
-        from simul_whisper import SimulStreamingOnlineProcessor
+        from whisperlivekit.simul_whisper import SimulStreamingOnlineProcessor
         online = SimulStreamingOnlineProcessor(
             asr,
             logfile=logfile,
         )
         # warmup_online(online, args.warmup_file)
-    elif False: #args.vac: #vac is now handled in audio_processor
+    elif False: #elif args.vac: 
+        """
+        WhisperStreaming backend also offer to use VAC.
+        but we handle it directly in the audio processor, which is more efficient
+        """
         online = VACOnlineASRProcessor(
             args.min_chunk_size,
             asr,
