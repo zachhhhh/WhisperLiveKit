@@ -29,6 +29,7 @@ class DiarizationObserver(Observer):
         self.speaker_segments = []
         self.processed_time = 0
         self.segment_lock = threading.Lock()
+        self.global_time_offset = 0.0
     
     def on_next(self, value: Tuple[Annotation, Any]):
         annotation, audio = value
@@ -49,8 +50,8 @@ class DiarizationObserver(Observer):
                         print(f"  {speaker}: {start:.2f}s-{end:.2f}s")
                         self.speaker_segments.append(SpeakerSegment(
                             speaker=speaker,
-                            start=start,
-                            end=end
+                            start=start + self.global_time_offset,
+                            end=end + self.global_time_offset
                         ))
             else:
                 logger.debug("\nNo speakers detected in this segment")
@@ -198,6 +199,9 @@ class DiartDiarization:
         )
         self.inference.attach_observers(self.observer)
         asyncio.get_event_loop().run_in_executor(None, self.inference)
+
+    def insert_silence(self, silence_duration):
+        self.observer.global_time_offset += silence_duration
 
     async def diarize(self, pcm_array: np.ndarray):
         """

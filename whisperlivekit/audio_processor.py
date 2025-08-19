@@ -372,7 +372,7 @@ class AudioProcessor:
                 
                 if type(item) is Silence:
                     cumulative_pcm_duration_stream_time += item.duration
-                    # self.diarization_obj.insert_silence(item.duration, self.tokens[-1].end)
+                    diarization_obj.insert_silence(item.duration)
                     continue
     
                 if isinstance(item, np.ndarray):
