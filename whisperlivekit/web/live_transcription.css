@@ -193,7 +193,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 3px;
 }
 
 #chunkSelector,
@@ -246,6 +246,12 @@ label {
   pointer-events: none;
 }
 
+.theme-selector-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
 .segmented label {
   display: inline-flex;
   align-items: center;
@@ -256,6 +262,14 @@ label {
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.segmented label span {
+  display: none;
+}
+
+.segmented label:hover span {
+  display: inline;
 }
 
 .segmented label:hover {
