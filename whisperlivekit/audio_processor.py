@@ -47,6 +47,7 @@ class AudioProcessor:
         self.last_ffmpeg_activity = time()
         self.ffmpeg_health_check_interval = 5
         self.ffmpeg_max_idle_time = 10
+        self.debug = False
 
         # State management
         self.is_stopping = False
@@ -58,7 +59,7 @@ class AudioProcessor:
         self.end_buffer = 0
         self.end_attributed_speaker = 0
         self.lock = asyncio.Lock()
-        self.beg_loop = time()
+        self.beg_loop = None #to deal with a potential little lag at the websocket initialization, this is now set in process_audio
         self.sep = " "  # Default separator
         self.last_response_content = ""
         
@@ -298,11 +299,10 @@ class AudioProcessor:
 
                 asr_internal_buffer_duration_s = len(getattr(self.online, 'audio_buffer', [])) / self.online.SAMPLING_RATE
                 transcription_lag_s = max(0.0, time() - self.beg_loop - self.end_buffer)
-
-                logger.info(
-                    f"ASR processing: internal_buffer={asr_internal_buffer_duration_s:.2f}s, "
-                    f"lag={transcription_lag_s:.2f}s."
-                )
+                asr_processing_logs = f"internal_buffer={asr_internal_buffer_duration_s:.2f}s | lag={transcription_lag_s:.2f}s |"
+                if type(item) is Silence:
+                    asr_processing_logs += f" + Silence of = {item.duration :.2fs} | last_end = {self.tokens[-1].end} |"
+                logger.info(asr_processing_logs)
                 
                 if type(item) is Silence:
                     cumulative_pcm_duration_stream_time += item.duration
@@ -444,8 +444,8 @@ class AudioProcessor:
                 lines = []
                 last_end_diarized = 0
                 undiarized_text = []
-                current_time = time() - self.beg_loop
-                tokens = handle_silences(tokens, current_time, self.silence)
+                current_time = time() - self.beg_loop if self.beg_loop else None
+                tokens, buffer_transcription = handle_silences(tokens, buffer_transcription, current_time, self.silence)
                 for token in tokens:
                     speaker = token.speaker
                     
@@ -459,21 +459,23 @@ class AudioProcessor:
                         if speaker not in [-1, 0]:
                             last_end_diarized = max(token.end, last_end_diarized)
 
-                    # Group by speaker
+                    debug_info = ""
+                    if self.debug:
+                        debug_info = f"[{format_time(token.start)} : {format_time(token.end)}]"
                     if speaker != previous_speaker or not lines:
                         lines.append({
                             "speaker": speaker,
-                            "text": token.text,
+                            "text": token.text + debug_info,
                             "beg": format_time(token.start),
                             "end": format_time(token.end),
                             "diff": round(token.end - last_end_diarized, 2)
                         })
                         previous_speaker = speaker
                     elif token.text:  # Only append if text isn't empty
-                        lines[-1]["text"] += sep + token.text
+                        lines[-1]["text"] += sep + token.text + debug_info
                         lines[-1]["end"] = format_time(token.end)
                         lines[-1]["diff"] = round(token.end - last_end_diarized, 2)
-                
+
                 # Handle undiarized text
                 if undiarized_text:
                     combined = sep.join(undiarized_text)
@@ -634,6 +636,10 @@ class AudioProcessor:
 
     async def process_audio(self, message):
         """Process incoming audio data."""
+
+        if not self.beg_loop:
+            self.beg_loop = time()
+
         if not message:
             logger.info("Empty audio message received, initiating stop sequence.")
             self.is_stopping = True

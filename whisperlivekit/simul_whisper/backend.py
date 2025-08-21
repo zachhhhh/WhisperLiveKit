@@ -36,7 +36,6 @@ class SimulStreamingOnlineProcessor:
     ):        
         self.asr = asr
         self.logfile = logfile
-        self.is_last = False
         self.end = 0.0
         self.global_time_offset = 0.0
         
@@ -57,12 +56,13 @@ class SimulStreamingOnlineProcessor:
         If silences are > 5s, we do a complete context clear. Otherwise, we just insert a small silence and shift the last_attend_frame
         """
         if silence_duration < 5:
-            gap_silence = torch.zeros(int(16000*min(silence_duration, 1.0)))
+            gap_silence = torch.zeros(int(16000*silence_duration))
             self.model.insert_audio(gap_silence)
-            self.global_time_offset = silence_duration - 1.0
+            # self.global_time_offset += silence_duration
         else:
+            self.process_iter(is_last=True) #we want to totally process what remains in the buffer.
             self.model.refresh_segment(complete=True)
-            self.global_time_offset += silence_duration
+            self.global_time_offset += silence_duration + offset
 
 
         
@@ -132,14 +132,14 @@ class SimulStreamingOnlineProcessor:
             logger.debug(f"TS-WORD:\t{start_time:.2f}\t{end_time:.2f}\t{word}")
         return timestamped_words
 
-    def process_iter(self) -> Tuple[List[ASRToken], float]:
+    def process_iter(self, is_last=False) -> Tuple[List[ASRToken], float]:
         """
         Process accumulated audio chunks using SimulStreaming.
         
         Returns a tuple: (list of committed ASRToken objects, float representing the audio processed up to time).
         """
         try:
-            tokens, generation_progress = self.model.infer(is_last=self.is_last)
+            tokens, generation_progress = self.model.infer(is_last=is_last)
             ts_words = self.timestamped_text(tokens, generation_progress)
             
             new_tokens = []
