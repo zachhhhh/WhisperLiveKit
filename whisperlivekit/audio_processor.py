@@ -301,7 +301,9 @@ class AudioProcessor:
                 transcription_lag_s = max(0.0, time() - self.beg_loop - self.end_buffer)
                 asr_processing_logs = f"internal_buffer={asr_internal_buffer_duration_s:.2f}s | lag={transcription_lag_s:.2f}s |"
                 if type(item) is Silence:
-                    asr_processing_logs += f" + Silence of = {item.duration:.2f}s | last_end = {self.tokens[-1].end} |"
+                    asr_processing_logs += f" + Silence of = {item.duration:.2f}s"
+                    if self.tokens:
+                        asr_processing_logs += " | last_end = {self.tokens[-1].end} |"
                 logger.info(asr_processing_logs)
                 
                 if type(item) is Silence:
@@ -445,12 +447,15 @@ class AudioProcessor:
                 last_end_diarized = 0
                 undiarized_text = []
                 current_time = time() - self.beg_loop if self.beg_loop else None
-                tokens, buffer_transcription = handle_silences(tokens, buffer_transcription, current_time, self.silence)
+                tokens, buffer_transcription, buffer_diarization = handle_silences(tokens, buffer_transcription, buffer_diarization, current_time, self.silence)
                 for token in tokens:
                     speaker = token.speaker
                     
+                    if speaker == -1: #Speaker -1 means no attributed by diarization. In the frontend, it should appear under 'Speaker 1'
+                        speaker = 1
+                    
                     # Handle diarization
-                    if self.args.diarization:
+                    if self.args.diarization and not tokens[-1].speaker == -2:
                         if (speaker in [-1, 0]) and token.end >= end_attributed_speaker:
                             undiarized_text.append(token.text)
                             continue

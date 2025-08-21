@@ -3,7 +3,7 @@
 let isRecording = false;
 let websocket = null;
 let recorder = null;
-let chunkDuration = 1000;
+let chunkDuration = 100;
 let websocketUrl = "ws://localhost:8000/asr";
 let userClosing = false;
 let wakeLock = null;
@@ -269,9 +269,7 @@ function renderLinesWithBuffer(
         speakerLabel = `<span class='loading'><span class="spinner"></span><span id='timeInfo'><span class="loading-diarization-value">${fmt1(
           remaining_time_diarization
         )}</span> second(s) of audio are undergoing diarization</span></span>`;
-      } else if (item.speaker == -1) {
-        speakerLabel = `<span id="speaker">Speaker 1<span id='timeInfo'>${timeInfo}</span></span>`;
-      } else if (item.speaker !== -1 && item.speaker !== 0) {
+      } else if (item.speaker !== 0) {
         speakerLabel = `<span id="speaker">Speaker ${item.speaker}<span id='timeInfo'>${timeInfo}</span></span>`;
       }
 
