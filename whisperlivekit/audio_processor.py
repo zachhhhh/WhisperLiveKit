@@ -301,7 +301,7 @@ class AudioProcessor:
                 transcription_lag_s = max(0.0, time() - self.beg_loop - self.end_buffer)
                 asr_processing_logs = f"internal_buffer={asr_internal_buffer_duration_s:.2f}s | lag={transcription_lag_s:.2f}s |"
                 if type(item) is Silence:
-                    asr_processing_logs += f" + Silence of = {item.duration :.2fs} | last_end = {self.tokens[-1].end} |"
+                    asr_processing_logs += f" + Silence of = {item.duration:.2f}s | last_end = {self.tokens[-1].end} |"
                 logger.info(asr_processing_logs)
                 
                 if type(item) is Silence:

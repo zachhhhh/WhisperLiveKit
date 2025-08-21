@@ -82,7 +82,7 @@ def parse_args():
     parser.add_argument(
         "--model",
         type=str,
-        default="tiny",
+        default="small",
         help="Name size of the Whisper model to use (default: tiny). Suggested values: tiny.en,tiny,base.en,base,small.en,small,medium.en,medium,large-v1,large-v2,large-v3,large,large-v3-turbo. The model is automatically downloaded from the model hub if not present in model cache dir.",
     )
     
@@ -115,7 +115,7 @@ def parse_args():
     parser.add_argument(
         "--backend",
         type=str,
-        default="faster-whisper",
+        default="simulstreaming",
         choices=["faster-whisper", "whisper_timestamped", "mlx-whisper", "openai-api", "simulstreaming"],
         help="Load only this backend for Whisper processing.",
     )

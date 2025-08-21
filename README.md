@@ -4,7 +4,7 @@
 <img src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/refs/heads/main/demo.png" alt="WhisperLiveKit Demo" width="730">
 </p>
 
-<p align="center"><b>Real-time, Fully Local Speech-to-Text with Speaker Diarization</b></p>
+<p align="center"><b>Real-time, Fully Local Speech-to-Text with Speaker Identification</b></p>
 
 <p align="center">
 <a href="https://pypi.org/project/whisperlivekit/"><img alt="PyPI Version" src="https://img.shields.io/pypi/v/whisperlivekit?color=g"></a>
@@ -14,7 +14,7 @@
 </p>
 
 
-WhisperLiveKit brings real-time speech transcription directly to your browser, with a ready-to-use backend+server and a simple frontend. ✨
+Real-time speech transcription directly to your browser, with a ready-to-use backend+server and a simple frontend. ✨
 
 #### Powered by Leading Research:
 
@@ -25,20 +25,14 @@ WhisperLiveKit brings real-time speech transcription directly to your browser, w
 - [Silero VAD](https://github.com/snakers4/silero-vad) (2024) - Enterprise-grade Voice Activity Detection
 
 
-### Key Features
-
-- **Real-time Transcription** - Locally (or on-prem) convert speech to text instantly as you speak
-- **Speaker Diarization** - Identify different speakers in real-time.
-- **Voice Activity Detection** – Reduce processing overhead when no voice is detected.
-- **Punctuation-Based Speaker Splitting** - Align speaker changes with natural sentence boundaries.
-- **Confidence Validation** – Immediately validate high-confidence tokens (WhisperStreaming only)
-- **SimulStreaming Backend** - [Dual-licensed](https://github.com/ufal/SimulStreaming#-licence-and-contributions) - Ultra-low latency transcription using SOTA AlignAtt policy. 
-- **Multi-User Support** - Handle multiple users simultaneously with a single backend/server
+> **Why not just run a simple Whisper model on every audio batch?** Whisper is designed for complete utterances, not real-time chunks. Processing small segments loses context, cuts off words mid-syllable, and produces poor transcription. WhisperLiveKit uses state-of-the-art simultaneous speech research for intelligent buffering and incremental processing.
 
 
 ### Architecture
 
-<img alt="Architecture" src="architecture.png" />
+<img alt="Architecture" src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/refs/heads/main/architecture.png" />
+
+*The backend supports multiple concurrent users. Voice Activity Detection reduces overhead when no voice is detected.*
 
 ### Installation & Quick Start
 
@@ -57,14 +51,16 @@ pip install whisperlivekit
 #### Quick Start
 1. **Start the transcription server:**
    ```bash
-   whisperlivekit-server --model tiny.en
+   whisperlivekit-server --model base --language en
    ```
 
-2. **Open your browser** and navigate to `http://localhost:8000`
+2. **Open your browser** and navigate to `http://localhost:8000`. Start speaking and watch your words appear in real-time!
 
-3. **Start speaking** and watch your words appear in real-time!
 
-> For HTTPS requirements, see the **Parameters** section for SSL configuration options.
+> - See [tokenizer.py](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/simul_whisper/whisper/tokenizer.py) for the list of all available languages.
+> - For HTTPS requirements, see the **Parameters** section for SSL configuration options.
+
+ 
 
 #### Optional Dependencies
 
@@ -151,18 +147,18 @@ The package includes an HTML/JavaScript implementation [here](https://github.com
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `--host` | Server host address | `localhost` |
-| `--port` | Server port | `8000` |
-| `--ssl-certfile` | Path to the SSL certificate file (for HTTPS support) | `None` |
-| `--ssl-keyfile` | Path to the SSL private key file (for HTTPS support) | `None` |
-| `--model` | Whisper model size. | `tiny` |
+| `--model` | Whisper model size. | `small` |
 | `--language` | Source language code or `auto` | `en` |
 | `--task` | `transcribe` or `translate` | `transcribe` |
-| `--backend` | Processing backend | `faster-whisper` |
+| `--backend` | Processing backend | `simulstreaming` |
 | `--min-chunk-size` | Minimum audio chunk size (seconds) | `1.0` |
 | `--no-vac` | Disable Voice Activity Controller | `False` |
 | `--no-vad` | Disable Voice Activity Detection | `False` |
 | `--warmup-file` | Audio file path for model warmup | `jfk.wav` |
+| `--host` | Server host address | `localhost` |
+| `--port` | Server port | `8000` |
+| `--ssl-certfile` | Path to the SSL certificate file (for HTTPS support) | `None` |
+| `--ssl-keyfile` | Path to the SSL private key file (for HTTPS support) | `None` |
 
 
 | WhisperStreaming backend options | Description | Default |
