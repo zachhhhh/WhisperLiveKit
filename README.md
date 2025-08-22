@@ -216,19 +216,39 @@ To deploy WhisperLiveKit in production:
 
 4. **HTTPS Support**: For secure deployments, use "wss://" instead of "ws://" in WebSocket URL
 
-### 🐋 Docker
+## 🐋 Docker
 
-A Dockerfile is provided which allows re-use of Python package installation options. Create a reusable image with only the basics and then run as a named container:
+Deploy the application easily using Docker with GPU or CPU support.
 
+### Prerequisites
+- Docker installed on your system
+- For GPU support: NVIDIA Docker runtime installed
+
+### Quick Start
+
+**With GPU acceleration (recommended):**
 ```bash
-docker build -t whisperlivekit-defaults .
-docker create --gpus all --name whisperlivekit -p 8000:8000 whisperlivekit-defaults --model base
-docker start -i whisperlivekit
+docker build -t wlk .
+docker run --gpus all -p 8000:8000 --name wlk wlk
 ```
 
-> **Note**: For **large** models, ensure that your **docker runtime** has enough **memory** available
+**CPU only:**
+```bash
+docker build -f Dockerfile.cpu -t wlk .
+docker run -p 8000:8000 --name wlk wlk
+```
 
-> **Note**: If you're running on a system without NVIDIA GPU support (such as Mac with Apple Silicon or any system without CUDA capabilities), you need to **remove the `--gpus all` flag** from the `docker create` command. Without GPU acceleration, transcription will use CPU only, which may be significantly slower. Consider using small models for better performance on CPU-only systems.
+### Advanced Usage
+
+**Custom configuration:**
+```bash
+# Example with custom model and language
+docker run --gpus all -p 8000:8000 --name wlk wlk --model large-v3 --language fr
+```
+
+### Memory Requirements
+- **Large models**: Ensure your Docker runtime has sufficient memory allocated
+
 
 #### Customization
 

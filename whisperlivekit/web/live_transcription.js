@@ -400,7 +400,12 @@ async function startRecording() {
     isRecording = true;
     updateUI();
   } catch (err) {
-    statusText.textContent = "Error accessing microphone. Please allow microphone access.";
+    if (window.location.hostname === "0.0.0.0") {
+      statusText.textContent =
+        "Error accessing microphone. Browsers may block microphone access on 0.0.0.0. Try using localhost:8000 instead.";
+    } else {
+      statusText.textContent = "Error accessing microphone. Please allow microphone access.";
+    }
     console.error(err);
   }
 }
