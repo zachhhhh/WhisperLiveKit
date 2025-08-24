@@ -186,7 +186,7 @@ The package includes an HTML/JavaScript implementation [here](https://github.com
 | Diarization options | Description | Default |
 |-----------|-------------|---------|
 | `--diarization` | Enable speaker identification | `False` |
-| `--diarization-backend` |  `diart` or `sortformer` | `diart` |
+| `--diarization-backend` |  `diart` or `sortformer` | `sortformer` |
 | `--punctuation-split` | Use punctuation to improve speaker boundaries | `True` |
 | `--segmentation-model` | Hugging Face model ID for Diart segmentation model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `pyannote/segmentation-3.0` |
 | `--embedding-model` | Hugging Face model ID for Diart embedding model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `speechbrain/spkrec-ecapa-voxceleb` |

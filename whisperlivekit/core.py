@@ -57,7 +57,7 @@ class TranscriptionEngine:
             "static_init_prompt": None,
             "max_context_tokens": None,
             "model_path": './base.pt',
-            "diarization_backend": "diart",
+            "diarization_backend": "sortformer",
             # diart params:
             "segmentation_model": "pyannote/segmentation-3.0",
             "embedding_model": "pyannote/embedding",
