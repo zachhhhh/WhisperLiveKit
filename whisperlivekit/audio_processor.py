@@ -11,16 +11,13 @@ from whisperlivekit.ffmpeg_manager import FFmpegManager, FFmpegState
 from whisperlivekit.remove_silences import handle_silences
 from whisperlivekit.trail_repetition import trim_tail_repetition
 from whisperlivekit.silero_vad_iterator import FixedVADIterator
+from whisperlivekit.results_formater import format_output, format_time
 # Set up logging once
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 SENTINEL = object() # unique sentinel object for end of stream marker
-
-def format_time(seconds: float) -> str:
-    """Format seconds as HH:MM:SS."""
-    return str(timedelta(seconds=int(seconds)))
 
 class AudioProcessor:
     """
@@ -433,7 +430,7 @@ class AudioProcessor:
                 buffer_diarization = state["buffer_diarization"]
                 end_attributed_speaker = state["end_attributed_speaker"]
                 sep = state["sep"]
-                
+                                
                 # Add dummy tokens if needed
                 if (not tokens or tokens[-1].is_dummy) and not self.args.transcription and self.args.diarization:
                     await self.add_dummy_token()
@@ -442,45 +439,13 @@ class AudioProcessor:
                     tokens = state["tokens"]
                 
                 # Format output
-                previous_speaker = -1
-                lines = []
-                last_end_diarized = 0
-                undiarized_text = []
-                current_time = time() - self.beg_loop if self.beg_loop else None
-                tokens, buffer_transcription, buffer_diarization = handle_silences(tokens, buffer_transcription, buffer_diarization, current_time, self.silence)
-                for token in tokens:
-                    speaker = token.speaker
-                    
-                    if speaker == -1: #Speaker -1 means no attributed by diarization. In the frontend, it should appear under 'Speaker 1'
-                        speaker = 1
-                    
-                    # Handle diarization
-                    if self.args.diarization and not tokens[-1].speaker == -2:
-                        if (speaker in [-1, 0]) and token.end >= end_attributed_speaker:
-                            undiarized_text.append(token.text)
-                            continue
-                        elif (speaker in [-1, 0]) and token.end < end_attributed_speaker:
-                            speaker = previous_speaker
-                        if speaker not in [-1, 0]:
-                            last_end_diarized = max(token.end, last_end_diarized)
-
-                    debug_info = ""
-                    if self.debug:
-                        debug_info = f"[{format_time(token.start)} : {format_time(token.end)}]"
-                    if speaker != previous_speaker or not lines:
-                        lines.append({
-                            "speaker": str(speaker),
-                            "text": token.text + debug_info,
-                            "beg": format_time(token.start),
-                            "end": format_time(token.end),
-                            "diff": round(token.end - last_end_diarized, 2)
-                        })
-                        previous_speaker = speaker
-                    elif token.text:  # Only append if text isn't empty
-                        lines[-1]["text"] += sep + token.text + debug_info
-                        lines[-1]["end"] = format_time(token.end)
-                        lines[-1]["diff"] = round(token.end - last_end_diarized, 2)
-
+                lines, undiarized_text, buffer_transcription, buffer_diarization = format_output(
+                    state,
+                    self.silence,
+                    current_time = time() - self.beg_loop if self.beg_loop else None,
+                    diarization = self.args.diarization,
+                    debug = self.debug
+                )
                 # Handle undiarized text
                 if undiarized_text:
                     combined = sep.join(undiarized_text)
@@ -510,7 +475,7 @@ class AudioProcessor:
                     "buffer_transcription": buffer_transcription,
                     "buffer_diarization": buffer_diarization,
                     "remaining_time_transcription": state["remaining_time_transcription"],
-                    "remaining_time_diarization": state["remaining_time_diarization"]
+                    "remaining_time_diarization": state["remaining_time_diarization"] if self.args.diarization else 0
                 }
                 
                 current_response_signature = f"{response_status} | " + \

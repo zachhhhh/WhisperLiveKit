@@ -58,17 +58,16 @@ class SortformerDiarization:
         """
         self.sample_rate = sample_rate
         self.speaker_segments = []
+        self.buffer_audio = np.array([], dtype=np.float32)
         self.segment_lock = threading.Lock()
         self.global_time_offset = 0.0
         self.processed_time = 0.0
+        self.debug = False
         
-        # Load and configure the model
         self._load_model(model_name)
         
-        # Initialize streaming state
         self._init_streaming_state()
         
-        # Audio processing variables
         self._previous_chunk_features = None
         self._chunk_index = 0
         self._len_prediction = None
@@ -169,50 +168,35 @@ class SortformerDiarization:
             pcm_array: Audio data as numpy array
         """
         try:
-            # Store PCM array for debugging
-            self.audio_buffer.append(pcm_array.copy())
+            if self.debug:
+                self.audio_buffer.append(pcm_array.copy())
+
+            threshold = int(self.chunk_duration_seconds * self.sample_rate)
             
-            # Add to buffer and accumulate duration
-            self.audio_chunk_buffer.append(pcm_array.copy())
-            chunk_duration = len(pcm_array) / self.sample_rate
-            self.accumulated_duration += chunk_duration
-            
-            # Check if we have accumulated enough audio
-            if self.accumulated_duration < self.chunk_duration_seconds:
-                print(f"Accumulating audio: {self.accumulated_duration:.2f}/{self.chunk_duration_seconds:.2f}s")
+            self.buffer_audio = np.concatenate([self.buffer_audio, pcm_array.copy()])
+            if not len(self.buffer_audio) >= threshold:
                 return
             
-            # Concatenate all buffered audio chunks
-            concatenated_audio = np.concatenate(self.audio_chunk_buffer)
+            audio = self.buffer_audio[:threshold]
+            self.buffer_audio = self.buffer_audio[threshold:]
             
-            # Reset buffer and accumulated duration
-            self.audio_chunk_buffer = []
-            self.accumulated_duration = 0.0
-            
-            # Convert audio to torch tensor
-            audio_signal_chunk = torch.tensor(concatenated_audio).unsqueeze(0).to(self.diar_model.device)
+            audio_signal_chunk = torch.tensor(audio).unsqueeze(0).to(self.diar_model.device)
             audio_signal_length_chunk = torch.tensor([audio_signal_chunk.shape[1]]).to(self.diar_model.device)
             
-            # Extract mel features
             processed_signal_chunk, processed_signal_length_chunk = self.audio2mel.get_features(
                 audio_signal_chunk, audio_signal_length_chunk
             )
             
-            # Handle feature overlap for continuity
             if self._previous_chunk_features is not None:
-                # Add overlap from previous chunk (99 frames as in offline version)
                 to_add = self._previous_chunk_features[:, :, -99:]
                 total_features = torch.concat([to_add, processed_signal_chunk], dim=2)
             else:
                 total_features = processed_signal_chunk
             
-            # Store current features for next iteration
             self._previous_chunk_features = processed_signal_chunk
             
-            # Transpose for model input
             chunk_feat_seq_t = torch.transpose(total_features, 1, 2)
             
-            # Process with streaming model
             with torch.inference_mode():
                 left_offset = 8 if self._chunk_index > 0 else 0
                 right_offset = 8
@@ -272,7 +256,6 @@ class SortformerDiarization:
                             start=start_time,
                             end=end_time
                         ))
-                        print('NEW SPEAKER, SpeakerSegment:', str(self.speaker_segments[-1]))
                 
                 # Update processed time
                 self.processed_time = max(self.processed_time, base_time + self.chunk_duration_seconds)
@@ -301,6 +284,7 @@ class SortformerDiarization:
             return tokens
         
         logger.debug(f"Assigning speakers to {len(tokens)} tokens using {len(segments)} segments")
+        use_punctuation_split = False
         if not use_punctuation_split:
             # Simple overlap-based assignment
             for token in tokens:
@@ -415,27 +399,15 @@ class SortformerDiarization:
         with self.segment_lock:
             self.speaker_segments.clear()
         
-        # Save audio buffer to WAV file for debugging
-        if self.audio_buffer:
-            try:
-                # Concatenate all PCM chunks
-                concatenated_audio = np.concatenate(self.audio_buffer)
-                
-                # Convert from float32 back to int16 for WAV file
-                audio_data_int16 = (concatenated_audio * 32767).astype(np.int16)
-                
-                # Write to WAV file
-                with wave.open("diarization_audio.wav", "wb") as wav_file:
-                    wav_file.setnchannels(1)  # Mono audio
-                    wav_file.setsampwidth(2)   # 2 bytes per sample (int16)
-                    wav_file.setframerate(self.sample_rate)
-                    wav_file.writeframes(audio_data_int16.tobytes())
-                
-                logger.info(f"Saved {len(concatenated_audio)} samples to diarization_audio.wav")
-            except Exception as e:
-                logger.error(f"Error saving audio to WAV file: {e}")
-        else:
-            logger.info("No audio data to save")
+        if self.debug:
+            concatenated_audio = np.concatenate(self.audio_buffer)
+            audio_data_int16 = (concatenated_audio * 32767).astype(np.int16)                
+            with wave.open("diarization_audio.wav", "wb") as wav_file:
+                wav_file.setnchannels(1)  # mono audio
+                wav_file.setsampwidth(2)   # 2 bytes per sample (int16)
+                wav_file.setframerate(self.sample_rate)
+                wav_file.writeframes(audio_data_int16.tobytes())
+            logger.info(f"Saved {len(concatenated_audio)} samples to diarization_audio.wav")
 
 
 def extract_number(s: str) -> int:
@@ -450,40 +422,27 @@ if __name__ == '__main__':
     import librosa
     
     async def main():
-        """Main function to test SortformerDiarization with the same example as offline version."""
-        # Load and prepare audio (same as offline version)
-        try:
-            an4_audio = 'audio_test.mp3'
-            signal, sr = librosa.load(an4_audio, sr=16000)
-            signal = signal[:16000*30]  # 30 seconds
-        except Exception as e:
-            print(f"Error loading audio file: {e}")
-            return
-        
+        """TEST ONLY."""
+        an4_audio = 'audio_test.mp3'
+        signal, sr = librosa.load(an4_audio, sr=16000)
+        signal = signal[:16000*30]
+
         print("\n" + "=" * 50)
-        print("Expected ground truth:")
+        print("ground truth:")
         print("Speaker 0: 0:00 - 0:09")
         print("Speaker 1: 0:09 - 0:19") 
         print("Speaker 2: 0:19 - 0:25")
         print("Speaker 0: 0:25 - 0:30")
         print("=" * 50)
         
-        # Create diarization instance
-        diarization = SortformerDiarization(sample_rate=16000)
-        
-        # Chunk and process audio
-        chunk_size = 16000  # 1 second
-        print(f"Processing {len(signal)} samples in {len(signal) // chunk_size} chunks...")
+        diarization = SortformerDiarization(sample_rate=16000)        
+        chunk_size = 1600
         
         for i in range(0, len(signal), chunk_size):
             chunk = signal[i:i+chunk_size]
             await diarization.diarize(chunk)
             print(f"Processed chunk {i // chunk_size + 1}")
         
-        # Close and save WAV
-        # diarization.close()
-        
-        # Print results
         segments = diarization.get_segments()
         print("\nDiarization results:")
         for segment in segments:
