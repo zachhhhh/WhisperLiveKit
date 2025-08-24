@@ -127,7 +127,8 @@ class TranscriptionEngine:
                     embedding_model_name=self.args.embedding_model
                 )
             elif self.args.diarization_backend == "sortformer":
-                raise ValueError('Sortformer backend in developement')
+                from whisperlivekit.diarization.sortformer_backend import SortformerDiarization
+                self.diarization = SortformerDiarization()
             else:
                 raise ValueError(f"Unknown diarization backend: {self.args.diarization_backend}")
             

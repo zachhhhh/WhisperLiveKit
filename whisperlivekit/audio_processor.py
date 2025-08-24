@@ -303,7 +303,7 @@ class AudioProcessor:
                 if type(item) is Silence:
                     asr_processing_logs += f" + Silence of = {item.duration:.2f}s"
                     if self.tokens:
-                        asr_processing_logs += " | last_end = {self.tokens[-1].end} |"
+                        asr_processing_logs += f" | last_end = {self.tokens[-1].end} |"
                 logger.info(asr_processing_logs)
                 
                 if type(item) is Silence:
@@ -469,7 +469,7 @@ class AudioProcessor:
                         debug_info = f"[{format_time(token.start)} : {format_time(token.end)}]"
                     if speaker != previous_speaker or not lines:
                         lines.append({
-                            "speaker": speaker,
+                            "speaker": str(speaker),
                             "text": token.text + debug_info,
                             "beg": format_time(token.start),
                             "end": format_time(token.end),
