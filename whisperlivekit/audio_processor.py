@@ -4,12 +4,9 @@ from time import time, sleep
 import math
 import logging
 import traceback
-from datetime import timedelta
 from whisperlivekit.timed_objects import ASRToken, Silence
 from whisperlivekit.core import TranscriptionEngine, online_factory, online_diarization_factory
 from whisperlivekit.ffmpeg_manager import FFmpegManager, FFmpegState
-from whisperlivekit.remove_silences import handle_silences
-from whisperlivekit.trail_repetition import trim_tail_repetition
 from whisperlivekit.silero_vad_iterator import FixedVADIterator
 from whisperlivekit.results_formater import format_output, format_time
 # Set up logging once
@@ -109,17 +106,6 @@ class AudioProcessor:
         """Thread-safe update of transcription with new data."""
         async with self.lock:
             self.tokens.extend(new_tokens)
-            
-            # self.tokens, has_been_trimmed = trim_tail_repetition(
-            #     self.tokens,
-            #     key=lambda t: t.text.strip().lower(),
-            #     min_block=2,        # avoid trimming single '.' loops; set to 1 if you want to remove those too
-            #     max_tail=200,
-            #     prefer="longest",   # prefer removing the longest repeated phrase
-            #     keep=1
-            # )
-            # if has_been_trimmed:
-            #     print('HAS BEEN TRIMMED !')
             self.buffer_transcription = buffer
             self.end_buffer = end_buffer
             self.sep = sep
