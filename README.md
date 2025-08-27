@@ -66,7 +66,7 @@ pip install whisperlivekit
 
 | Optional | `pip install` |
 |-----------|-------------|
-| Speaker diarization with Sortformer | `git+https://github.com/NVIDIA/NeMo.git@main#egg=nemo_toolkit[asr]` |
+| **Speaker diarization with Sortformer** | `git+https://github.com/NVIDIA/NeMo.git@main#egg=nemo_toolkit[asr]` |
 | Speaker diarization with Diart | `diart` |
 | Original Whisper backend | `whisper` |
 | Improved timestamps backend | `whisper-timestamped` |
@@ -75,21 +75,11 @@ pip install whisperlivekit
 
 See  **Parameters & Configuration** below on how to use them.
 
- 
-> **Pyannote Models Setup** For diarization, you need access to pyannote.audio models:
-> 1. [Accept user conditions](https://huggingface.co/pyannote/segmentation) for the `pyannote/segmentation` model
-> 2. [Accept user conditions](https://huggingface.co/pyannote/segmentation-3.0) for the `pyannote/segmentation-3.0` model
-> 3. [Accept user conditions](https://huggingface.co/pyannote/embedding) for the `pyannote/embedding` model
->4. Login with HuggingFace:
-> ```bash
-> huggingface-cli login
-> ```
 
-## 💻 Usage Examples
 
-#### Command-line Interface
+### Usage Examples
 
-Start the transcription server with various options:
+**Command-line Interface**: Start the transcription server with various options:
 
 ```bash
 # Use better model than default (small)
@@ -100,8 +90,7 @@ whisperlivekit-server --host 0.0.0.0 --port 8000 --model medium --diarization --
 ```
 
 
-#### Python API Integration (Backend)
-Check [basic_server](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/basic_server.py) for a more complete example of how to use the functions and classes.
+**Python API Integration**: Check [basic_server](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/basic_server.py) for a more complete example of how to use the functions and classes.
 
 ```python
 from whisperlivekit import TranscriptionEngine, AudioProcessor, parse_args
@@ -139,12 +128,10 @@ async def websocket_endpoint(websocket: WebSocket):
         await audio_processor.process_audio(message)        
 ```
 
-#### Frontend Implementation
-
-The package includes an HTML/JavaScript implementation [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html). You can also import it using `from whisperlivekit import get_web_interface_html` & `page = get_web_interface_html()`
+**Frontend Implementation**: The package includes an HTML/JavaScript implementation [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/web/live_transcription.html). You can also import it using `from whisperlivekit import get_web_interface_html` & `page = get_web_interface_html()`
 
 
-### ⚙️ Parameters & Configuration
+## Parameters & Configuration
 
 An important list of parameters can be changed. But what *should* you change?
 - the `--model` size. List and recommandations [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/available_models.md)
@@ -199,6 +186,13 @@ The rest I don't recommend. But below are your options.
 | `--diarization-backend` |  `diart` or `sortformer` | `sortformer` |
 | `--segmentation-model` | Hugging Face model ID for Diart segmentation model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `pyannote/segmentation-3.0` |
 | `--embedding-model` | Hugging Face model ID for Diart embedding model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `speechbrain/spkrec-ecapa-voxceleb` |
+
+
+> For diarization using Diart, you need access to pyannote.audio models:
+> 1. [Accept user conditions](https://huggingface.co/pyannote/segmentation) for the `pyannote/segmentation` model
+> 2. [Accept user conditions](https://huggingface.co/pyannote/segmentation-3.0) for the `pyannote/segmentation-3.0` model
+> 3. [Accept user conditions](https://huggingface.co/pyannote/embedding) for the `pyannote/embedding` model
+>4. Login with HuggingFace: `huggingface-cli login`
 
 ### 🚀 Deployment Guide
 
