@@ -148,7 +148,7 @@ The package includes an HTML/JavaScript implementation [here](https://github.com
 
 An important list of parameters can be changed. But what *should* you change?
 - the `--model` size. List and recommandations [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/available_models.md)
-- the `--language`.  List [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/simul_whisper/whisper/tokenizer.py)
+- the `--language`.  List [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/simul_whisper/whisper/tokenizer.py). If you use `auto`, the model attempts to detect the language automatically, but it tends to bias towards English.
 - the `--backend` ? you can switch to `--backend faster-whisper` if  `simulstreaming` does not work correctly or if you prefer to avoid the dual-license requirements.
 - `--warmup-file`, if you have one
 - `--host`, `--port`, `--ssl-certfile`, `--ssl-keyfile`, if you set up a server
@@ -159,7 +159,7 @@ The rest I don't recommend. But below are your options.
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `--model` | Whisper model size. | `small` |
-| `--language` | Source language code or `auto` | `en` |
+| `--language` | Source language code or `auto` | `auto` |
 | `--task` | `transcribe` or `translate` | `transcribe` |
 | `--backend` | Processing backend | `simulstreaming` |
 | `--min-chunk-size` | Minimum audio chunk size (seconds) | `1.0` |

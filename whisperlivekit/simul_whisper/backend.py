@@ -212,7 +212,7 @@ class SimulStreamingASR():
         logger.warning(SIMULSTREAMING_LICENSE)
         self.logfile = logfile
         self.transcribe_kargs = {}
-        self.original_language = None if lan == "auto" else lan
+        self.original_language = lan
         
         self.model_path = kwargs.get('model_path', './large-v3.pt')
         self.frame_threshold = kwargs.get('frame_threshold', 25)
@@ -281,7 +281,7 @@ class SimulStreamingASR():
     def load_model(self):
         whisper_model = load_model(name=self.model_name, download_root=self.model_path)
         warmup_audio = load_file(self.warmup_file)
-        whisper_model.transcribe(warmup_audio, language=self.original_language)
+        whisper_model.transcribe(warmup_audio, language=self.original_language if self.original_language != 'auto' else None)
         return whisper_model
     
     def get_new_model_instance(self):
