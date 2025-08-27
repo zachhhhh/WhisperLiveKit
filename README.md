@@ -68,10 +68,10 @@ pip install whisperlivekit
 |-----------|-------------|
 | Speaker diarization with Sortformer | `git+https://github.com/NVIDIA/NeMo.git@main#egg=nemo_toolkit[asr]` |
 | Speaker diarization with Diart | `diart` |
-| Original Whisper backend | `whisperlivekit[whisper]` |
-| Improved timestamps backend | `whisperlivekit[whisper-timestamped]` |
-| Apple Silicon optimization backend | `whisperlivekit[mlx-whisper]` |
-| OpenAI API backend | `whisperlivekit[openai]` |
+| Original Whisper backend | `whisper` |
+| Improved timestamps backend | `whisper-timestamped` |
+| Apple Silicon optimization backend | `mlx-whisper` |
+| OpenAI API backend | `openai` |
 
 See  **Parameters & Configuration** below on how to use them.
 

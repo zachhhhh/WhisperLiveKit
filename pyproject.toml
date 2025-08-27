@@ -35,12 +35,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-diarization = ["diart"]
 sentence = ["mosestokenizer", "wtpsplit"]
-whisper = ["whisper"]
-whisper-timestamped = ["whisper-timestamped"]
-mlx-whisper = ["mlx-whisper"]
-openai = ["openai"]
 
 [project.urls]
 Homepage = "https://github.com/QuentinFuxa/WhisperLiveKit"
