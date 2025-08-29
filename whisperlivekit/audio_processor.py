@@ -120,7 +120,7 @@ class AudioProcessor:
     async def add_dummy_token(self):
         """Placeholder token when no transcription is available."""
         async with self.lock:
-            current_time = time() - self.beg_loop
+            current_time = time() - self.beg_loop if self.beg_loop else 0
             self.tokens.append(ASRToken(
                 start=current_time, end=current_time + 1,
                 text=".", speaker=-1, is_dummy=True
@@ -295,7 +295,7 @@ class AudioProcessor:
                 
                 if type(item) is Silence:
                     cumulative_pcm_duration_stream_time += item.duration
-                    self.online.insert_silence(item.duration, self.tokens[-1].end)
+                    self.online.insert_silence(item.duration, self.tokens[-1].end if self.tokens else 0)
                     continue
                 
                 if isinstance(item, np.ndarray):

@@ -42,6 +42,8 @@ class SimulStreamingOnlineProcessor:
         self.committed: List[ASRToken] = []
         self.last_result_tokens: List[ASRToken] = []
         self.load_new_backend()
+        
+        #can be moved
         if asr.tokenizer:
             self.model.tokenizer = asr.tokenizer
 
@@ -249,11 +251,6 @@ class SimulStreamingASR():
             }
             self.model_path = model_mapping.get(modelsize, f'./{modelsize}.pt')
         
-        # Set up tokenizer for translation if needed
-        if self.task == "translate":
-            self.tokenizer = self.set_translate_task()
-        else:
-            self.tokenizer = None
         self.cfg = AlignAttConfig(
                 model_path=self.model_path,
                 segment_length=self.segment_length,
@@ -270,6 +267,12 @@ class SimulStreamingASR():
                 max_context_tokens=self.max_context_tokens,
                 static_init_prompt=self.static_init_prompt,
         )  
+        
+        # Set up tokenizer for translation if needed
+        if self.task == "translate":
+            self.tokenizer = self.set_translate_task()
+        else:
+            self.tokenizer = None
         
         self.model_name = os.path.basename(self.cfg.model_path).replace(".pt", "")
         self.model_path = os.path.dirname(os.path.abspath(self.cfg.model_path))
@@ -301,10 +304,12 @@ class SimulStreamingASR():
 
     def set_translate_task(self):
         """Set up translation task."""
+        if self.cfg.language == 'auto':
+            raise Exception('Translation cannot be done with language = auto')
         return tokenizer.get_tokenizer(
             multilingual=True,
-            language=self.model.cfg.language,
-            num_languages=self.model.model.num_languages,
+            language=self.cfg.language,
+            num_languages=99,
             task="translate"
         )
 

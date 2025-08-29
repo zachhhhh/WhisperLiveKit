@@ -81,7 +81,7 @@ def ends_with_silence(tokens, buffer_transcription, buffer_diarization, current_
     if not tokens:
         return [], buffer_transcription, buffer_diarization
     last_token = tokens[-1]
-    if tokens and (
+    if tokens and current_time and (
         current_time - last_token.end >= END_SILENCE_DURATION 
         or 
         (current_time - last_token.end >= 3 and vac_detected_silence)
