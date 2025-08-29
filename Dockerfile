@@ -17,18 +17,26 @@ RUN apt-get update && \
         ffmpeg \
         git \
         build-essential \
-        python3-dev && \
+        python3-dev \
+        ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu129
+
+# timeout/retries for large torch wheels
+RUN pip3 install --upgrade pip setuptools wheel && \
+    pip3 --disable-pip-version-check install --timeout=120 --retries=5 \
+        --index-url https://download.pytorch.org/whl/cu129 \
+        torch torchaudio \
+    || (echo "Initial install failed — retrying with extended timeout..." && \
+        pip3 --disable-pip-version-check install --timeout=300 --retries=3 \
+            --index-url https://download.pytorch.org/whl/cu129 \
+            torch torchvision torchaudio)
 
 COPY . .
 
 # Install WhisperLiveKit directly, allowing for optional dependencies
-#   Note: For gates models, need to add your HF toke. See README.md
-#         for more details.
 RUN if [ -n "$EXTRAS" ]; then \
       echo "Installing with extras: [$EXTRAS]"; \
       pip install --no-cache-dir whisperlivekit[$EXTRAS]; \
@@ -37,15 +45,13 @@ RUN if [ -n "$EXTRAS" ]; then \
       pip install --no-cache-dir whisperlivekit; \
     fi
 
-# Enable in-container caching for Hugging Face models by: 
-# Note: If running multiple containers, better to map a shared
-# bucket. 
-#
+# In-container caching for Hugging Face models by: 
 # A) Make the cache directory persistent via an anonymous volume.
 #    Note: This only persists for a single, named container. This is 
 #          only for convenience at de/test stage. 
 #          For prod, it is better to use a named volume via host mount/k8s.
 VOLUME ["/root/.cache/huggingface/hub"]
+
 
 # or
 # B) Conditionally copy a local pre-cache from the build context to the 
@@ -61,8 +67,7 @@ RUN if [ -n "$HF_PRECACHE_DIR" ]; then \
       echo "No local Hugging Face cache specified, skipping copy"; \
     fi
 
-# Conditionally copy a Hugging Face token if provided
-
+# Conditionally copy a Hugging Face token if provided. Useful for Diart backend (pyannote audio models)
 RUN if [ -n "$HF_TKN_FILE" ]; then \
       echo "Copying Hugging Face token from $HF_TKN_FILE"; \
       mkdir -p /root/.cache/huggingface && \
@@ -70,11 +75,9 @@ RUN if [ -n "$HF_TKN_FILE" ]; then \
     else \
       echo "No Hugging Face token file specified, skipping token setup"; \
     fi
-    
-# Expose port for the transcription server
+
 EXPOSE 8000
 
 ENTRYPOINT ["whisperlivekit-server", "--host", "0.0.0.0"]
 
-# Default args
 CMD ["--model", "medium"]
