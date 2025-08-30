@@ -16,32 +16,25 @@ def get_web_interface_html():
 def get_inline_ui_html():
     """Returns the complete web interface HTML with all assets embedded in a single call."""
     try:
-        # Load HTML template
         with resources.files('whisperlivekit.web').joinpath('live_transcription.html').open('r', encoding='utf-8') as f:
-            html_content = f.read()
-        
-        # Load CSS and embed it
+            html_content = f.read()        
         with resources.files('whisperlivekit.web').joinpath('live_transcription.css').open('r', encoding='utf-8') as f:
             css_content = f.read()
-        
-        # Load JS and embed it
         with resources.files('whisperlivekit.web').joinpath('live_transcription.js').open('r', encoding='utf-8') as f:
             js_content = f.read()
         
-        # Load SVG files and convert to data URIs
+        # SVG files
         with resources.files('whisperlivekit.web').joinpath('src', 'system_mode.svg').open('r', encoding='utf-8') as f:
             system_svg = f.read()
             system_data_uri = f"data:image/svg+xml;base64,{base64.b64encode(system_svg.encode('utf-8')).decode('utf-8')}"
-        
         with resources.files('whisperlivekit.web').joinpath('src', 'light_mode.svg').open('r', encoding='utf-8') as f:
             light_svg = f.read()
             light_data_uri = f"data:image/svg+xml;base64,{base64.b64encode(light_svg.encode('utf-8')).decode('utf-8')}"
-        
         with resources.files('whisperlivekit.web').joinpath('src', 'dark_mode.svg').open('r', encoding='utf-8') as f:
             dark_svg = f.read()
             dark_data_uri = f"data:image/svg+xml;base64,{base64.b64encode(dark_svg.encode('utf-8')).decode('utf-8')}"
         
-        # Replace external references with embedded content
+        # Replace external references
         html_content = html_content.replace(
             '<link rel="stylesheet" href="/web/live_transcription.css" />',
             f'<style>\n{css_content}\n</style>'
@@ -52,7 +45,7 @@ def get_inline_ui_html():
             f'<script>\n{js_content}\n</script>'
         )
         
-        # Replace SVG references with data URIs
+        # Replace SVG references
         html_content = html_content.replace(
             '<img src="/web/src/system_mode.svg" alt="" />',
             f'<img src="{system_data_uri}" alt="" />'
