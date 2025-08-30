@@ -35,6 +35,17 @@ try:
 except ImportError:
     HAS_MLX_WHISPER = False
 
+try:
+    from faster_whisper import WhisperModel
+    from faster_whisper.audio import pad_or_trim as fw_pad_or_trim
+    from faster_whisper.feature_extractor import FeatureExtractor
+    HAS_FASTER_WHISPER = True
+except ImportError:
+    HAS_FASTER_WHISPER = False
+    
+# HAS_MLX_WHISPER = False
+HAS_FASTER_WHISPER = False #Time to determine if that's really faster
+
 
 # New features added to the original version of Simul-Whisper: 
 # - large-v3 model support
@@ -56,6 +67,14 @@ class PaddedAlignAttWhisper:
             print('Simulstreaming will use MLX whisper for a faster encoder.')
             mlx_model_name = model_mapping[model_name]
             self.mlx_model = load_models.load_model(path_or_hf_repo=mlx_model_name)
+        elif HAS_FASTER_WHISPER:
+            print('Simulstreaming will use Faster Whisper for the encoder.')
+            self.fw_model = WhisperModel(
+                model_name,
+                device='auto',
+                compute_type='auto',
+            )
+            self.feature_extractor = FeatureExtractor(feature_size=self.model.dims.n_mels)
 
         logger.info(f"Model dimensions: {self.model.dims}")
 
@@ -375,13 +394,22 @@ class PaddedAlignAttWhisper:
             input_segments = self.segments[0]
 
         # NEW : we can use a different encoder, before using standart whisper for cross attention with the hooks on the decoder
-        # beg_encode = time()
+        beg_encode = time()
         if HAS_MLX_WHISPER:
             mlx_mel_padded = mlx_log_mel_spectrogram(audio=input_segments.detach(), n_mels=self.model.dims.n_mels, padding=N_SAMPLES)
             mlx_mel = mlx_pad_or_trim(mlx_mel_padded, N_FRAMES, axis=-2)
             mlx_encoder_feature = self.mlx_model.encoder(mlx_mel[None])
             encoder_feature = torch.tensor(np.array(mlx_encoder_feature))
             content_mel_len = int((mlx_mel_padded.shape[0] - mlx_mel.shape[0])/2)
+            device = 'cpu'
+        elif HAS_FASTER_WHISPER:
+            audio_length_seconds = len(input_segments) / 16000   
+            content_mel_len = int(audio_length_seconds * 100)//2      
+            # padded_audio = pad_or_trim(input_segments.detach(), N_SAMPLES)
+            mel_padded_2 = self.feature_extractor(waveform=input_segments.numpy(), padding=N_SAMPLES)[None, :]
+            mel = fw_pad_or_trim(mel_padded_2, N_FRAMES, axis=-1)
+            encoder_feature_ctranslate = self.fw_model.encode(mel)
+            encoder_feature = torch.Tensor(np.array(encoder_feature_ctranslate))
             device = 'cpu'
         else:
             # mel + padding to 30s
@@ -393,8 +421,8 @@ class PaddedAlignAttWhisper:
             content_mel_len = int((mel_padded.shape[2] - mel.shape[2])/2)
             encoder_feature = self.model.encoder(mel)
             device = mel.device
-        # end_encode = time()
-        # print('Encode time whisper', HAS_MLX_WHISPER, end_encode-beg_encode)
+        end_encode = time()
+        # print('Encoder duration:', end_encode-beg_encode)
 
         
                 
