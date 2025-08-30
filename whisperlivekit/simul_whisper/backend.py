@@ -13,15 +13,10 @@ import os
 import gc
 logger = logging.getLogger(__name__)
 
-try:
-    import torch
-    from whisperlivekit.simul_whisper.config import AlignAttConfig
-    from whisperlivekit.simul_whisper.simul_whisper import PaddedAlignAttWhisper
-    from whisperlivekit.simul_whisper.whisper import tokenizer
-except ImportError as e:
-    raise ImportError(
-        """SimulStreaming dependencies are not available.
-        Please install WhisperLiveKit using pip install "whisperlivekit[simulstreaming]".""")
+import torch
+from whisperlivekit.simul_whisper.config import AlignAttConfig
+from whisperlivekit.simul_whisper.simul_whisper import PaddedAlignAttWhisper
+from whisperlivekit.simul_whisper.whisper import tokenizer
 
 # TOO_MANY_REPETITIONS = 3
 
