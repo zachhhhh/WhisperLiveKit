@@ -18,6 +18,21 @@ from whisperlivekit.simul_whisper.config import AlignAttConfig
 from whisperlivekit.simul_whisper.simul_whisper import PaddedAlignAttWhisper
 from whisperlivekit.simul_whisper.whisper import tokenizer
 
+try:
+    from .mlx_encoder import mlx_model_mapping, load_mlx_encoder
+    HAS_MLX_WHISPER = True
+except ImportError:
+    HAS_MLX_WHISPER = False
+if HAS_MLX_WHISPER:
+    HAS_FASTER_WHISPER = False
+else:
+    try:
+        from faster_whisper import WhisperModel
+        HAS_FASTER_WHISPER = True
+    except ImportError:
+        HAS_FASTER_WHISPER = False
+
+
 # TOO_MANY_REPETITIONS = 3
 
 class SimulStreamingOnlineProcessor:
@@ -46,7 +61,10 @@ class SimulStreamingOnlineProcessor:
         model = self.asr.get_new_model_instance()
         self.model = PaddedAlignAttWhisper(
             cfg=self.asr.cfg,
-            loaded_model=model)
+            loaded_model=model,
+            mlx_encoder=self.asr.mlx_encoder,
+            fw_encoder=self.asr.fw_encoder,
+            )
 
     def insert_silence(self, silence_duration, offset):
         """
@@ -273,8 +291,18 @@ class SimulStreamingASR():
         self.model_path = os.path.dirname(os.path.abspath(self.cfg.model_path))
         self.models = [self.load_model() for i in range(self.preload_model_count)]
     
-
-
+        self.mlx_encoder, self.fw_encoder = None, None
+        if HAS_MLX_WHISPER:
+            print('Simulstreaming will use MLX whisper for a faster encoder.')
+            mlx_model_name = mlx_model_mapping[self.model_name]
+            self.mlx_encoder = load_mlx_encoder(path_or_hf_repo=mlx_model_name)
+        elif HAS_FASTER_WHISPER:
+            print('Simulstreaming will use Faster Whisper for the encoder.')
+            self.fw_encoder = WhisperModel(
+                self.model_name,
+                device='auto',
+                compute_type='auto',
+            )
 
     def load_model(self):
         whisper_model = load_model(name=self.model_name, download_root=self.model_path)

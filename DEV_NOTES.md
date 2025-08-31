@@ -10,6 +10,12 @@ On macOS Apple Silicon M4 :
 | FASTER_WHISPER | 0.4s | 1.20s |
 | MLX_WHISPER | 0.07s | 0.20s |
 
+Memory saved by only loading encoder for optimized framework:
+
+For tiny.en, mlx whisper:
+Sizes MLX whisper:
+Decoder weights: 59110771 bytes
+Encoder weights: 15268874 bytes
 
 
 
