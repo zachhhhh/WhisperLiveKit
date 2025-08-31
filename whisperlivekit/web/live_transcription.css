@@ -184,7 +184,7 @@ body {
 
 .settings {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 12px;
 }
@@ -198,23 +198,27 @@ body {
 
 #chunkSelector,
 #websocketInput,
-#themeSelector {
+#themeSelector,
+#microphoneSelect {
   font-size: 16px;
   padding: 5px 8px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background-color: var(--button-bg);
   color: var(--text);
-  max-height: 34px;
+  max-height: 30px;
 }
 
-#websocketInput {
-  width: 220px;
+#microphoneSelect {
+  width: 100%;
+  max-width: 190px;
+  min-width: 120px;
 }
 
 #chunkSelector:focus,
 #websocketInput:focus,
-#themeSelector:focus {
+#themeSelector:focus,
+#microphoneSelect:focus {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
@@ -247,9 +251,9 @@ label {
 }
 
 .theme-selector-container {
-  position: absolute;
-  top: 20px;
-  right: 20px;
+  display: flex;
+  align-items: center;
+  margin-top: 17px;
 }
 
 .segmented label {
@@ -399,4 +403,58 @@ label {
   padding: 2px 10px;
   font-size: 14px;
   margin-bottom: 0px;
+}
+
+/* for smaller screens */
+@media (max-width: 768px) {
+  .settings-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .settings {
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .field {
+    align-items: center;
+  }
+  
+  #websocketInput,
+  #microphoneSelect {
+    min-width: 100px;
+    max-width: 160px;
+  }
+  
+  .theme-selector-container {
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    margin: 10px;
+  }
+  
+  .settings {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  #websocketInput,
+  #microphoneSelect {
+    max-width: 140px;
+  }
+  
+  .segmented label {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  
+  .segmented img {
+    width: 14px;
+    height: 14px;
+  }
 }

@@ -18,6 +18,8 @@ let animationFrame = null;
 let waitingForStop = false;
 let lastReceivedData = null;
 let lastSignature = null;
+let availableMicrophones = [];
+let selectedMicrophoneId = null;
 
 waveCanvas.width = 60 * (window.devicePixelRatio || 1);
 waveCanvas.height = 30 * (window.devicePixelRatio || 1);
@@ -31,6 +33,7 @@ const websocketDefaultSpan = document.getElementById("wsDefaultUrl");
 const linesTranscriptDiv = document.getElementById("linesTranscript");
 const timerElement = document.querySelector(".timer");
 const themeRadios = document.querySelectorAll('input[name="theme"]');
+const microphoneSelect = document.getElementById("microphoneSelect");
 
 function getWaveStroke() {
   const styles = getComputedStyle(document.documentElement);
@@ -80,6 +83,61 @@ if (darkMq && darkMq.addEventListener) {
 } else if (darkMq && darkMq.addListener) {
   // deprecated, but included for Safari compatibility
   darkMq.addListener(handleOsThemeChange);
+}
+
+async function enumerateMicrophones() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(track => track.stop());
+
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    availableMicrophones = devices.filter(device => device.kind === 'audioinput');
+
+    populateMicrophoneSelect();
+    console.log(`Found ${availableMicrophones.length} microphone(s)`);
+  } catch (error) {
+    console.error('Error enumerating microphones:', error);
+    statusText.textContent = "Error accessing microphones. Please grant permission.";
+  }
+}
+
+function populateMicrophoneSelect() {
+  if (!microphoneSelect) return;
+
+  microphoneSelect.innerHTML = '<option value="">Default Microphone</option>';
+
+  availableMicrophones.forEach((device, index) => {
+    const option = document.createElement('option');
+    option.value = device.deviceId;
+    option.textContent = device.label || `Microphone ${index + 1}`;
+    microphoneSelect.appendChild(option);
+  });
+
+  const savedMicId = localStorage.getItem('selectedMicrophone');
+  if (savedMicId && availableMicrophones.some(mic => mic.deviceId === savedMicId)) {
+    microphoneSelect.value = savedMicId;
+    selectedMicrophoneId = savedMicId;
+  }
+}
+
+function handleMicrophoneChange() {
+  selectedMicrophoneId = microphoneSelect.value || null;
+  localStorage.setItem('selectedMicrophone', selectedMicrophoneId || '');
+
+  const selectedDevice = availableMicrophones.find(mic => mic.deviceId === selectedMicrophoneId);
+  const deviceName = selectedDevice ? selectedDevice.label : 'Default Microphone';
+
+  console.log(`Selected microphone: ${deviceName}`);
+  statusText.textContent = `Microphone changed to: ${deviceName}`;
+
+  if (isRecording) {
+    statusText.textContent = "Switching microphone... Please wait.";
+    stopRecording().then(() => {
+      setTimeout(() => {
+        toggleRecording();
+      }, 1000);
+    });
+  }
 }
 
 // Helpers
@@ -377,7 +435,11 @@ async function startRecording() {
       console.log("Error acquiring wake lock.");
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioConstraints = selectedMicrophoneId 
+      ? { audio: { deviceId: { exact: selectedMicrophoneId } } }
+      : { audio: true };
+
+    const stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
 
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     analyser = audioContext.createAnalyser();
@@ -516,3 +578,22 @@ function updateUI() {
 }
 
 recordButton.addEventListener("click", toggleRecording);
+
+if (microphoneSelect) {
+  microphoneSelect.addEventListener("change", handleMicrophoneChange);
+}
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await enumerateMicrophones();
+  } catch (error) {
+    console.log("Could not enumerate microphones on load:", error);
+  }
+});
+navigator.mediaDevices.addEventListener('devicechange', async () => {
+  console.log('Device change detected, re-enumerating microphones');
+  try {
+    await enumerateMicrophones();
+  } catch (error) {
+    console.log("Error re-enumerating microphones:", error);
+  }
+});
