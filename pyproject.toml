@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "whisperlivekit"
-version = "0.2.7"
-description = "Real-time, Fully Local Whisper's Speech-to-Text and Speaker Diarization"
+version = "0.2.8"
+description = "Real-time speech-to-text with speaker diarization using Whisper"
 readme = "README.md"
 authors = [
     { name = "Quentin Fuxa" }
@@ -18,6 +18,11 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Multimedia :: Sound/Audio :: Speech"
 ]
@@ -28,7 +33,8 @@ dependencies = [
     "faster-whisper",
     "uvicorn",
     "websockets",
-    "torch",
+    "torchaudio>=2.0.0",
+    "torch>=2.0.0",
     "tqdm",
     "tiktoken",
     'triton>=2.0.0; platform_machine == "x86_64" and (sys_platform == "linux" or sys_platform == "linux2")'

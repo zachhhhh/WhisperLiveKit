@@ -64,7 +64,7 @@ class PaddedAlignAttWhisper:
 
         self.mlx_encoder = mlx_encoder
         self.fw_encoder = fw_encoder
-        if HAS_FASTER_WHISPER:
+        if fw_encoder:
             self.fw_feature_extractor = FeatureExtractor(feature_size=self.model.dims.n_mels)
             
         logger.info(f"Model dimensions: {self.model.dims}")
@@ -175,6 +175,15 @@ class PaddedAlignAttWhisper:
         print('remove hook')
         for hook in self.l_hooks:
             hook.remove()
+
+    def warmup(self, audio):
+        try:
+            self.insert_audio(audio)
+            self.infer(is_last=True)
+            self.refresh_segment(complete=True)
+            logger.info("Model warmed up successfully")
+        except Exception as e:
+            logger.exception(f"Model warmup failed: {e}")
 
     def create_tokenizer(self, language=None):
         self.tokenizer = tokenizer.get_tokenizer(
@@ -386,14 +395,14 @@ class PaddedAlignAttWhisper:
 
         # NEW : we can use a different encoder, before using standart whisper for cross attention with the hooks on the decoder
         beg_encode = time()
-        if HAS_MLX_WHISPER:
+        if self.mlx_encoder:
             mlx_mel_padded = mlx_log_mel_spectrogram(audio=input_segments.detach(), n_mels=self.model.dims.n_mels, padding=N_SAMPLES)
             mlx_mel = mlx_pad_or_trim(mlx_mel_padded, N_FRAMES, axis=-2)
             mlx_encoder_feature = self.mlx_encoder.encoder(mlx_mel[None])
             encoder_feature = torch.tensor(np.array(mlx_encoder_feature))
             content_mel_len = int((mlx_mel_padded.shape[0] - mlx_mel.shape[0])/2)
             device = 'cpu'
-        elif HAS_FASTER_WHISPER:
+        elif self.fw_encoder:
             audio_length_seconds = len(input_segments) / 16000   
             content_mel_len = int(audio_length_seconds * 100)//2      
             mel_padded_2 = self.fw_feature_extractor(waveform=input_segments.numpy(), padding=N_SAMPLES)[None, :]

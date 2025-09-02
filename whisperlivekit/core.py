@@ -46,6 +46,7 @@ class TranscriptionEngine:
             "confidence_validation": False,
             "buffer_trimming_sec": 15,
             # simulstreaming params:
+            "disable_fast_encoder": False,
             "frame_threshold": 25,
             "beams": 1,
             "decoder_type": None,
@@ -60,7 +61,7 @@ class TranscriptionEngine:
             "diarization_backend": "sortformer",
             # diart params:
             "segmentation_model": "pyannote/segmentation-3.0",
-            "embedding_model": "pyannote/embedding",
+            "embedding_model": "pyannote/embedding",         
         }
 
         config_dict = {**defaults, **kwargs}
@@ -97,7 +98,7 @@ class TranscriptionEngine:
                 simulstreaming_kwargs = {}
                 for attr in ['frame_threshold', 'beams', 'decoder_type', 'audio_max_len', 'audio_min_len', 
                             'cif_ckpt_path', 'never_fire', 'init_prompt', 'static_init_prompt', 
-                            'max_context_tokens', 'model_path', 'warmup_file', 'preload_model_count']:
+                            'max_context_tokens', 'model_path', 'warmup_file', 'preload_model_count', 'disable_fast_encoder']:
                     if hasattr(self.args, attr):
                         simulstreaming_kwargs[attr] = getattr(self.args, attr)
         

@@ -9,7 +9,7 @@
 <p align="center">
 <a href="https://pypi.org/project/whisperlivekit/"><img alt="PyPI Version" src="https://img.shields.io/pypi/v/whisperlivekit?color=g"></a>
 <a href="https://pepy.tech/project/whisperlivekit"><img alt="PyPI Downloads" src="https://static.pepy.tech/personalized-badge/whisperlivekit?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=installations"></a>
-<a href="https://pypi.org/project/whisperlivekit/"><img alt="Python Versions" src="https://img.shields.io/badge/python-3.9--3.13-dark_green"></a>
+<a href="https://pypi.org/project/whisperlivekit/"><img alt="Python Versions" src="https://img.shields.io/badge/python-3.9--3.15-dark_green"></a>
 <a href="https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT/Dual Licensed-dark_green"></a>
 </p>
 
@@ -67,10 +67,10 @@ pip install whisperlivekit
 | Optional | `pip install` |
 |-----------|-------------|
 | **Speaker diarization with Sortformer** | `git+https://github.com/NVIDIA/NeMo.git@main#egg=nemo_toolkit[asr]` |
-| Speaker diarization with Diart | `diart` |
-| Original Whisper backend | `whisper` |
-| Improved timestamps backend | `whisper-timestamped` |
-| Apple Silicon optimization backend | `mlx-whisper` |
+| **Apple Silicon optimized backend** | `mlx-whisper` |
+| *[Not recommanded]*  Speaker diarization with Diart | `diart` |
+| *[Not recommanded]*  Original Whisper backend | `whisper` |
+| *[Not recommanded]*  Improved timestamps backend | `whisper-timestamped` |
 | OpenAI API backend | `openai` |
 
 See  **Parameters & Configuration** below on how to use them.
@@ -138,6 +138,7 @@ An important list of parameters can be changed. But what *should* you change?
 - the `--language`.  List [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/simul_whisper/whisper/tokenizer.py). If you use `auto`, the model attempts to detect the language automatically, but it tends to bias towards English.
 - the `--backend` ? you can switch to `--backend faster-whisper` if  `simulstreaming` does not work correctly or if you prefer to avoid the dual-license requirements.
 - `--warmup-file`, if you have one
+- `--task translate`, to translate in english
 - `--host`, `--port`, `--ssl-certfile`, `--ssl-keyfile`, if you set up a server
 - `--diarization`, if you want to use it.
 
@@ -159,14 +160,9 @@ The rest I don't recommend. But below are your options.
 | `--ssl-keyfile` | Path to the SSL private key file (for HTTPS support) | `None` |
 
 
-| WhisperStreaming backend options | Description | Default |
-|-----------|-------------|---------|
-| `--confidence-validation` | Use confidence scores for faster validation | `False` |
-| `--buffer_trimming` | Buffer trimming strategy (`sentence` or `segment`) | `segment` |
-
-
 | SimulStreaming backend options | Description | Default |
 |-----------|-------------|---------|
+| `--disable-fast-encoder` | Disable Faster Whisper or MLX Whisper backends for the encoder (if installed). Inference can be slower but helpful when GPU memory is limited | `False` |
 | `--frame-threshold` | AlignAtt frame threshold (lower = faster, higher = more accurate) | `25` |
 | `--beams` | Number of beams for beam search (1 = greedy decoding) | `1` |
 | `--decoder` | Force decoder type (`beam` or `greedy`) | `auto` |
@@ -179,6 +175,12 @@ The rest I don't recommend. But below are your options.
 | `--max-context-tokens` | Maximum context tokens | `None` |
 | `--model-path` | Direct path to .pt model file. Download it if not found | `./base.pt` |
 | `--preloaded-model-count` | Optional. Number of models to preload in memory to speed up loading (set up to the expected number of concurrent users) | `1` |
+
+
+| WhisperStreaming backend options | Description | Default |
+|-----------|-------------|---------|
+| `--confidence-validation` | Use confidence scores for faster validation | `False` |
+| `--buffer_trimming` | Buffer trimming strategy (`sentence` or `segment`) | `segment` |
 
 | Diarization options | Description | Default |
 |-----------|-------------|---------|

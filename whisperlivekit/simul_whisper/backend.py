@@ -244,7 +244,8 @@ class SimulStreamingASR():
         self.max_context_tokens = kwargs.get('max_context_tokens', None)
         self.warmup_file = kwargs.get('warmup_file', None)
         self.preload_model_count = kwargs.get('preload_model_count', 1)
-        
+        self.disable_fast_encoder = kwargs.get('disable_fast_encoder', False)
+        self.fast_encoder = False
         if model_dir is not None:
             self.model_path = model_dir
         elif modelsize is not None:
@@ -289,25 +290,44 @@ class SimulStreamingASR():
         
         self.model_name = os.path.basename(self.cfg.model_path).replace(".pt", "")
         self.model_path = os.path.dirname(os.path.abspath(self.cfg.model_path))
-        self.models = [self.load_model() for i in range(self.preload_model_count)]
     
         self.mlx_encoder, self.fw_encoder = None, None
-        if HAS_MLX_WHISPER:
-            print('Simulstreaming will use MLX whisper for a faster encoder.')
-            mlx_model_name = mlx_model_mapping[self.model_name]
-            self.mlx_encoder = load_mlx_encoder(path_or_hf_repo=mlx_model_name)
-        elif HAS_FASTER_WHISPER:
-            print('Simulstreaming will use Faster Whisper for the encoder.')
-            self.fw_encoder = WhisperModel(
-                self.model_name,
-                device='auto',
-                compute_type='auto',
-            )
+        if not self.disable_fast_encoder:
+            if HAS_MLX_WHISPER:
+                print('Simulstreaming will use MLX whisper for a faster encoder.')
+                mlx_model_name = mlx_model_mapping[self.model_name]
+                self.mlx_encoder = load_mlx_encoder(path_or_hf_repo=mlx_model_name)
+                self.fast_encoder = True
+            elif HAS_FASTER_WHISPER:
+                print('Simulstreaming will use Faster Whisper for the encoder.')
+                self.fw_encoder = WhisperModel(
+                    self.model_name,
+                    device='auto',
+                    compute_type='auto',
+                )
+                self.fast_encoder = True
+
+        self.models = [self.load_model() for i in range(self.preload_model_count)]
+
 
     def load_model(self):
-        whisper_model = load_model(name=self.model_name, download_root=self.model_path)
+        whisper_model = load_model(name=self.model_name, download_root=self.model_path, decoder_only=self.fast_encoder)
         warmup_audio = load_file(self.warmup_file)
-        whisper_model.transcribe(warmup_audio, language=self.original_language if self.original_language != 'auto' else None)
+        if warmup_audio is not None:
+            warmup_audio = torch.from_numpy(warmup_audio).float()
+            if self.fast_encoder:                
+                temp_model = PaddedAlignAttWhisper(
+                    cfg=self.cfg,
+                    loaded_model=whisper_model,
+                    mlx_encoder=self.mlx_encoder,
+                    fw_encoder=self.fw_encoder,
+                )
+                temp_model.warmup(warmup_audio)
+                temp_model.remove_hooks()
+            else:
+                # For standard encoder, use the original transcribe warmup
+                warmup_audio = load_file(self.warmup_file)
+                whisper_model.transcribe(warmup_audio, language=self.original_language if self.original_language != 'auto' else None)
         return whisper_model
     
     def get_new_model_instance(self):

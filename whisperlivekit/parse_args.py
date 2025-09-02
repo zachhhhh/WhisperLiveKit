@@ -161,6 +161,14 @@ def parse_args():
 
     # SimulStreaming-specific arguments
     simulstreaming_group = parser.add_argument_group('SimulStreaming arguments (only used with --backend simulstreaming)')
+
+    simulstreaming_group.add_argument(
+        "--disable-fast-encoder",
+        action="store_true",
+        default=False,
+        dest="disable_fast_encoder",
+        help="Disable Faster Whisper or MLX Whisper backends for encoding (if installed). Slower but helpful when GPU memory is limited",
+    )
     
     simulstreaming_group.add_argument(
         "--frame-threshold",

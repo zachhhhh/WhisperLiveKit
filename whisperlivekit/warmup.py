@@ -31,21 +31,21 @@ def load_file(warmup_file=None, timeout=5):
                 logger.debug(f"Download successful in {time.time() - start_time:.2f}s")
             except (urllib.error.URLError, socket.timeout) as e:
                 logger.warning(f"Download failed: {e}. Proceeding without warmup.")
-                return False
+                return None
             finally:
                 socket.setdefaulttimeout(original_timeout)
     elif not warmup_file:
-        return False 
+        return None 
     
     if not warmup_file or not os.path.exists(warmup_file) or os.path.getsize(warmup_file) == 0:
         logger.warning(f"Warmup file {warmup_file} invalid or missing.")
-        return False
+        return None
     
     try:
         audio, sr = librosa.load(warmup_file, sr=16000)
     except Exception as e:
         logger.warning(f"Failed to load audio file: {e}")
-        return False
+        return None
     return audio
 
 def warmup_asr(asr, warmup_file=None, timeout=5):

@@ -19,6 +19,15 @@ transcription_engine = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    
+    #to remove after 0.2.8
+    if args.backend == "simulstreaming" and not args.disable_fast_encoder:
+        logger.warning(f"""
+{'='*50}
+WhisperLiveKit 0.2.8 has introduced a new fast encoder feature using MLX Whisper or Faster Whisper for improved speed. Use --disable-fast-encoder to disable if you encounter issues.
+{'='*50}
+    """)
+    
     global transcription_engine
     transcription_engine = TranscriptionEngine(
         **vars(args),
