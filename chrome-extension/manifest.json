@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "WhisperLiveKit Tab Capture",
+  "version": "1.0",
+  "description": "Capture and transcribe audio from browser tabs using WhisperLiveKit.",
+  "action": {
+    "default_title": "WhisperLiveKit Tab Capture",
+    "default_popup": "popup.html"
+  },
+  "permissions": ["scripting", "tabCapture", "offscreen", "activeTab", "storage"],
+  "web_accessible_resources": [
+    {
+      "resources": ["requestPermissions.html", "requestPermissions.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
