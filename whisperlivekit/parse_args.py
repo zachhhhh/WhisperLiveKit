@@ -112,6 +112,15 @@ def parse_args():
         choices=["transcribe", "translate"],
         help="Transcribe or translate.",
     )
+    
+    parser.add_argument(
+        "--target-language",
+        type=str,
+        default="",
+        dest="target_language",
+        help="Target language for translation. Not functional yet.",
+    )    
+
     parser.add_argument(
         "--backend",
         type=str,

@@ -33,6 +33,7 @@ class TranscriptionEngine:
             "model_dir": None,
             "lan": "auto",
             "task": "transcribe",
+            "target_language": "",
             "backend": "faster-whisper",
             "vac": True,
             "vac_chunk_size": 0.04,
@@ -132,6 +133,12 @@ class TranscriptionEngine:
                 self.diarization_model = SortformerDiarization()
             else:
                 raise ValueError(f"Unknown diarization backend: {self.args.diarization_backend}")
+            
+        if self.args.target_language:
+            if self.args.language == 'auto':
+                raise Exception('Translation cannot be set with language auto')
+            else:
+                from whisperlivekit.translation.translation import load_model
             
         TranscriptionEngine._initialized = True
 

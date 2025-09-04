@@ -39,6 +39,8 @@ Real-time speech transcription directly to your browser, with a ready-to-use bac
 ```bash
 pip install whisperlivekit
 ```
+> You can also clone the repo and `pip install -e .` for the latest version.
+
 
 >  **FFmpeg is required** and must be installed before using WhisperLiveKit
 > 
@@ -148,7 +150,8 @@ The rest I don't recommend. But below are your options.
 |-----------|-------------|---------|
 | `--model` | Whisper model size. | `small` |
 | `--language` | Source language code or `auto` | `auto` |
-| `--task` | `transcribe` or `translate` | `transcribe` |
+| `--task` | Set to `translate` to translate to english | `transcribe` |
+| `--target-language` | [NOT FUNCTIONAL YET] | `None` |
 | `--backend` | Processing backend | `simulstreaming` |
 | `--min-chunk-size` | Minimum audio chunk size (seconds) | `1.0` |
 | `--no-vac` | Disable Voice Activity Controller | `False` |
