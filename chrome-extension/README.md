@@ -9,5 +9,9 @@ Capture the audio of your current tab, transcribe or translate it using Whisperl
 
 
 ## Devs:
-- Impossible to capture audio from tabs if extension is a pannel, unfortunately: https://issues.chromium.org/issues/40926394
+- Impossible to capture audio from tabs if extension is a pannel, unfortunately: 
+- https://issues.chromium.org/issues/40926394
+- https://groups.google.com/a/chromium.org/g/chromium-extensions/c/DET2SXCFnDg
+- https://issues.chromium.org/issues/40916430
+
 - To capture microphone in an extension, there are tricks: https://github.com/justinmann/sidepanel-audio-issue , https://medium.com/@lynchee.owo/how-to-enable-microphone-access-in-chrome-extensions-by-code-924295170080 (comments)

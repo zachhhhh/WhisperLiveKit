@@ -34,6 +34,18 @@ const timerElement = document.querySelector(".timer");
 const themeRadios = document.querySelectorAll('input[name="theme"]');
 const microphoneSelect = document.getElementById("microphoneSelect");
 
+
+
+chrome.runtime.onInstalled.addListener((details) => {
+    if (details.reason.search(/install/g) === -1) {
+        return
+    }
+    chrome.tabs.create({
+        url: chrome.runtime.getURL("welcome.html"),
+        active: true
+    })
+})
+
 function getWaveStroke() {
   const styles = getComputedStyle(document.documentElement);
   const v = styles.getPropertyValue("--wave-stroke").trim();
@@ -602,18 +614,47 @@ recordButton.addEventListener("click", toggleRecording);
 if (microphoneSelect) {
   microphoneSelect.addEventListener("change", handleMicrophoneChange);
 }
-// document.addEventListener('DOMContentLoaded', async () => {
-//   try {
-//     await enumerateMicrophones();
-//   } catch (error) {
-//     console.log("Could not enumerate microphones on load:", error);
-//   }
-// });
-// navigator.mediaDevices.addEventListener('devicechange', async () => {
-//   console.log('Device change detected, re-enumerating microphones');
-//   try {
-//     await enumerateMicrophones();
-//   } catch (error) {
-//     console.log("Error re-enumerating microphones:", error);
-//   }
-// });
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await enumerateMicrophones();
+  } catch (error) {
+    console.log("Could not enumerate microphones on load:", error);
+  }
+});
+navigator.mediaDevices.addEventListener('devicechange', async () => {
+  console.log('Device change detected, re-enumerating microphones');
+  try {
+    await enumerateMicrophones();
+  } catch (error) {
+    console.log("Error re-enumerating microphones:", error);
+  }
+});
+
+
+async function run() {
+  const micPermission = await navigator.permissions.query({
+    name: "microphone",
+  });
+
+  document.getElementById(
+    "audioPermission"
+  ).innerText = `MICROPHONE: ${micPermission.state}`;
+
+  if (micPermission.state !== "granted") {
+    chrome.tabs.create({ url: "welcome.html" });
+  }
+
+  const intervalId = setInterval(async () => {
+    const micPermission = await navigator.permissions.query({
+      name: "microphone",
+    });
+    if (micPermission.state === "granted") {
+      document.getElementById(
+        "audioPermission"
+      ).innerText = `MICROPHONE: ${micPermission.state}`;
+      clearInterval(intervalId);
+    }
+  }, 100);
+}
+
+void run();
