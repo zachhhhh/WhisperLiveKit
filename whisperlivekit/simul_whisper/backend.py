@@ -77,7 +77,7 @@ class SimulStreamingOnlineProcessor:
         else:
             self.process_iter(is_last=True) #we want to totally process what remains in the buffer.
             self.model.refresh_segment(complete=True)
-            self.global_time_offset += silence_duration + offset
+            self.global_time_offset = silence_duration + offset
 
 
         
