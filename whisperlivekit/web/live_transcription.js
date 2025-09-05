@@ -373,7 +373,10 @@ function renderLinesWithBuffer(
     .join("");
 
   linesTranscriptDiv.innerHTML = linesHtml;
-  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  const transcriptContainer = document.querySelector('.transcript-container');
+  if (transcriptContainer) {
+    transcriptContainer.scrollTo({ top: transcriptContainer.scrollHeight, behavior: "smooth" });
+  }
 }
 
 function updateTimer() {
