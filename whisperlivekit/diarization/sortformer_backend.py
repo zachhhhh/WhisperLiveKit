@@ -106,6 +106,7 @@ class SortformerDiarizationOnline:
             features=128,
             pad_to=0
         )
+        self.audio2mel.to(self.diar_model.device)
         
         self.chunk_duration_seconds = (
             self.diar_model.sortformer_modules.chunk_len * 
