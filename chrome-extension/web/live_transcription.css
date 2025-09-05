@@ -80,6 +80,41 @@ body {
   color: var(--text);
 }
 
+.settings-toggle {
+  margin-top: 4px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--button-bg);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  /* border: 1px solid var(--button-border); */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.settings-toggle:hover {
+  background-color: var(--chip-bg);
+}
+
+.settings-toggle img {
+  width: 24px;
+  height: 24px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, transform 0.3s ease;
+}
+
+.settings-toggle:hover img {
+  opacity: 1;
+}
+
+.settings-toggle.active img {
+  transform: rotate(80deg);
+}
+
 /* Record button */
 #recordButton {
   width: 50px;
@@ -177,16 +212,22 @@ body {
 .settings-container {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   gap: 15px;
   margin-top: 20px;
+  flex-wrap: wrap;
 }
 
 .settings {
-  display: flex;
+  display: none;
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 12px;
+  transition: opacity 0.3s ease;
+}
+
+.settings.visible {
+  display: flex;
 }
 
 .field {
@@ -406,58 +447,87 @@ label {
 }
 
 /* for smaller screens */
-@media (max-width: 768px) {
+/* @media (max-width: 450px) {
   .settings-container {
     flex-direction: column;
     gap: 10px;
+    align-items: center;
   }
-  
+
   .settings {
     justify-content: center;
     gap: 8px;
+    width: 100%;
   }
-  
+
   .field {
     align-items: center;
+    width: 100%;
   }
-  
+
   #websocketInput,
   #microphoneSelect {
     min-width: 200px;
-    max-width: 400px;
+    max-width: 100%;
   }
-  
+
   .theme-selector-container {
     margin-top: 10px;
   }
-}
+} */
 
-@media (max-width: 480px) {
+/* @media (max-width: 768px) and (min-width: 451px) {
+  .settings-container {
+    gap: 10px;
+  }
+
+  .settings {
+    gap: 8px;
+  }
+
+  #websocketInput,
+  #microphoneSelect {
+    min-width: 150px;
+    max-width: 300px;
+  }
+} */
+
+/* @media (max-width: 480px) {
   body {
     margin: 10px;
   }
-  
+
+  .settings-toggle {
+    width: 35px;
+    height: 35px;
+  }
+
+  .settings-toggle img {
+    width: 20px;
+    height: 20px;
+  }
+
   .settings {
     flex-direction: column;
     align-items: center;
     gap: 6px;
   }
-  
+
   #websocketInput,
   #microphoneSelect {
     max-width: 400px;
   }
-  
+
   .segmented label {
     padding: 4px 8px;
     font-size: 12px;
   }
-  
+
   .segmented img {
     width: 14px;
     height: 14px;
   }
-}
+} */
 
 
 html

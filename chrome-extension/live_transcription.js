@@ -33,6 +33,8 @@ const linesTranscriptDiv = document.getElementById("linesTranscript");
 const timerElement = document.querySelector(".timer");
 const themeRadios = document.querySelectorAll('input[name="theme"]');
 const microphoneSelect = document.getElementById("microphoneSelect");
+const settingsToggle = document.getElementById("settingsToggle");
+const settingsDiv = document.querySelector(".settings");
 
 
 
@@ -614,6 +616,13 @@ recordButton.addEventListener("click", toggleRecording);
 if (microphoneSelect) {
   microphoneSelect.addEventListener("change", handleMicrophoneChange);
 }
+
+// Settings toggle functionality
+settingsToggle.addEventListener("click", () => {
+  settingsDiv.classList.toggle("visible");
+  settingsToggle.classList.toggle("active");
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     await enumerateMicrophones();
