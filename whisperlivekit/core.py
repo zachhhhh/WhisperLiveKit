@@ -140,7 +140,7 @@ class TranscriptionEngine:
                 raise Exception('Translation cannot be set with language auto')
             else:
                 from whisperlivekit.translation.translation import load_model
-                self.translation_model = load_model()
+                self.translation_model = load_model([self.args.language]) #in the future we want to handle different languages for different speakers
             
         TranscriptionEngine._initialized = True
 
@@ -168,11 +168,17 @@ def online_factory(args, asr, tokenizer, logfile=sys.stderr):
 def online_diarization_factory(args, diarization_backend):
     if args.diarization_backend == "diart":
         online = diarization_backend
-        # Not the best here, since several user/instances will share the same backend, but diart is not SOTA anymore and sortformer is recommanded
+        # Not the best here, since several user/instances will share the same backend, but diart is not SOTA anymore and sortformer is recommended
     
     if args.diarization_backend == "sortformer":
         from whisperlivekit.diarization.sortformer_backend import SortformerDiarizationOnline
         online = SortformerDiarizationOnline(shared_model=diarization_backend)
     return online
 
-        
+
+def online_translation_factory(args, translation_model):
+    #should be at speaker level in the future:
+    #one shared nllb model for all speaker
+    #one tokenizer per speaker/language
+    from whisperlivekit.translation.translation import OnlineTranslation
+    online = OnlineTranslation(translation_model, [args.language], [args.target_language])

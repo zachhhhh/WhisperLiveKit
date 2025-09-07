@@ -5,7 +5,7 @@ import math
 import logging
 import traceback
 from whisperlivekit.timed_objects import ASRToken, Silence
-from whisperlivekit.core import TranscriptionEngine, online_factory, online_diarization_factory
+from whisperlivekit.core import TranscriptionEngine, online_factory, online_diarization_factory, online_translation_factory
 from whisperlivekit.ffmpeg_manager import FFmpegManager, FFmpegState
 from whisperlivekit.silero_vad_iterator import FixedVADIterator
 from whisperlivekit.results_formater import format_output, format_time
@@ -48,6 +48,7 @@ class AudioProcessor:
         self.silence = False
         self.silence_duration = 0.0
         self.tokens = []
+        self.translated_tokens = []
         self.buffer_transcription = ""
         self.buffer_diarization = ""
         self.end_buffer = 0
@@ -80,23 +81,21 @@ class AudioProcessor:
         
         self.transcription_queue = asyncio.Queue() if self.args.transcription else None
         self.diarization_queue = asyncio.Queue() if self.args.diarization else None
+        self.translation_queue = asyncio.Queue() if self.args.target_language else None
         self.pcm_buffer = bytearray()
 
-        # Task references
         self.transcription_task = None
         self.diarization_task = None
         self.ffmpeg_reader_task = None
         self.watchdog_task = None
         self.all_tasks_for_cleanup = []
         
-        # Initialize transcription engine if enabled
         if self.args.transcription:
-            self.online = online_factory(self.args, models.asr, models.tokenizer)
-            
-        # Initialize diarization engine if enabled
+            self.online = online_factory(self.args, models.asr, models.tokenizer)            
         if self.args.diarization:
             self.diarization = online_diarization_factory(self.args, models.diarization_model)
-
+        if self.args.target_language:
+            self.online_translation = online_translation_factory(self.args, models.translation_model)
 
     def convert_pcm_to_float(self, pcm_buffer):
         """Convert PCM buffer in s16le format to normalized NumPy array."""
@@ -143,6 +142,7 @@ class AudioProcessor:
                 
             return {
                 "tokens": self.tokens.copy(),
+                "translated_tokens": self.translated_tokens.copy(),
                 "buffer_transcription": self.buffer_transcription,
                 "buffer_diarization": self.buffer_diarization,
                 "end_buffer": self.end_buffer,
@@ -156,6 +156,7 @@ class AudioProcessor:
         """Reset all state variables to initial values."""
         async with self.lock:
             self.tokens = []
+            self.translated_tokens = []
             self.buffer_transcription = self.buffer_diarization = ""
             self.end_buffer = self.end_attributed_speaker = 0
             self.beg_loop = time()
@@ -391,6 +392,15 @@ class AudioProcessor:
                     self.diarization_queue.task_done()
         logger.info("Diarization processor task finished.")
 
+    async def translation_processor(self, online_translation):
+        # the idea is to ignore diarization for the moment. We use only transcription tokens. 
+        # And the speaker is attributed given the segments used for the translation
+        # in the future we want to have different languages for each speaker etc, so it will be more complex.
+        while True:
+            try:
+                item = await self.translation_queue.get()
+            except Exception as e:
+                logger.warning(f"Exception in translation_processor: {e}")
 
     async def results_formatter(self):
         """Format processing results for output."""
@@ -535,6 +545,9 @@ class AudioProcessor:
             self.diarization_task = asyncio.create_task(self.diarization_processor(self.diarization))
             self.all_tasks_for_cleanup.append(self.diarization_task)
             processing_tasks_for_watchdog.append(self.diarization_task)
+        
+        if self.args.target_language and self.args.language != 'auto':
+            self.translation_task = asyncio.create_task(self.translation_processor(self.online_translation))
         
         self.ffmpeg_reader_task = asyncio.create_task(self.ffmpeg_stdout_reader())
         self.all_tasks_for_cleanup.append(self.ffmpeg_reader_task)
