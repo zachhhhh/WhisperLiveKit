@@ -3,12 +3,12 @@ import numpy as np
 import logging
 from typing import List, Tuple, Optional
 import logging
+import platform
 from whisperlivekit.timed_objects import ASRToken, Transcript
 from whisperlivekit.warmup import load_file
 from whisperlivekit.simul_whisper.license_simulstreaming import SIMULSTREAMING_LICENSE
 from .whisper import load_model, tokenizer
 from .whisper.audio import TOKENS_PER_SECOND
-
 import os
 import gc
 logger = logging.getLogger(__name__)
@@ -22,6 +22,8 @@ try:
     from .mlx_encoder import mlx_model_mapping, load_mlx_encoder
     HAS_MLX_WHISPER = True
 except ImportError:
+    if platform.system() == "Darwin" and platform.machine() == "arm64":
+        print('MLX Whisper not found but you are on Apple Silicon. Consider installing mlx-whisper for better performance: pip install mlx-whisper')
     HAS_MLX_WHISPER = False
 if HAS_MLX_WHISPER:
     HAS_FASTER_WHISPER = False
