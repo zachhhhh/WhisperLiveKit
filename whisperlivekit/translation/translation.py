@@ -2,8 +2,7 @@ import ctranslate2
 import transformers
 from dataclasses import dataclass
 import huggingface_hub
-
-src_lang = "eng_Latn"
+from .mapping_languages import get_nllb_code
 
 @dataclass
 class TranslationModel():
@@ -30,8 +29,10 @@ def translate(input, translation_model, tgt_lang):
 
 
 if __name__ == '__main__':
-    tgt_lang = "fra_Latn"
-    src_lang = "eng_Latn"
-    translation_model = load_model(src_lang)
-    result = translate('Hello world', translation_model=translation_model, tgt_lang=tgt_lang)
+    tgt_lang = 'fr'
+    src_lang = "en"
+    nllb_tgt_lang = get_nllb_code(tgt_lang)
+    nllb_src_lang = get_nllb_code(src_lang)
+    translation_model = load_model(nllb_src_lang)
+    result = translate('Hello world', translation_model=translation_model, tgt_lang=nllb_tgt_lang)
     print(result)

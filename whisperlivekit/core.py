@@ -133,12 +133,14 @@ class TranscriptionEngine:
                 self.diarization_model = SortformerDiarization()
             else:
                 raise ValueError(f"Unknown diarization backend: {self.args.diarization_backend}")
-            
+        
+        self.translation_model = None
         if self.args.target_language:
             if self.args.language == 'auto':
                 raise Exception('Translation cannot be set with language auto')
             else:
                 from whisperlivekit.translation.translation import load_model
+                self.translation_model = load_model()
             
         TranscriptionEngine._initialized = True
 

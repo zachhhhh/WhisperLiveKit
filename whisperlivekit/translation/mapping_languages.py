@@ -132,7 +132,7 @@ NLLB_TO_NAME = {lang["nllb"]: lang["name"] for lang in LANGUAGES}
 
 
 def get_nllb_code(crowdin_code):
-    return CROWDIN_TO_NLLB.get(crowdin_code, crowdin_code)
+    return CROWDIN_TO_NLLB.get(crowdin_code, None)
 
 
 def get_crowdin_code(nllb_code):
