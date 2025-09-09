@@ -32,5 +32,9 @@ class SpeakerSegment(TimedText):
     pass
 
 @dataclass
+class Translation(TimedText):
+    pass
+
+@dataclass
 class Silence():
     duration: float

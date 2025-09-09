@@ -174,7 +174,6 @@ class PaddedAlignAttWhisper:
             self.token_decoder = BeamSearchDecoder(inference=self.inference, eot=self.tokenizer.eot, beam_size=cfg.beam_size)
             
     def remove_hooks(self):
-        print('remove hook')
         for hook in self.l_hooks:
             hook.remove()
 

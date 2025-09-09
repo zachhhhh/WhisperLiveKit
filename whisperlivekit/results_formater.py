@@ -6,7 +6,7 @@ from whisperlivekit.remove_silences import handle_silences
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-PUNCTUATION_MARKS = {'.', '!', '?'}
+PUNCTUATION_MARKS = {'.', '!', '?', '。', '！', '？'}
 CHECK_AROUND = 4
 
 def format_time(seconds: float) -> str:
@@ -59,6 +59,7 @@ def append_token_to_last_line(lines, sep, token, debug_info, last_end_diarized):
 
 def format_output(state, silence, current_time, diarization, debug):
     tokens = state["tokens"]
+    translated_tokens = state["translated_tokens"] # Here we will attribute the speakers only based on the timestamps of the segments
     buffer_transcription = state["buffer_transcription"]
     buffer_diarization = state["buffer_diarization"]
     end_attributed_speaker = state["end_attributed_speaker"]

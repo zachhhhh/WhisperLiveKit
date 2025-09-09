@@ -136,11 +136,11 @@ class TranscriptionEngine:
         
         self.translation_model = None
         if self.args.target_language:
-            if self.args.language == 'auto':
+            if self.args.lan == 'auto':
                 raise Exception('Translation cannot be set with language auto')
             else:
                 from whisperlivekit.translation.translation import load_model
-                self.translation_model = load_model([self.args.language]) #in the future we want to handle different languages for different speakers
+                self.translation_model = load_model([self.args.lan]) #in the future we want to handle different languages for different speakers
             
         TranscriptionEngine._initialized = True
 
@@ -181,4 +181,4 @@ def online_translation_factory(args, translation_model):
     #one shared nllb model for all speaker
     #one tokenizer per speaker/language
     from whisperlivekit.translation.translation import OnlineTranslation
-    online = OnlineTranslation(translation_model, [args.language], [args.target_language])
+    return OnlineTranslation(translation_model, [args.lan], [args.target_language])
