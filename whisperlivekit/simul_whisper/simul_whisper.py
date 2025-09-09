@@ -408,7 +408,7 @@ class PaddedAlignAttWhisper:
             content_mel_len = int(audio_length_seconds * 100)//2      
             mel_padded_2 = self.fw_feature_extractor(waveform=input_segments.numpy(), padding=N_SAMPLES)[None, :]
             mel = fw_pad_or_trim(mel_padded_2, N_FRAMES, axis=-1)
-            encoder_feature_ctranslate = np.array(self.fw_encoder.encode(mel))
+            encoder_feature_ctranslate = self.fw_encoder.encode(mel)
             encoder_feature = torch.as_tensor(encoder_feature_ctranslate, device=self.device)
         else:
             # mel + padding to 30s
