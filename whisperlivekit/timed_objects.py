@@ -1,5 +1,11 @@
 from dataclasses import dataclass
 from typing import Optional
+from datetime import timedelta
+
+def format_time(seconds: float) -> str:
+    """Format seconds as HH:MM:SS."""
+    return str(timedelta(seconds=int(seconds)))
+
 
 @dataclass
 class TimedText:
@@ -38,3 +44,17 @@ class Translation(TimedText):
 @dataclass
 class Silence():
     duration: float
+    
+    
+@dataclass
+class Line(TimedText):
+    translation: str = ''
+    
+    def to_dict(self):
+        return {
+            'speaker': int(self.speaker),
+            'text': self.text,
+            'translation': self.translation,
+            'start': format_time(self.start),
+            'end': format_time(self.end),
+        }

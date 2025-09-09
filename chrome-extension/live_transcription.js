@@ -310,7 +310,7 @@ function renderLinesWithBuffer(
   const showTransLag = !isFinalizing && remaining_time_transcription > 0;
   const showDiaLag = !isFinalizing && !!buffer_diarization && remaining_time_diarization > 0;
   const signature = JSON.stringify({
-    lines: (lines || []).map((it) => ({ speaker: it.speaker, text: it.text, beg: it.beg, end: it.end })),
+    lines: (lines || []).map((it) => ({ speaker: it.speaker, text: it.text, start: it.start, end: it.end })),
     buffer_transcription: buffer_transcription || "",
     buffer_diarization: buffer_diarization || "",
     status: current_status,
@@ -333,8 +333,8 @@ function renderLinesWithBuffer(
   const linesHtml = (lines || [])
     .map((item, idx) => {
       let timeInfo = "";
-      if (item.beg !== undefined && item.end !== undefined) {
-        timeInfo = ` ${item.beg} - ${item.end}`;
+      if (item.start !== undefined && item.end !== undefined) {
+        timeInfo = ` ${item.start} - ${item.end}`;
       }
 
       let speakerLabel = "";

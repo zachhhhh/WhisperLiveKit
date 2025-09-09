@@ -4,11 +4,11 @@ from time import time, sleep
 import math
 import logging
 import traceback
-from whisperlivekit.timed_objects import ASRToken, Silence
+from whisperlivekit.timed_objects import ASRToken, Silence, Line
 from whisperlivekit.core import TranscriptionEngine, online_factory, online_diarization_factory, online_translation_factory
 from whisperlivekit.ffmpeg_manager import FFmpegManager, FFmpegState
 from whisperlivekit.silero_vad_iterator import FixedVADIterator
-from whisperlivekit.results_formater import format_output, format_time
+from whisperlivekit.results_formater import format_output
 # Set up logging once
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ class AudioProcessor:
         self.silence = False
         self.silence_duration = 0.0
         self.tokens = []
-        self.translated_tokens = []
+        self.translated_segments = []
         self.buffer_transcription = ""
         self.buffer_diarization = ""
         self.end_buffer = 0
@@ -153,7 +153,7 @@ class AudioProcessor:
                 
             return {
                 "tokens": self.tokens.copy(),
-                "translated_tokens": self.translated_tokens.copy(),
+                "translated_segments": self.translated_segments.copy(),
                 "buffer_transcription": self.buffer_transcription,
                 "buffer_diarization": self.buffer_diarization,
                 "end_buffer": self.end_buffer,
@@ -167,7 +167,7 @@ class AudioProcessor:
         """Reset all state variables to initial values."""
         async with self.lock:
             self.tokens = []
-            self.translated_tokens = []
+            self.translated_segments = []
             self.buffer_transcription = self.buffer_diarization = ""
             self.end_buffer = self.end_attributed_speaker = 0
             self.beg_loop = time()
@@ -431,8 +431,7 @@ class AudioProcessor:
                     tokens_to_process.append(additional_token)                
                 if tokens_to_process:
                     online_translation.insert_tokens(tokens_to_process)
-                    translations = online_translation.process()
-                    print(translations)
+                    self.translated_segments = online_translation.process()
                 
                 self.translation_queue.task_done()
                 for _ in additional_tokens:
@@ -505,23 +504,19 @@ class AudioProcessor:
                     buffer_diarization = combined
                 
                 response_status = "active_transcription"
-                final_lines_for_response = lines.copy()
-
                 if not tokens and not buffer_transcription and not buffer_diarization:
                     response_status = "no_audio_detected"
-                    final_lines_for_response = []
-                elif response_status == "active_transcription" and not final_lines_for_response:
-                    final_lines_for_response = [{
-                        "speaker": 1,
-                        "text": "",
-                        "beg": format_time(state.get("end_buffer", 0)),
-                        "end": format_time(state.get("end_buffer", 0)),
-                        "diff": 0
-                    }]
+                    lines = []
+                elif response_status == "active_transcription" and not lines:
+                    lines = [Line(
+                        speaker=1,
+                        start=state.get("end_buffer", 0),
+                        end=state.get("end_buffer", 0)        
+                    )]
                 
                 response = {
                     "status": response_status,
-                    "lines": final_lines_for_response,
+                    "lines": [line.to_dict() for line in lines],
                     "buffer_transcription": buffer_transcription,
                     "buffer_diarization": buffer_diarization,
                     "remaining_time_transcription": state["remaining_time_transcription"],
@@ -529,7 +524,7 @@ class AudioProcessor:
                 }
                 
                 current_response_signature = f"{response_status} | " + \
-                                           ' '.join([f"{line['speaker']} {line['text']}" for line in final_lines_for_response]) + \
+                                           ' '.join([f"{line.speaker} {line.text}" for line in lines]) + \
                                            f" | {buffer_transcription} | {buffer_diarization}"
                 
                 trans = state["remaining_time_transcription"]
@@ -540,7 +535,7 @@ class AudioProcessor:
                     or round(trans, 1) != round(last_sent_trans, 1)
                     or round(diar, 1) != round(last_sent_diar, 1)
                 )
-                if should_push and (final_lines_for_response or buffer_transcription or buffer_diarization or response_status == "no_audio_detected" or trans > 0 or diar > 0):
+                if should_push and (lines or buffer_transcription or buffer_diarization or response_status == "no_audio_detected" or trans > 0 or diar > 0):
                     yield response
                     self.last_response_content = current_response_signature
                     last_sent_trans = trans
@@ -556,7 +551,6 @@ class AudioProcessor:
                     
                     if all_processors_done:
                         logger.info("Results formatter: All upstream processors are done and in stopping state. Terminating.")
-                        final_state = await self.get_current_state()
                         return
                 
                 await asyncio.sleep(0.1)  # Avoid overwhelming the client
