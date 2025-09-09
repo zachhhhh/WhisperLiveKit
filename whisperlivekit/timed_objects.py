@@ -9,8 +9,8 @@ def format_time(seconds: float) -> str:
 
 @dataclass
 class TimedText:
-    start: Optional[float]
-    end: Optional[float]
+    start: Optional[float] = 0
+    end: Optional[float] = 0
     text: Optional[str] = ''
     speaker: Optional[int] = -1
     probability: Optional[float] = None

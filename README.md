@@ -151,7 +151,7 @@ The rest I don't recommend. But below are your options.
 | `--model` | Whisper model size. | `small` |
 | `--language` | Source language code or `auto` | `auto` |
 | `--task` | Set to `translate` to translate to english | `transcribe` |
-| `--target-language` | [NOT FUNCTIONAL YET] | `None` |
+| `--target-language` | [BETA] Translation language target. Ex: `fr` | `None` |
 | `--backend` | Processing backend | `simulstreaming` |
 | `--min-chunk-size` | Minimum audio chunk size (seconds) | `1.0` |
 | `--no-vac` | Disable Voice Activity Controller | `False` |
