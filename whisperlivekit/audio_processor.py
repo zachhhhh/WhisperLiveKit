@@ -635,12 +635,13 @@ class AudioProcessor:
             except Exception as e:
                 logger.error(f"Error in watchdog task: {e}", exc_info=True)
         
-    async def cleanup(self):
-        """Clean up resources when processing is complete."""
-        logger.info("Starting cleanup of AudioProcessor resources.")        
-        for task in self.all_tasks_for_cleanup:
-            if task and not task.done():
-                task.cancel()
+async def cleanup(self):
+    """Clean up resources when processing is complete."""
+    logger.info("Starting cleanup of AudioProcessor resources.")
+    self.is_stopping = True
+    for task in self.all_tasks_for_cleanup:
+        if task and not task.done():
+            task.cancel()
         
         created_tasks = [t for t in self.all_tasks_for_cleanup if t]
         if created_tasks:
