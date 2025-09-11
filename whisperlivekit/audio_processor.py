@@ -635,23 +635,23 @@ class AudioProcessor:
             except Exception as e:
                 logger.error(f"Error in watchdog task: {e}", exc_info=True)
         
-async def cleanup(self):
-    """Clean up resources when processing is complete."""
-    logger.info("Starting cleanup of AudioProcessor resources.")
-    self.is_stopping = True
-    for task in self.all_tasks_for_cleanup:
-        if task and not task.done():
-            task.cancel()
-        
-        created_tasks = [t for t in self.all_tasks_for_cleanup if t]
-        if created_tasks:
-            await asyncio.gather(*created_tasks, return_exceptions=True)
-        logger.info("All processing tasks cancelled or finished.")
-        await self.ffmpeg_manager.stop()
-        logger.info("FFmpeg manager stopped.")
-        if self.args.diarization and hasattr(self, 'diarization') and hasattr(self.diarization, 'close'):
-            self.diarization.close()
-        logger.info("AudioProcessor cleanup complete.")
+    async def cleanup(self):
+        """Clean up resources when processing is complete."""
+        logger.info("Starting cleanup of AudioProcessor resources.")
+        self.is_stopping = True
+        for task in self.all_tasks_for_cleanup:
+            if task and not task.done():
+                task.cancel()
+            
+            created_tasks = [t for t in self.all_tasks_for_cleanup if t]
+            if created_tasks:
+                await asyncio.gather(*created_tasks, return_exceptions=True)
+            logger.info("All processing tasks cancelled or finished.")
+            await self.ffmpeg_manager.stop()
+            logger.info("FFmpeg manager stopped.")
+            if self.args.diarization and hasattr(self, 'diarization') and hasattr(self.diarization, 'close'):
+                self.diarization.close()
+            logger.info("AudioProcessor cleanup complete.")
 
 
     async def process_audio(self, message):

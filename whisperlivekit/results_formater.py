@@ -1,7 +1,7 @@
 
 import logging
 from whisperlivekit.remove_silences import handle_silences
-from timed_objects import Line, format_time
+from whisperlivekit.timed_objects import Line, format_time
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

@@ -4,7 +4,7 @@ import transformers
 from dataclasses import dataclass
 import huggingface_hub
 from whisperlivekit.translation.mapping_languages import get_nllb_code
-from timed_objects import Translation
+from whisperlivekit.timed_objects import Translation
 
 
 #In diarization case, we may want to translate just one speaker, or at least start the sentences there
@@ -69,7 +69,7 @@ class OnlineTranslation:
         nllb_output_lang = get_nllb_code(output_lang)
             
         source = self.translation_model.tokenizer[input_lang].convert_ids_to_tokens(self.translation_model.tokenizer[input_lang].encode(input))   
-        results = self.translation_model.translator.translate_batch([source], target_prefix=[[nllb_output_lang]])
+        results = self.translation_model.translator.translate_batch([source], target_prefix=[[nllb_output_lang]]) #we can use return_attention=True to try to optimize the stuff.
         target = results[0].hypotheses[0][1:]
         results = self.translation_model.tokenizer[input_lang].decode(self.translation_model.tokenizer[input_lang].convert_tokens_to_ids(target))
         return results
@@ -115,8 +115,23 @@ if __name__ == '__main__':
     output_lang = 'fr'
     input_lang = "en"
     
+    
+    test_string = """
+    Transcription technology has improved so much in the past few years. Have you noticed how accurate real-time speech-to-text is now?
+    """
+    test = test_string.split(' ')
+    step = len(test) // 3
+    
     shared_model = load_model([input_lang])
     online_translation = OnlineTranslation(shared_model, input_languages=[input_lang], output_languages=[output_lang])
+        
+    for id in range(5):
+        val = test[id*step : (id+1)*step]
+        val_str = ' '.join(val)
+        result = online_translation.translate(val_str)
+        print(result)
     
-    result = online_translation.translate('Hello world')
-    print(result)
+    
+    
+    
+    # print(result)
