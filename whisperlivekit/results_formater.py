@@ -46,7 +46,9 @@ def append_token_to_last_line(lines, sep, token, debug_info):
         lines[-1].text += sep + token.text + debug_info
         lines[-1].end = token.end
 
-def format_output(state, silence, current_time, diarization, debug):
+def format_output(state, silence, current_time, args, debug):
+    diarization = args.diarization
+    disable_punctuation_split = args.disable_punctuation_split
     tokens = state["tokens"]
     translated_segments = state["translated_segments"] # Here we will attribute the speakers only based on the timestamps of the segments
     buffer_transcription = state["buffer_transcription"]
@@ -115,7 +117,9 @@ def format_output(state, silence, current_time, diarization, debug):
                 append_token_to_last_line(lines, sep, token, debug_info)
                 continue
             else: #we create a new speaker, but that's no ideal. We are not sure about the split. We prefer to append to previous line
-                # lines.append(new_line(token, speaker, debug_info = ""))
+                if disable_punctuation_split:
+                    lines.append(new_line(token, speaker, debug_info = ""))
+                    continue
                 pass
             
         append_token_to_last_line(lines, sep, token, debug_info)

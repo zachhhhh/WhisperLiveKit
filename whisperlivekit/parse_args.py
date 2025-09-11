@@ -73,6 +73,12 @@ def parse_args():
     )
     
     parser.add_argument(
+        "--disable-punctuation-split",
+        action="store_true",
+        help="Disable the split parameter.",
+    )
+    
+    parser.add_argument(
         "--min-chunk-size",
         type=float,
         default=0.5,

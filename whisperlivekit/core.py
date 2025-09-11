@@ -60,7 +60,8 @@ class TranscriptionEngine:
             "max_context_tokens": None,
             "model_path": './base.pt',
             "diarization_backend": "sortformer",
-            # diart params:
+            # diarization params:
+            "disable_punctuation_split" : False,
             "segmentation_model": "pyannote/segmentation-3.0",
             "embedding_model": "pyannote/embedding",         
         }

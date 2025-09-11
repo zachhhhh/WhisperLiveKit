@@ -19,6 +19,7 @@ Real-time speech transcription directly to your browser, with a ready-to-use bac
 #### Powered by Leading Research:
 
 - [SimulStreaming](https://github.com/ufal/SimulStreaming) (SOTA 2025) - Ultra-low latency transcription with AlignAtt policy
+- [NLLB](https://arxiv.org/abs/2207.04672), ([distilled](https://huggingface.co/entai2965/nllb-200-distilled-600M-ctranslate2)) (2024) - Translation to more than 100 languages.
 - [WhisperStreaming](https://github.com/ufal/whisper_streaming) (SOTA 2023) - Low latency transcription with LocalAgreement policy
 - [Streaming Sortformer](https://arxiv.org/abs/2507.18446) (SOTA 2025) - Advanced real-time speaker diarization
 - [Diart](https://github.com/juanmc2005/diart) (SOTA 2021) - Real-time speaker diarization
@@ -143,8 +144,9 @@ An important list of parameters can be changed. But what *should* you change?
 - `--task translate`, to translate in english
 - `--host`, `--port`, `--ssl-certfile`, `--ssl-keyfile`, if you set up a server
 - `--diarization`, if you want to use it.
+- [BETA] `--target-language`, to translate using NLLB. [118 languages available](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/translation/mapping_languages.py). If you want to translate to english, you should rather use `--task translate`, since Whisper can do it directly.
 
-The rest I don't recommend. But below are your options.
+### Full list of parameters :
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
@@ -189,6 +191,7 @@ The rest I don't recommend. But below are your options.
 |-----------|-------------|---------|
 | `--diarization` | Enable speaker identification | `False` |
 | `--diarization-backend` |  `diart` or `sortformer` | `sortformer` |
+| `--disable-punctuation-split` |  Disable punctuation based splits. See #214 | `False` |
 | `--segmentation-model` | Hugging Face model ID for Diart segmentation model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `pyannote/segmentation-3.0` |
 | `--embedding-model` | Hugging Face model ID for Diart embedding model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `speechbrain/spkrec-ecapa-voxceleb` |
 

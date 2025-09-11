@@ -492,7 +492,7 @@ class AudioProcessor:
                     state,
                     self.silence,
                     current_time = time() - self.beg_loop if self.beg_loop else None,
-                    diarization = self.args.diarization,
+                    args = self.args,
                     debug = self.debug
                 )
                 # Handle undiarized text
