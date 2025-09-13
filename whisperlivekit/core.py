@@ -4,7 +4,7 @@ try:
 except ImportError:
     from .whisper_streaming_custom.whisper_online import backend_factory
     from .whisper_streaming_custom.online_asr import OnlineASRProcessor
-from whisperlivekit.warmup import warmup_asr, warmup_online
+from whisperlivekit.warmup import warmup_asr
 from argparse import Namespace
 import sys
 
@@ -155,7 +155,6 @@ def online_factory(args, asr, tokenizer, logfile=sys.stderr):
             asr,
             logfile=logfile,
         )
-        # warmup_online(online, args.warmup_file)
     else:
         online = OnlineASRProcessor(
             asr,
