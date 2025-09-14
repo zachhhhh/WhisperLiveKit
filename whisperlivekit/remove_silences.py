@@ -39,7 +39,7 @@ def blank_to_silence(tokens):
                         )
                 else:
                     if silence_token: #there was silence but no more
-                        if silence_token.end - silence_token.start >= MIN_SILENCE_DURATION:
+                        if silence_token.duration() >= MIN_SILENCE_DURATION:
                             cleaned_tokens.append(
                                 silence_token
                             )

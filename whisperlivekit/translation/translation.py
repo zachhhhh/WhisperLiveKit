@@ -1,3 +1,4 @@
+import logging
 import ctranslate2
 import torch
 import transformers
@@ -6,11 +7,14 @@ import huggingface_hub
 from whisperlivekit.translation.mapping_languages import get_nllb_code
 from whisperlivekit.timed_objects import Translation
 
+logger = logging.getLogger(__name__)
 
 #In diarization case, we may want to translate just one speaker, or at least start the sentences there
 
 PUNCTUATION_MARKS = {'.', '!', '?', '。', '！', '？'}
 
+MIN_SILENCE_DURATION_DEL_BUFFER = 3 #After a silence of x seconds, we consider the model should not use the buffer, even if the previous
+# sentence is not finished.
 
 @dataclass
 class TranslationModel():
@@ -109,7 +113,11 @@ class OnlineTranslation:
         self.translation_remaining = self.translate_tokens(self.buffer)
         self.len_processed_buffer = len(self.buffer)
         return self.validated + [self.translation_remaining]
-                
+
+    def insert_silence(self, silence_duration: float):
+        if silence_duration >= MIN_SILENCE_DURATION_DEL_BUFFER:
+            self.buffer = []
+            self.validated += [self.translation_remaining]
 
 if __name__ == '__main__':
     output_lang = 'fr'
