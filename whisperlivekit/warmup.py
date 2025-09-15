@@ -49,11 +49,3 @@ def warmup_asr(asr, warmup_file=None, timeout=5):
         return
     asr.transcribe(audio)
     logger.info("ASR model is warmed up.")
-    
-def warmup_online(online, warmup_file=None, timeout=5):
-    audio = load_file(warmup_file=warmup_file, timeout=timeout)
-    if audio is None:
-        logger.warning("Warmup file unavailable. Skipping online warmup.")
-        return
-    online.warmup(audio)
-    logger.info("Online processor is warmed up.")
