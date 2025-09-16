@@ -21,26 +21,37 @@ class TranslationModel():
     translator: ctranslate2.Translator
     tokenizer: dict
 
-def load_model(src_langs):
-    MODEL = 'nllb-200-distilled-600M-ctranslate2'
-    MODEL_GUY = 'entai2965'
-    huggingface_hub.snapshot_download(MODEL_GUY + '/' + MODEL,local_dir=MODEL)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    translator = ctranslate2.Translator(MODEL,device=device)
-    tokenizer = dict()
-    for src_lang in src_langs:
-        tokenizer[src_lang] = transformers.AutoTokenizer.from_pretrained(MODEL, src_lang=src_lang, clean_up_tokenization_spaces=True)
+def load_model(src_langs, backend='ctranslate2'):
+    if backend=='ctranslate2':
+        MODEL = 'nllb-200-distilled-600M-ctranslate2'
+        MODEL_GUY = 'entai2965'
+        huggingface_hub.snapshot_download(MODEL_GUY + '/' + MODEL,local_dir=MODEL)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        translator = ctranslate2.Translator(MODEL,device=device)
+        tokenizer = dict()
+        for src_lang in src_langs:
+            tokenizer[src_lang] = transformers.AutoTokenizer.from_pretrained(MODEL, src_lang=src_lang, clean_up_tokenization_spaces=True)
+    elif backend=='transformers':
+        raise Exception('not implemented yet')
     return TranslationModel(
         translator=translator,
         tokenizer=tokenizer
     )
 
-def translate(input, translation_model, tgt_lang):
-    source = translation_model.tokenizer.convert_ids_to_tokens(translation_model.tokenizer.encode(input))
+def translate(input, translation_model, tgt_lang, src_lang="en"):
+    # Get the specific tokenizer for the source language
+    tokenizer = translation_model.tokenizer[src_lang]
+    
+    # Convert input to tokens
+    source = tokenizer.convert_ids_to_tokens(tokenizer.encode(input))
+    
+    # Translate with target language prefix
     target_prefix = [tgt_lang]
     results = translation_model.translator.translate_batch([source], target_prefix=[target_prefix])
+    
+    # Get translated tokens and decode
     target = results[0].hypotheses[0][1:]
-    return translation_model.tokenizer.decode(translation_model.tokenizer.convert_tokens_to_ids(target))
+    return tokenizer.decode(tokenizer.convert_tokens_to_ids(target))
 
 class OnlineTranslation:
     def __init__(self, translation_model: TranslationModel, input_languages: list, output_languages: list):

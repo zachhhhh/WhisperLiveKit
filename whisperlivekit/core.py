@@ -43,10 +43,12 @@ class TranscriptionEngine:
             "transcription": True,
             "vad": True,
             "pcm_input": False,
+            
             # whisperstreaming params:
             "buffer_trimming": "segment",
             "confidence_validation": False,
             "buffer_trimming_sec": 15,
+            
             # simulstreaming params:
             "disable_fast_encoder": False,
             "frame_threshold": 25,
@@ -61,10 +63,14 @@ class TranscriptionEngine:
             "max_context_tokens": None,
             "model_path": './base.pt',
             "diarization_backend": "sortformer",
+            
             # diarization params:
             "disable_punctuation_split" : False,
             "segmentation_model": "pyannote/segmentation-3.0",
-            "embedding_model": "pyannote/embedding",         
+            "embedding_model": "pyannote/embedding",  
+            
+            # translation params:
+            "nllb_backend": "ctranslate2"
         }
 
         config_dict = {**defaults, **kwargs}
@@ -142,7 +148,7 @@ class TranscriptionEngine:
                 raise Exception('Translation cannot be set with language auto')
             else:
                 from whisperlivekit.translation.translation import load_model
-                self.translation_model = load_model([self.args.lan]) #in the future we want to handle different languages for different speakers
+                self.translation_model = load_model([self.args.lan], backend=self.args.nllb_backend) #in the future we want to handle different languages for different speakers
             
         TranscriptionEngine._initialized = True
 

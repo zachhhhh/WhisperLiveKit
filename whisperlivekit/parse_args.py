@@ -287,6 +287,13 @@ def parse_args():
         help="Optional. Number of models to preload in memory to speed up loading (set up to the expected number of concurrent instances).",
     )
 
+    simulstreaming_group.add_argument(
+        "--nllb-backend",
+        type=str,
+        default="ctranslate2",
+        help="transformer or ctranslate2",
+    )
+
     args = parser.parse_args()
     
     args.transcription = not args.no_transcription
