@@ -70,7 +70,8 @@ class TranscriptionEngine:
             "embedding_model": "pyannote/embedding",  
             
             # translation params:
-            "nllb_backend": "ctranslate2"
+            "nllb_backend": "ctranslate2",
+            "nllb_size": "600M"
         }
 
         config_dict = {**defaults, **kwargs}
@@ -148,8 +149,7 @@ class TranscriptionEngine:
                 raise Exception('Translation cannot be set with language auto')
             else:
                 from whisperlivekit.translation.translation import load_model
-                self.translation_model = load_model([self.args.lan], backend=self.args.nllb_backend) #in the future we want to handle different languages for different speakers
-            
+                self.translation_model = load_model([self.args.lan], backend=self.args.nllb_backend, model_size=self.args.nllb_size) #in the future we want to handle different languages for different speakers
         TranscriptionEngine._initialized = True
 
 

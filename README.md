@@ -200,7 +200,8 @@ An important list of parameters can be changed. But what *should* you change?
 
 | Translation options | Description | Default |
 |-----------|-------------|---------|
-| `--nllb-backend` | [NOT FUNCTIONNAL YET] transformer or ctranslate2 | `ctranslate2` |
+| `--nllb-backend` | `transformers` or `ctranslate2` | `ctranslate2` |
+| `--nllb-size` | `600M` or `1.3B` | `600M` |
 
 > For diarization using Diart, you need access to pyannote.audio models:
 > 1. [Accept user conditions](https://huggingface.co/pyannote/segmentation) for the `pyannote/segmentation` model

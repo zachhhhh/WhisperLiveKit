@@ -291,7 +291,14 @@ def parse_args():
         "--nllb-backend",
         type=str,
         default="ctranslate2",
-        help="transformer or ctranslate2",
+        help="transformers or ctranslate2",
+    )
+    
+    simulstreaming_group.add_argument(
+        "--nllb-size",
+        type=str,
+        default="600M",
+        help="600M or 1.3B",
     )
 
     args = parser.parse_args()
