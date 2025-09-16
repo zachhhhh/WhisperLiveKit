@@ -22,6 +22,9 @@ let lastReceivedData = null;
 let lastSignature = null;
 let availableMicrophones = [];
 let selectedMicrophoneId = null;
+let serverUseAudioWorklet = null;
+let configReadyResolve;
+const configReady = new Promise((r) => (configReadyResolve = r));
 
 waveCanvas.width = 60 * (window.devicePixelRatio || 1);
 waveCanvas.height = 30 * (window.devicePixelRatio || 1);
@@ -228,6 +231,14 @@ function setupWebSocket() {
 
     websocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      if (data.type === "config") {
+        serverUseAudioWorklet = !!data.useAudioWorklet;
+        statusText.textContent = serverUseAudioWorklet
+          ? "Connected. Using AudioWorklet (PCM)."
+          : "Connected. Using MediaRecorder (WebM).";
+        if (configReadyResolve) configReadyResolve();
+        return;
+      }
 
       if (data.type === "ready_to_stop") {
         console.log("Ready to stop received, finalizing display and closing WebSocket.");
@@ -459,38 +470,54 @@ async function startRecording() {
     microphone = audioContext.createMediaStreamSource(stream);
     microphone.connect(analyser);
 
-    if (!audioContext.audioWorklet) {
-      throw new Error("AudioWorklet is not supported in this browser");
-    }
-    await audioContext.audioWorklet.addModule("/web/pcm_worklet.js");
-    workletNode = new AudioWorkletNode(audioContext, "pcm-forwarder", { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1 });
-    microphone.connect(workletNode);
-
-    recorderWorker = new Worker("/web/recorder_worker.js");
-    recorderWorker.postMessage({
-      command: "init",
-      config: {
-        sampleRate: audioContext.sampleRate,
-      },
-    });
-
-    recorderWorker.onmessage = (e) => {
-      if (websocket && websocket.readyState === WebSocket.OPEN) {
-        websocket.send(e.data.buffer);
+    if (serverUseAudioWorklet) {
+      if (!audioContext.audioWorklet) {
+        throw new Error("AudioWorklet is not supported in this browser");
       }
-    };
+      await audioContext.audioWorklet.addModule("/web/pcm_worklet.js");
+      workletNode = new AudioWorkletNode(audioContext, "pcm-forwarder", { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1 });
+      microphone.connect(workletNode);
 
-    workletNode.port.onmessage = (e) => {
-      const data = e.data;
-      const ab = data instanceof ArrayBuffer ? data : data.buffer;
-      recorderWorker.postMessage(
-        {
-          command: "record",
-          buffer: ab,
+      recorderWorker = new Worker("/web/recorder_worker.js");
+      recorderWorker.postMessage({
+        command: "init",
+        config: {
+          sampleRate: audioContext.sampleRate,
         },
-        [ab]
-      );
-    };
+      });
+
+      recorderWorker.onmessage = (e) => {
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+          websocket.send(e.data.buffer);
+        }
+      };
+
+      workletNode.port.onmessage = (e) => {
+        const data = e.data;
+        const ab = data instanceof ArrayBuffer ? data : data.buffer;
+        recorderWorker.postMessage(
+          {
+            command: "record",
+            buffer: ab,
+          },
+          [ab]
+        );
+      };
+    } else {
+      try {
+        recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      } catch (e) {
+        recorder = new MediaRecorder(stream);
+      }
+      recorder.ondataavailable = (e) => {
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+          if (e.data && e.data.size > 0) {
+            websocket.send(e.data);
+          }
+        }
+      };
+      recorder.start(chunkDuration);
+    }
 
     startTime = Date.now();
     timerInterval = setInterval(updateTimer, 1000);
@@ -526,6 +553,14 @@ async function stopRecording() {
     const emptyBlob = new Blob([], { type: "audio/webm" });
     websocket.send(emptyBlob);
     statusText.textContent = "Recording stopped. Processing final audio...";
+  }
+
+  if (recorder) {
+    try {
+      recorder.stop();
+    } catch (e) {
+    }
+    recorder = null;
   }
 
   if (recorderWorker) {
@@ -586,9 +621,11 @@ async function toggleRecording() {
     console.log("Connecting to WebSocket");
     try {
       if (websocket && websocket.readyState === WebSocket.OPEN) {
+        await configReady;
         await startRecording();
       } else {
         await setupWebSocket();
+        await configReady;
         await startRecording();
       }
     } catch (err) {

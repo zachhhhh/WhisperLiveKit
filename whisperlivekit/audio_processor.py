@@ -8,6 +8,7 @@ from whisperlivekit.timed_objects import ASRToken, Silence, Line, FrontData, Sta
 from whisperlivekit.core import TranscriptionEngine, online_factory, online_diarization_factory, online_translation_factory
 from whisperlivekit.silero_vad_iterator import FixedVADIterator
 from whisperlivekit.results_formater import format_output
+from whisperlivekit.ffmpeg_manager import FFmpegManager, FFmpegState
 # Set up logging once
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ class AudioProcessor:
         self.bytes_per_sample = 2
         self.bytes_per_sec = self.samples_per_sec * self.bytes_per_sample
         self.max_bytes_per_sec = 32000 * 5  # 5 seconds of audio at 32 kHz
-        self.is_pcm_input = True
+        self.is_pcm_input = self.args.pcm_input
         self.debug = False
 
         # State management
@@ -74,7 +75,21 @@ class AudioProcessor:
             self.vac = FixedVADIterator(models.vac_model)
         else:
             self.vac = None
-            
+                         
+        self.ffmpeg_manager = None
+        self.ffmpeg_reader_task = None
+        self._ffmpeg_error = None
+
+        if not self.is_pcm_input:
+            self.ffmpeg_manager = FFmpegManager(
+                sample_rate=self.sample_rate,
+                channels=self.channels
+            )
+            async def handle_ffmpeg_error(error_type: str):
+                logger.error(f"FFmpeg error: {error_type}")
+                self._ffmpeg_error = error_type
+            self.ffmpeg_manager.on_error_callback = handle_ffmpeg_error
+             
         self.transcription_queue = asyncio.Queue() if self.args.transcription else None
         self.diarization_queue = asyncio.Queue() if self.args.diarization else None
         self.translation_queue = asyncio.Queue() if self.args.target_language else None
@@ -154,6 +169,56 @@ class AudioProcessor:
             self.buffer_transcription = self.buffer_diarization = ""
             self.end_buffer = self.end_attributed_speaker = 0
             self.beg_loop = time()
+
+    async def ffmpeg_stdout_reader(self):
+        """Read audio data from FFmpeg stdout and process it into the PCM pipeline."""
+        beg = time()
+        while True:
+            try:
+                if self.is_stopping:
+                    logger.info("Stopping ffmpeg_stdout_reader due to stopping flag.")
+                    break
+
+                state = await self.ffmpeg_manager.get_state() if self.ffmpeg_manager else FFmpegState.STOPPED
+                if state == FFmpegState.FAILED:
+                    logger.error("FFmpeg is in FAILED state, cannot read data")
+                    break
+                elif state == FFmpegState.STOPPED:
+                    logger.info("FFmpeg is stopped")
+                    break
+                elif state != FFmpegState.RUNNING:
+                    await asyncio.sleep(0.1)
+                    continue
+
+                current_time = time()
+                elapsed_time = max(0.0, current_time - beg)
+                buffer_size = max(int(32000 * elapsed_time), 4096)  # dynamic read
+                beg = current_time
+
+                chunk = await self.ffmpeg_manager.read_data(buffer_size)
+                if not chunk:
+                    # No data currently available
+                    await asyncio.sleep(0.05)
+                    continue
+
+                self.pcm_buffer.extend(chunk)
+                await self.handle_pcm_data()
+
+            except asyncio.CancelledError:
+                logger.info("ffmpeg_stdout_reader cancelled.")
+                break
+            except Exception as e:
+                logger.warning(f"Exception in ffmpeg_stdout_reader: {e}")
+                logger.debug(f"Traceback: {traceback.format_exc()}")
+                await asyncio.sleep(0.2)
+
+        logger.info("FFmpeg stdout processing finished. Signaling downstream processors if needed.")
+        if self.args.transcription and self.transcription_queue:
+            await self.transcription_queue.put(SENTINEL)
+        if self.args.diarization and self.diarization_queue:
+            await self.diarization_queue.put(SENTINEL)
+        if self.args.target_language and self.translation_queue:
+            await self.translation_queue.put(SENTINEL)
 
     async def transcription_processor(self):
         """Process audio chunks for transcription."""
@@ -337,6 +402,16 @@ class AudioProcessor:
         """Format processing results for output."""
         while True:
             try:
+                # If FFmpeg error occurred, notify front-end
+                if self._ffmpeg_error:
+                    yield FrontData(
+                        status="error",
+                        error=f"FFmpeg error: {self._ffmpeg_error}"
+                    )
+                    self._ffmpeg_error = None
+                    await asyncio.sleep(1)
+                    continue
+
                 # Get current state
                 state = await self.get_current_state()
                                 
@@ -412,6 +487,21 @@ class AudioProcessor:
         self.all_tasks_for_cleanup = []
         processing_tasks_for_watchdog = []
 
+        # If using FFmpeg (non-PCM input), start it and spawn stdout reader
+        if not self.is_pcm_input:
+            success = await self.ffmpeg_manager.start()
+            if not success:
+                logger.error("Failed to start FFmpeg manager")
+                async def error_generator():
+                    yield FrontData(
+                        status="error",
+                        error="FFmpeg failed to start. Please check that FFmpeg is installed."
+                    )
+                return error_generator()
+            self.ffmpeg_reader_task = asyncio.create_task(self.ffmpeg_stdout_reader())
+            self.all_tasks_for_cleanup.append(self.ffmpeg_reader_task)
+            processing_tasks_for_watchdog.append(self.ffmpeg_reader_task)
+
         if self.args.transcription and self.online:
             self.transcription_task = asyncio.create_task(self.transcription_processor())
             self.all_tasks_for_cleanup.append(self.transcription_task)
@@ -466,7 +556,14 @@ class AudioProcessor:
             if created_tasks:
                 await asyncio.gather(*created_tasks, return_exceptions=True)
             logger.info("All processing tasks cancelled or finished.")
-            if self.args.diarization and hasattr(self, 'diarization') and hasattr(self.diarization, 'close'):
+
+            if not self.is_pcm_input and self.ffmpeg_manager:
+                try:
+                    await self.ffmpeg_manager.stop()
+                    logger.info("FFmpeg manager stopped.")
+                except Exception as e:
+                    logger.warning(f"Error stopping FFmpeg manager: {e}")
+            if self.args.diarization and hasattr(self, 'dianization') and hasattr(self.diarization, 'close'):
                 self.diarization.close()
             logger.info("AudioProcessor cleanup complete.")
 
@@ -480,9 +577,12 @@ class AudioProcessor:
         if not message:
             logger.info("Empty audio message received, initiating stop sequence.")
             self.is_stopping = True
-            
+             
             if self.transcription_queue:
                 await self.transcription_queue.put(SENTINEL)
+
+            if not self.is_pcm_input and self.ffmpeg_manager:
+                await self.ffmpeg_manager.stop()
 
             return
 
@@ -493,6 +593,17 @@ class AudioProcessor:
         if self.is_pcm_input:
             self.pcm_buffer.extend(message)
             await self.handle_pcm_data()
+        else:
+            if not self.ffmpeg_manager:
+                logger.error("FFmpeg manager not initialized for non-PCM input.")
+                return
+            success = await self.ffmpeg_manager.write_data(message)
+            if not success:
+                ffmpeg_state = await self.ffmpeg_manager.get_state()
+                if ffmpeg_state == FFmpegState.FAILED:
+                    logger.error("FFmpeg is in FAILED state, cannot process audio")
+                else:
+                    logger.warning("Failed to write audio data to FFmpeg")
 
     async def handle_pcm_data(self):
         # Process when enough data

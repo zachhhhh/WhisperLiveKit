@@ -72,6 +72,11 @@ async def websocket_endpoint(websocket: WebSocket):
     )
     await websocket.accept()
     logger.info("WebSocket connection opened.")
+
+    try:
+        await websocket.send_json({"type": "config", "useAudioWorklet": bool(args.pcm_input)})
+    except Exception as e:
+        logger.warning(f"Failed to send config to client: {e}")
             
     results_generator = await audio_processor.create_tasks()
     websocket_task = asyncio.create_task(handle_websocket_results(websocket, results_generator))
