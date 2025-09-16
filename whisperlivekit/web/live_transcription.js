@@ -12,7 +12,7 @@ let timerInterval = null;
 let audioContext = null;
 let analyser = null;
 let microphone = null;
-let scriptProcessor = null;
+let workletNode = null;
 let recorderWorker = null;
 let waveCanvas = document.getElementById("waveCanvas");
 let waveCtx = waveCanvas.getContext("2d");
@@ -459,9 +459,12 @@ async function startRecording() {
     microphone = audioContext.createMediaStreamSource(stream);
     microphone.connect(analyser);
 
-    scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
-    microphone.connect(scriptProcessor);
-    scriptProcessor.connect(audioContext.destination);
+    if (!audioContext.audioWorklet) {
+      throw new Error("AudioWorklet is not supported in this browser");
+    }
+    await audioContext.audioWorklet.addModule("/web/pcm_worklet.js");
+    workletNode = new AudioWorkletNode(audioContext, "pcm-forwarder", { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1 });
+    microphone.connect(workletNode);
 
     recorderWorker = new Worker("/web/recorder_worker.js");
     recorderWorker.postMessage({
@@ -477,12 +480,16 @@ async function startRecording() {
       }
     };
 
-    scriptProcessor.onaudioprocess = (e) => {
-      const inputData = e.inputBuffer.getChannelData(0);
-      recorderWorker.postMessage({
-        command: "record",
-        buffer: inputData.buffer,
-      }, [inputData.buffer]);
+    workletNode.port.onmessage = (e) => {
+      const data = e.data;
+      const ab = data instanceof ArrayBuffer ? data : data.buffer;
+      recorderWorker.postMessage(
+        {
+          command: "record",
+          buffer: ab,
+        },
+        [ab]
+      );
     };
 
     startTime = Date.now();
@@ -526,9 +533,14 @@ async function stopRecording() {
     recorderWorker = null;
   }
   
-  if (scriptProcessor) {
-    scriptProcessor.disconnect();
-    scriptProcessor = null;
+  if (workletNode) {
+    try {
+      workletNode.port.onmessage = null;
+    } catch (e) {}
+    try {
+      workletNode.disconnect();
+    } catch (e) {}
+    workletNode = null;
   }
 
   if (microphone) {
