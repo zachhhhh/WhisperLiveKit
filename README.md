@@ -18,9 +18,9 @@ Real-time speech transcription directly to your browser, with a ready-to-use bac
 
 #### Powered by Leading Research:
 
-- [SimulStreaming](https://github.com/ufal/SimulStreaming) (SOTA 2025) - Ultra-low latency transcription with AlignAtt policy
+- [SimulStreaming](https://github.com/ufalSimulStreaming) (SOTA 2025) - Ultra-low latency transcription using [AlignAtt policy](https://arxiv.org/pdf/2305.11408)
 - [NLLB](https://arxiv.org/abs/2207.04672), ([distilled](https://huggingface.co/entai2965/nllb-200-distilled-600M-ctranslate2)) (2024) - Translation to more than 100 languages.
-- [WhisperStreaming](https://github.com/ufal/whisper_streaming) (SOTA 2023) - Low latency transcription with LocalAgreement policy
+- [WhisperStreaming](https://github.com/ufal/whisper_streaming) (SOTA 2023) - Low latency transcription using [LocalAgreement policy](https://www.isca-archive.org/interspeech_2020/liu20s_interspeech.pdf)
 - [Streaming Sortformer](https://arxiv.org/abs/2507.18446) (SOTA 2025) - Advanced real-time speaker diarization
 - [Diart](https://github.com/juanmc2005/diart) (SOTA 2021) - Real-time speaker diarization
 - [Silero VAD](https://github.com/snakers4/silero-vad) (2024) - Enterprise-grade Voice Activity Detection
@@ -41,15 +41,6 @@ Real-time speech transcription directly to your browser, with a ready-to-use bac
 pip install whisperlivekit
 ```
 > You can also clone the repo and `pip install -e .` for the latest version.
-
-
->  **FFmpeg is required** and must be installed before using WhisperLiveKit
-> 
-> | OS | How to install |
-> |-----------|-------------|
->  | Ubuntu/Debian | `sudo apt install ffmpeg` |
-> | MacOS | `brew install ffmpeg` |
-> | Windows | Download .exe from https://ffmpeg.org/download.html and add to PATH |
 
 #### Quick Start
 1. **Start the transcription server:**
@@ -86,8 +77,8 @@ See  **Parameters & Configuration** below on how to use them.
 **Command-line Interface**: Start the transcription server with various options:
 
 ```bash
-# Use better model than default (small)
-whisperlivekit-server --model large-v3
+# Large model and translate from french to danish
+whisperlivekit-server --model large-v3 --language fr --target-language da
 
 # Advanced configuration with diarization and language
 whisperlivekit-server --host 0.0.0.0 --port 8000 --model medium --diarization --language fr
@@ -137,26 +128,14 @@ async def websocket_endpoint(websocket: WebSocket):
 
 ## Parameters & Configuration
 
-An important list of parameters can be changed. But what *should* you change?
-- the `--model` size. List and recommandations [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/available_models.md)
-- the `--language`.  List [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/simul_whisper/whisper/tokenizer.py). If you use `auto`, the model attempts to detect the language automatically, but it tends to bias towards English.
-- the `--backend` ? you can switch to `--backend faster-whisper` if  `simulstreaming` does not work correctly or if you prefer to avoid the dual-license requirements.
-- `--warmup-file`, if you have one
-- `--task translate`, to translate in english
-- `--host`, `--port`, `--ssl-certfile`, `--ssl-keyfile`, if you set up a server
-- `--diarization`, if you want to use it.
-- [BETA] `--target-language`, to translate using NLLB. [118 languages available](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/translation/mapping_languages.py). If you want to translate to english, you should rather use `--task translate`, since Whisper can do it directly.
-
-### Full list of parameters :
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `--model` | Whisper model size. | `small` |
-| `--language` | Source language code or `auto` | `auto` |
-| `--task` | Set to `translate` to translate to english | `transcribe` |
-| `--target-language` | [BETA] Translation language target. Ex: `fr` | `None` |
-| `--backend` | Processing backend | `simulstreaming` |
-| `--min-chunk-size` | Minimum audio chunk size (seconds) | `1.0` |
+| `--model` | Whisper model size. List and recommandations [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/available_models.md) | `small` |
+| `--language` | List [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/simul_whisper/whisper/tokenizer.py). If you use `auto`, the model attempts to detect the language automatically, but it tends to bias towards English. | `auto` |
+| `--target-language` | If sets, activates translation using NLLB. Ex: `fr`. [118 languages available](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/translation/mapping_languages.py). If you want to translate to english, you should rather use `--task translate`, since Whisper can do it directly. | `None` |
+| `--task` | Set to `translate` to translate *only* to english, using Whisper translation. | `transcribe` |
+| `--backend` | Processing backend. You can switch to `faster-whisper` if  `simulstreaming` does not work correctly | `simulstreaming` |
 | `--no-vac` | Disable Voice Activity Controller | `False` |
 | `--no-vad` | Disable Voice Activity Detection | `False` |
 | `--warmup-file` | Audio file path for model warmup | `jfk.wav` |
@@ -164,7 +143,8 @@ An important list of parameters can be changed. But what *should* you change?
 | `--port` | Server port | `8000` |
 | `--ssl-certfile` | Path to the SSL certificate file (for HTTPS support) | `None` |
 | `--ssl-keyfile` | Path to the SSL private key file (for HTTPS support) | `None` |
-| `--pcm-input` | raw PCM (s16le) data is expected as input and FFmpeg will be bypassed. | `False` |
+| `--pcm-input` | raw PCM (s16le) data is expected as input and FFmpeg will be bypassed. Frontend will use AudioWorklet instead of MediaRecorder | `False` |
+| `--min-chunk-size` | Minimum audio chunk size  (seconds), used by different sections of WLK | `0.5` |
 
 
 | SimulStreaming backend options | Description | Default |
