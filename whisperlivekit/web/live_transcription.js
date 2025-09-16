@@ -345,13 +345,6 @@ function renderLinesWithBuffer(
       }
 
       let currentLineText = item.text || "";
-      
-      if (item.translation) {
-        currentLineText += `<div class="label_translation">
-          <img src="/web/src/translate.svg" alt="Translation" width="12" height="12" />
-          <span>${item.translation}</span>
-        </div>`;
-      }
 
       if (idx === lines.length - 1) {
         if (!isFinalizing && item.speaker !== -2) {
@@ -384,6 +377,13 @@ function renderLinesWithBuffer(
             currentLineText += `<span class="buffer_transcription">${buffer_transcription}</span>`;
           }
         }
+      }
+      
+      if (item.translation) {
+        currentLineText += `<div class="label_translation">
+          <img src="/web/src/translate.svg" alt="Translation" width="12" height="12" />
+          <span>${item.translation}</span>
+        </div>`;
       }
 
       return currentLineText.trim().length > 0 || speakerLabel.length > 0

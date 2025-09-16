@@ -1,4 +1,4 @@
-# Available model sizes:
+# Available Whisper model sizes:
 
 - tiny.en (english only)
 - tiny
@@ -71,3 +71,39 @@
 3. Good hardware and want best quality? → `large-v3`
 4. Need fast, high-quality transcription without translation? → `large-v3-turbo`
 5. Need translation capabilities? → `large-v2` or `large-v3` (avoid turbo)
+
+
+_______________________
+
+# Translation Models and Backend
+
+**Language Support**: ~200 languages
+
+## Distilled Model Sizes Available
+
+| Model | Size | Parameters | VRAM (FP16) | VRAM (INT8) | Quality |
+|-------|------|------------|-------------|-------------|---------|
+| 600M | 2.46 GB | 600M | ~1.5GB | ~800MB | Good, understandable |
+| 1.3B | 5.48 GB | 1.3B | ~3GB | ~1.5GB | Better accuracy, context |
+
+**Quality Impact**: 1.3B has ~15-25% better BLEU scores vs 600M across language pairs.
+
+## Backend Performance
+
+| Backend | Speed vs Base | Memory Usage | Quality Loss |
+|---------|---------------|--------------|--------------|
+| CTranslate2 | 6-10x faster | 40-60% less | ~5% BLEU drop |
+| Transformers | Baseline | High | None |
+| Transformers + MPS (on Apple Silicon) | 2x faster | Medium | None |
+
+**Metrics**:
+- CTranslate2: 50-100+ tokens/sec
+- Transformers: 10-30 tokens/sec
+- Apple Silicon with MPS: Up to 2x faster than CTranslate2
+
+## Quick Decision Matrix
+
+**Choose 600M**: Limited resources, close to 0 lag
+**Choose 1.3B**: Quality matters
+**Choose Transformers**: On Apple Silicon
+

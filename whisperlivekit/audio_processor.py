@@ -445,8 +445,8 @@ class AudioProcessor:
                 elif not lines:
                     lines = [Line(
                         speaker=1,
-                        start=state.get("end_buffer", 0),
-                        end=state.get("end_buffer", 0)        
+                        start=state.end_buffer,
+                        end=state.end_buffer
                     )]
                 
                 response = FrontData(
