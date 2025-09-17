@@ -80,8 +80,8 @@ See  **Parameters & Configuration** below on how to use them.
 # Large model and translate from french to danish
 whisperlivekit-server --model large-v3 --language fr --target-language da
 
-# Advanced configuration with diarization and language
-whisperlivekit-server --host 0.0.0.0 --port 8000 --model medium --diarization --language fr
+# Diarization and server listening on */80 
+whisperlivekit-server --host 0.0.0.0 --port 80 --model medium --diarization --language fr
 ```
 
 
@@ -135,6 +135,7 @@ async def websocket_endpoint(websocket: WebSocket):
 | `--language` | List [here](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/simul_whisper/whisper/tokenizer.py). If you use `auto`, the model attempts to detect the language automatically, but it tends to bias towards English. | `auto` |
 | `--target-language` | If sets, activates translation using NLLB. Ex: `fr`. [118 languages available](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/translation/mapping_languages.py). If you want to translate to english, you should rather use `--task translate`, since Whisper can do it directly. | `None` |
 | `--task` | Set to `translate` to translate *only* to english, using Whisper translation. | `transcribe` |
+| `--diarization` | Enable speaker identification | `False` |
 | `--backend` | Processing backend. You can switch to `faster-whisper` if  `simulstreaming` does not work correctly | `simulstreaming` |
 | `--no-vac` | Disable Voice Activity Controller | `False` |
 | `--no-vad` | Disable Voice Activity Detection | `False` |
@@ -144,8 +145,18 @@ async def websocket_endpoint(websocket: WebSocket):
 | `--ssl-certfile` | Path to the SSL certificate file (for HTTPS support) | `None` |
 | `--ssl-keyfile` | Path to the SSL private key file (for HTTPS support) | `None` |
 | `--pcm-input` | raw PCM (s16le) data is expected as input and FFmpeg will be bypassed. Frontend will use AudioWorklet instead of MediaRecorder | `False` |
-| `--min-chunk-size` | Minimum audio chunk size  (seconds), used by different sections of WLK | `0.5` |
 
+| Translation options | Description | Default |
+|-----------|-------------|---------|
+| `--nllb-backend` | `transformers` or `ctranslate2` | `ctranslate2` |
+| `--nllb-size` | `600M` or `1.3B` | `600M` |
+
+| Diarization options | Description | Default |
+|-----------|-------------|---------|
+| `--diarization-backend` |  `diart` or `sortformer` | `sortformer` |
+| `--disable-punctuation-split` |  Disable punctuation based splits. See #214 | `False` |
+| `--segmentation-model` | Hugging Face model ID for Diart segmentation model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `pyannote/segmentation-3.0` |
+| `--embedding-model` | Hugging Face model ID for Diart embedding model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `speechbrain/spkrec-ecapa-voxceleb` |
 
 | SimulStreaming backend options | Description | Default |
 |-----------|-------------|---------|
@@ -164,30 +175,16 @@ async def websocket_endpoint(websocket: WebSocket):
 | `--preload-model-count` | Optional. Number of models to preload in memory to speed up loading (set up to the expected number of concurrent users) | `1` |
 
 
+
 | WhisperStreaming backend options | Description | Default |
 |-----------|-------------|---------|
 | `--confidence-validation` | Use confidence scores for faster validation | `False` |
 | `--buffer_trimming` | Buffer trimming strategy (`sentence` or `segment`) | `segment` |
 
-| Diarization options | Description | Default |
-|-----------|-------------|---------|
-| `--diarization` | Enable speaker identification | `False` |
-| `--diarization-backend` |  `diart` or `sortformer` | `sortformer` |
-| `--disable-punctuation-split` |  Disable punctuation based splits. See #214 | `False` |
-| `--segmentation-model` | Hugging Face model ID for Diart segmentation model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `pyannote/segmentation-3.0` |
-| `--embedding-model` | Hugging Face model ID for Diart embedding model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `speechbrain/spkrec-ecapa-voxceleb` |
 
 
-| Translation options | Description | Default |
-|-----------|-------------|---------|
-| `--nllb-backend` | `transformers` or `ctranslate2` | `ctranslate2` |
-| `--nllb-size` | `600M` or `1.3B` | `600M` |
 
-> For diarization using Diart, you need access to pyannote.audio models:
-> 1. [Accept user conditions](https://huggingface.co/pyannote/segmentation) for the `pyannote/segmentation` model
-> 2. [Accept user conditions](https://huggingface.co/pyannote/segmentation-3.0) for the `pyannote/segmentation-3.0` model
-> 3. [Accept user conditions](https://huggingface.co/pyannote/embedding) for the `pyannote/embedding` model
->4. Login with HuggingFace: `huggingface-cli login`
+> For diarization using Diart, you need to accept user conditions [here](https://huggingface.co/pyannote/segmentation) for the `pyannote/segmentation` model, [here](https://huggingface.co/pyannote/segmentation-3.0) for the `pyannote/segmentation-3.0` model and [here](https://huggingface.co/pyannote/embedding) for the `pyannote/embedding` model. **Then**, login to HuggingFace: `huggingface-cli login`
 
 ### 🚀 Deployment Guide
 
