@@ -123,14 +123,33 @@ def format_output(state, silence, current_time, args, debug, sep):
             
         append_token_to_last_line(lines, sep, token, debug_info)
     if lines and translated_segments:
-        cts_idx = 0 # current_translated_segment_idx
-        for line in lines:
-            while cts_idx < len(translated_segments):
-                ts = translated_segments[cts_idx]
-                if ts and ts.start and ts.start >= line.start and ts.end <= line.end:
-                    line.translation += ts.text + ' '
-                    cts_idx += 1
-                else:
-                    break
-    return lines, undiarized_text, buffer_transcription, '' 
-
+        unassigned_translated_segments = []
+        for ts in translated_segments:
+            assigned = False
+            for line in lines:
+                if ts and ts.overlaps_with(line):
+                    if ts.is_within(line):
+                        line.translation += ts.text + ' '
+                        assigned = True
+                        break
+                    else:
+                        ts0, ts1 = ts.approximate_cut_at(line.end)
+                        if ts0 and line.overlaps_with(ts0):
+                            line.translation += ts0.text + ' '
+                        if ts1:
+                            unassigned_translated_segments.append(ts1)
+                        assigned = True
+                        break
+            if not assigned:
+                unassigned_translated_segments.append(ts)
+        
+        if unassigned_translated_segments:
+            for line in lines:
+                remaining_segments = []
+                for ts in unassigned_translated_segments:
+                    if ts and ts.overlaps_with(line):
+                        line.translation += ts.text + ' '
+                    else:
+                        remaining_segments.append(ts)
+                unassigned_translated_segments = remaining_segments #maybe do smth in the future about that
+    return lines, undiarized_text, buffer_transcription, ''

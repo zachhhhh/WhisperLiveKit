@@ -198,6 +198,11 @@ An important list of parameters can be changed. But what *should* you change?
 | `--embedding-model` | Hugging Face model ID for Diart embedding model. [Available models](https://github.com/juanmc2005/diart/tree/main?tab=readme-ov-file#pre-trained-models) | `speechbrain/spkrec-ecapa-voxceleb` |
 
 
+| Translation options | Description | Default |
+|-----------|-------------|---------|
+| `--nllb-backend` | `transformers` or `ctranslate2` | `ctranslate2` |
+| `--nllb-size` | `600M` or `1.3B` | `600M` |
+
 > For diarization using Diart, you need access to pyannote.audio models:
 > 1. [Accept user conditions](https://huggingface.co/pyannote/segmentation) for the `pyannote/segmentation` model
 > 2. [Accept user conditions](https://huggingface.co/pyannote/segmentation-3.0) for the `pyannote/segmentation-3.0` model

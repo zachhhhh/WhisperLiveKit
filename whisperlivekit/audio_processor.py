@@ -179,12 +179,11 @@ class AudioProcessor:
                     asr_processing_logs += f" + Silence of = {item.duration:.2f}s"
                     if self.tokens:
                         asr_processing_logs += f" | last_end = {self.tokens[-1].end} |"
-                logger.info(asr_processing_logs)
-                
-                if type(item) is Silence:
+                    logger.info(asr_processing_logs)
                     cumulative_pcm_duration_stream_time += item.duration
                     self.online.insert_silence(item.duration, self.tokens[-1].end if self.tokens else 0)
                     continue
+                logger.info(asr_processing_logs)
                 
                 if isinstance(item, np.ndarray):
                     pcm_array = item
@@ -223,7 +222,7 @@ class AudioProcessor:
                     new_tokens, buffer_text, new_end_buffer
                 )
                 
-                if new_tokens and self.args.target_language and self.translation_queue:
+                if self.translation_queue:
                     for token in new_tokens:
                         await self.translation_queue.put(token)
                         
@@ -256,13 +255,11 @@ class AudioProcessor:
                     logger.debug("Diarization processor received sentinel. Finishing.")
                     self.diarization_queue.task_done()
                     break
-                
-                if type(item) is Silence:
+                elif type(item) is Silence:
                     cumulative_pcm_duration_stream_time += item.duration
                     diarization_obj.insert_silence(item.duration)
                     continue
-    
-                if isinstance(item, np.ndarray):
+                elif isinstance(item, np.ndarray):
                     pcm_array = item
                 else:
                     raise Exception('item should be pcm_array') 
@@ -295,14 +292,17 @@ class AudioProcessor:
         # in the future we want to have different languages for each speaker etc, so it will be more complex.
         while True:
             try:
-                token = await self.translation_queue.get() #block until at least 1 token
-                if token is SENTINEL:
+                item = await self.translation_queue.get() #block until at least 1 token
+                if item is SENTINEL:
                     logger.debug("Translation processor received sentinel. Finishing.")
                     self.translation_queue.task_done()
                     break
+                elif type(item) is Silence:
+                    online_translation.insert_silence(item.duration)
+                    continue
                 
                 # get all the available tokens for translation. The more words, the more precise
-                tokens_to_process = [token]
+                tokens_to_process = [item]
                 additional_tokens = await get_all_from_queue(self.translation_queue)
                 
                 sentinel_found = False
@@ -326,7 +326,7 @@ class AudioProcessor:
             except Exception as e:
                 logger.warning(f"Exception in translation_processor: {e}")
                 logger.warning(f"Traceback: {traceback.format_exc()}")
-                if 'token' in locals() and token is not SENTINEL:
+                if 'token' in locals() and item is not SENTINEL:
                     self.translation_queue.task_done()
                 if 'additional_tokens' in locals():
                     for _ in additional_tokens:
@@ -367,7 +367,7 @@ class AudioProcessor:
                 if not state.tokens and not buffer_transcription and not buffer_diarization:
                     response_status = "no_audio_detected"
                     lines = []
-                elif response_status == "active_transcription" and not lines:
+                elif not lines:
                     lines = [Line(
                         speaker=1,
                         start=state.get("end_buffer", 0),
@@ -528,6 +528,8 @@ class AudioProcessor:
                 await self.transcription_queue.put(silence_buffer)
             if self.args.diarization and self.diarization_queue:
                 await self.diarization_queue.put(silence_buffer)
+            if self.translation_queue:
+                await self.translation_queue.put(silence_buffer)
 
         if not self.silence:
             if self.args.transcription and self.transcription_queue:
