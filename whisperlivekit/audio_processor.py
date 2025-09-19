@@ -66,6 +66,8 @@ class AudioProcessor:
         self.beg_loop = None #to deal with a potential little lag at the websocket initialization, this is now set in process_audio
         self.sep = " "  # Default separator
         self.last_response_content = FrontData()
+        self.last_detected_speaker = None
+        self.speaker_languages = {}
         
         # Models and processing
         self.asr = models.asr
@@ -333,7 +335,7 @@ class AudioProcessor:
                 await diarization_obj.diarize(pcm_array)
                 
                 async with self.lock:
-                    self.tokens = diarization_obj.assign_speakers_to_tokens(
+                    self.tokens, last_segment = diarization_obj.assign_speakers_to_tokens(
                         self.tokens,
                         use_punctuation_split=self.args.punctuation_split
                     )
@@ -341,7 +343,12 @@ class AudioProcessor:
                         self.end_attributed_speaker = max(self.tokens[-1].end, self.end_attributed_speaker)
                     if buffer_diarization:
                         self.buffer_diarization = buffer_diarization
-                
+
+                    # if last_segment is not None and last_segment.speaker != self.last_detected_speaker:
+                    #     if not self.speaker_languages.get(last_segment.speaker, None):
+                    #         self.last_detected_speaker = last_segment.speaker
+                    #         self.online.on_new_speaker(last_segment)
+       
                 self.diarization_queue.task_done()
                 
             except Exception as e:
@@ -552,20 +559,20 @@ class AudioProcessor:
             if task and not task.done():
                 task.cancel()
             
-            created_tasks = [t for t in self.all_tasks_for_cleanup if t]
-            if created_tasks:
-                await asyncio.gather(*created_tasks, return_exceptions=True)
-            logger.info("All processing tasks cancelled or finished.")
+        created_tasks = [t for t in self.all_tasks_for_cleanup if t]
+        if created_tasks:
+            await asyncio.gather(*created_tasks, return_exceptions=True)
+        logger.info("All processing tasks cancelled or finished.")
 
-            if not self.is_pcm_input and self.ffmpeg_manager:
-                try:
-                    await self.ffmpeg_manager.stop()
-                    logger.info("FFmpeg manager stopped.")
-                except Exception as e:
-                    logger.warning(f"Error stopping FFmpeg manager: {e}")
-            if self.args.diarization and hasattr(self, 'dianization') and hasattr(self.diarization, 'close'):
-                self.diarization.close()
-            logger.info("AudioProcessor cleanup complete.")
+        if not self.is_pcm_input and self.ffmpeg_manager:
+            try:
+                await self.ffmpeg_manager.stop()
+                logger.info("FFmpeg manager stopped.")
+            except Exception as e:
+                logger.warning(f"Error stopping FFmpeg manager: {e}")
+        if self.args.diarization and hasattr(self, 'dianization') and hasattr(self.diarization, 'close'):
+            self.diarization.close()
+        logger.info("AudioProcessor cleanup complete.")
 
 
     async def process_audio(self, message):

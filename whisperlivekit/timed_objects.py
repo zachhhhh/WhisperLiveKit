@@ -92,16 +92,22 @@ class Silence():
 @dataclass
 class Line(TimedText):
     translation: str = ''
+    detected_language: str = None
     
     def to_dict(self):
-        return {
+        _dict = {
             'speaker': int(self.speaker),
             'text': self.text,
-            'translation': self.translation,
             'start': format_time(self.start),
             'end': format_time(self.end),
         }
-        
+        if self.translation:
+            _dict['translation'] = self.translation
+        if self.detected_language:
+            _dict['detected_language'] = self.detected_language
+        return _dict
+    
+
 @dataclass  
 class FrontData():
     status: str = ''

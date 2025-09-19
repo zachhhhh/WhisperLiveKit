@@ -306,7 +306,7 @@ function renderLinesWithBuffer(
   const showTransLag = !isFinalizing && remaining_time_transcription > 0;
   const showDiaLag = !isFinalizing && !!buffer_diarization && remaining_time_diarization > 0;
   const signature = JSON.stringify({
-    lines: (lines || []).map((it) => ({ speaker: it.speaker, text: it.text, start: it.start, end: it.end })),
+    lines: (lines || []).map((it) => ({ speaker: it.speaker, text: it.text, start: it.start, end: it.end, detected_language: it.detected_language })),
     buffer_transcription: buffer_transcription || "",
     buffer_diarization: buffer_diarization || "",
     status: current_status,
@@ -335,13 +335,20 @@ function renderLinesWithBuffer(
 
       let speakerLabel = "";
       if (item.speaker === -2) {
-        speakerLabel = `<span class="silence">Silence<span id='timeInfo'>${timeInfo}</span></span>`;
+        const silenceIcon = `<img class="silence-icon" src="/web/src/silence.svg" alt="Silence" />`;
+        speakerLabel = `<span class="silence">${silenceIcon}<span id='timeInfo'>${timeInfo}</span></span>`;
       } else if (item.speaker == 0 && !isFinalizing) {
         speakerLabel = `<span class='loading'><span class="spinner"></span><span id='timeInfo'><span class="loading-diarization-value">${fmt1(
           remaining_time_diarization
         )}</span> second(s) of audio are undergoing diarization</span></span>`;
       } else if (item.speaker !== 0) {
-        speakerLabel = `<span id="speaker">Speaker ${item.speaker}<span id='timeInfo'>${timeInfo}</span></span>`;
+        const speakerIcon = `<img class="speaker-icon" src="/web/src/speaker.svg" alt="Speaker ${item.speaker}" />`;
+        const speakerNum = `<span class="speaker-badge">${item.speaker}</span>`;
+        speakerLabel = `<span id="speaker">${speakerIcon}${speakerNum}<span id='timeInfo'>${timeInfo}</span></span>`;
+
+        if (item.detected_language) {
+          speakerLabel += `<span class="label_language"><img src="/web/src/language.svg" alt="Detected language" width="12" height="12" /><span>${item.detected_language}</span></span>`;
+        }
       }
 
       let currentLineText = item.text || "";
