@@ -5,9 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from whisperlivekit import TranscriptionEngine, AudioProcessor, get_inline_ui_html, parse_args
 import asyncio
 import logging
-from starlette.staticfiles import StaticFiles
-import pathlib
-import whisperlivekit.web as webpkg
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger().setLevel(logging.WARNING)
@@ -33,8 +30,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-web_dir = pathlib.Path(webpkg.__file__).parent
-app.mount("/web", StaticFiles(directory=str(web_dir)), name="web")
 
 @app.get("/")
 async def get():
