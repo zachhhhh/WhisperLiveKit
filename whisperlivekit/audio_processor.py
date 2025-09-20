@@ -59,7 +59,6 @@ class AudioProcessor:
         self.tokens = []
         self.translated_segments = []
         self.buffer_transcription = Transcript()
-        self.buffer_diarization = ""
         self.end_buffer = 0
         self.end_attributed_speaker = 0
         self.lock = asyncio.Lock()
@@ -142,7 +141,6 @@ class AudioProcessor:
                 tokens=self.tokens.copy(),
                 translated_segments=self.translated_segments.copy(),
                 buffer_transcription=self.buffer_transcription,
-                buffer_diarization=self.buffer_diarization,
                 end_buffer=self.end_buffer,
                 end_attributed_speaker=self.end_attributed_speaker,
                 remaining_time_transcription=remaining_transcription,
@@ -154,7 +152,7 @@ class AudioProcessor:
         async with self.lock:
             self.tokens = []
             self.translated_segments = []
-            self.buffer_transcription = self.buffer_diarization = Transcript()
+            self.buffer_transcription = Transcript()
             self.end_buffer = self.end_attributed_speaker = 0
             self.beg_loop = time()
 
@@ -297,7 +295,7 @@ class AudioProcessor:
 
     async def diarization_processor(self, diarization_obj):
         """Process audio chunks for speaker diarization."""
-        buffer_diarization = ""
+        buffer_diarization = Transcript()
         cumulative_pcm_duration_stream_time = 0.0
         while True:
             try:
@@ -318,15 +316,15 @@ class AudioProcessor:
                 # Process diarization
                 await diarization_obj.diarize(pcm_array)
                 
+                segments = diarization_obj.get_segments()
+                
                 async with self.lock:
-                    self.tokens, last_segment = diarization_obj.assign_speakers_to_tokens(
+                    self.tokens = diarization_obj.assign_speakers_to_tokens(
                         self.tokens,
                         use_punctuation_split=self.args.punctuation_split
                     )
                     if len(self.tokens) > 0:
                         self.end_attributed_speaker = max(self.tokens[-1].end, self.end_attributed_speaker)
-                    if buffer_diarization:
-                        self.buffer_diarization = buffer_diarization
 
                     # if last_segment is not None and last_segment.speaker != self.last_detected_speaker:
                     #     if not self.speaker_languages.get(last_segment.speaker, None):
@@ -423,23 +421,15 @@ class AudioProcessor:
                 )
                 if end_w_silence:
                     buffer_transcription = Transcript()
-                    buffer_diarization = Transcript()
                 else:
                     buffer_transcription = state.buffer_transcription
-                    buffer_diarization = state.buffer_diarization
 
-                # Handle undiarized text
+                buffer_diarization = ''
                 if undiarized_text:
-                    combined = self.sep.join(undiarized_text)
-                    if buffer_transcription:
-                        combined += self.sep
+                    buffer_diarization = self.sep.join(undiarized_text)
 
                     async with self.lock:
                         self.end_attributed_speaker = state.end_attributed_speaker
-                        if buffer_diarization:
-                            self.buffer_diarization = buffer_diarization
-
-                    buffer_diarization.text = combined
                 
                 response_status = "active_transcription"
                 if not state.tokens and not buffer_transcription and not buffer_diarization:
@@ -456,7 +446,7 @@ class AudioProcessor:
                     status=response_status,
                     lines=lines,
                     buffer_transcription=buffer_transcription.text,
-                    buffer_diarization=buffer_transcription.text,
+                    buffer_diarization=buffer_diarization,
                     remaining_time_transcription=state.remaining_time_transcription,
                     remaining_time_diarization=state.remaining_time_diarization if self.args.diarization else 0
                 )

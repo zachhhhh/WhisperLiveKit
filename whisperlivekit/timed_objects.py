@@ -17,7 +17,7 @@ class TimedText:
     speaker: Optional[int] = -1
     probability: Optional[float] = None
     is_dummy: Optional[bool] = False
-    language: str = None
+    detected_language: Optional[str] = None
     
     def is_punctuation(self):
         return self.text.strip() in PUNCTUATION_MARKS
@@ -41,11 +41,11 @@ class TimedText:
         return bool(self.text)
 
 
-@dataclass
+@dataclass()
 class ASRToken(TimedText):
     def with_offset(self, offset: float) -> "ASRToken":
         """Return a new token with the time offset added."""
-        return ASRToken(self.start + offset, self.end + offset, self.text, self.speaker, self.probability)
+        return ASRToken(self.start + offset, self.end + offset, self.text, self.speaker, self.probability, detected_language=self.detected_language)
 
 @dataclass
 class Sentence(TimedText):
@@ -123,7 +123,6 @@ class Silence():
 @dataclass
 class Line(TimedText):
     translation: str = ''
-    detected_language: str = None
     
     def to_dict(self):
         _dict = {

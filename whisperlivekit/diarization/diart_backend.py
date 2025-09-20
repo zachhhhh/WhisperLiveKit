@@ -242,7 +242,7 @@ class DiartDiarization:
                         token.speaker = extract_number(segment.speaker) + 1
         else:
             tokens = add_speaker_to_tokens(segments, tokens)
-        return tokens, segments[-1]
+        return tokens
         
 def concatenate_speakers(segments):
     segments_concatenated = [{"speaker": 1, "begin": 0.0, "end": 0.0}]

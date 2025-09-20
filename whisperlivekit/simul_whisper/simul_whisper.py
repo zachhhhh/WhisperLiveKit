@@ -78,7 +78,6 @@ class PaddedAlignAttWhisper:
         self.detected_language = cfg.language if cfg.language != "auto" else None
         self.global_time_offset = 0.0
         self.reset_tokenizer_to_auto_next_call = False
-        self.sentence_start_time = 0.0
         
         self.max_text_len = self.model.dims.n_text_ctx
         self.num_decoder_layers = len(self.model.decoder.blocks)
@@ -153,7 +152,7 @@ class PaddedAlignAttWhisper:
         
         self.last_attend_frame = -self.cfg.rewind_threshold
         self.cumulative_time_offset = 0.0
-        self.sentence_start_time = self.cumulative_time_offset + self.segments_len()
+        self.second_word_timestamp = None
 
         if self.cfg.max_context_tokens is None:
             self.max_context_tokens = self.max_text_len
@@ -261,7 +260,6 @@ class PaddedAlignAttWhisper:
         self.init_context()
         logger.debug(f"Context: {self.context}")
         if not complete and len(self.segments) > 2:
-            logger.debug("keeping last two segments because they are and it is not complete.")
             self.segments = self.segments[-2:]
         else:
             logger.debug("removing all segments.")
@@ -434,14 +432,17 @@ class PaddedAlignAttWhisper:
         end_encode = time()
         # print('Encoder duration:', end_encode-beg_encode)
                 
-        if self.cfg.language == "auto" and self.detected_language is None:
-            seconds_since_start = (self.cumulative_time_offset + self.segments_len()) - self.sentence_start_time
-            if seconds_since_start >= 3.0:
+        if self.cfg.language == "auto" and self.detected_language is None and self.second_word_timestamp:
+            seconds_since_start = self.segments_len() - self.second_word_timestamp
+            if seconds_since_start >= 5.0:
                 language_tokens, language_probs = self.lang_id(encoder_feature) 
                 top_lan, p = max(language_probs[0].items(), key=lambda x: x[1])
                 print(f"Detected language: {top_lan} with p={p:.4f}")
                 self.create_tokenizer(top_lan)
-                self.refresh_segment(complete=True)
+                self.last_attend_frame = -self.cfg.rewind_threshold
+                self.cumulative_time_offset = 0.0
+                self.init_tokens()
+                self.init_context()
                 self.detected_language = top_lan
                 logger.info(f"Tokenizer language: {self.tokenizer.language}, {self.tokenizer.sot_sequence_including_notimestamps}")
             else:
@@ -590,6 +591,10 @@ class PaddedAlignAttWhisper:
         
         self._clean_cache()
 
+        if len(l_absolute_timestamps) >=2 and self.second_word_timestamp is None:
+            self.second_word_timestamp = l_absolute_timestamps[1]
+            
+
         timestamped_words = []
         timestamp_idx = 0
         for word, word_tokens in zip(split_words, split_tokens):
@@ -604,15 +609,10 @@ class PaddedAlignAttWhisper:
                     end=current_timestamp + 0.1,
                     text= word,
                     probability=0.95,
-                    language=self.detected_language
+                    detected_language=self.detected_language
                 ).with_offset(
                     self.global_time_offset
             )
             timestamped_words.append(timestamp_entry)
         
-        if self.detected_language is None and self.cfg.language == "auto":
-            timestamped_buffer_language, timestamped_words = timestamped_words, []
-        else:
-            timestamped_buffer_language = []
-        
-        return timestamped_words, timestamped_buffer_language
+        return timestamped_words

@@ -108,9 +108,13 @@ class SimulStreamingOnlineProcessor:
         Returns a tuple: (list of committed ASRToken objects, float representing the audio processed up to time).
         """
         try:
-            timestamped_words, timestamped_buffer_language = self.model.infer(is_last=is_last)
-            self.buffer = timestamped_buffer_language
+            timestamped_words = self.model.infer(is_last=is_last)
+            if timestamped_words and timestamped_words[0].detected_language == None:
+                self.buffer.extend(timestamped_words)
+                return [], self.end
+            
             self.committed.extend(timestamped_words)
+            self.buffer = []
             return timestamped_words, self.end
 
             

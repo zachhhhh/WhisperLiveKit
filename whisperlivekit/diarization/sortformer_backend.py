@@ -296,7 +296,7 @@ class SortformerDiarizationOnline:
         
         if not segments or not tokens:
             logger.debug("No segments or tokens available for speaker assignment")
-            return tokens, None
+            return tokens
         
         logger.debug(f"Assigning speakers to {len(tokens)} tokens using {len(segments)} segments")
         use_punctuation_split = False
@@ -313,7 +313,7 @@ class SortformerDiarizationOnline:
             # Use punctuation-aware assignment (similar to diart_backend)
             tokens = self._add_speaker_to_tokens_with_punctuation(segments, tokens)
         
-        return tokens, segments[-1]
+        return tokens
 
     def _add_speaker_to_tokens_with_punctuation(self, segments: List[SpeakerSegment], tokens: list) -> list:
         """

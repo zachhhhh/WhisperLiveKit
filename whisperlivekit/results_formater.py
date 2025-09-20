@@ -38,12 +38,16 @@ def new_line(
         text = token.text + debug_info,
         start = token.start,
         end = token.end,
+        detected_language=token.detected_language
     )
 
 def append_token_to_last_line(lines, sep, token, debug_info):
     if token.text:
         lines[-1].text += sep + token.text + debug_info
         lines[-1].end = token.end
+    if not lines[-1].detected_language and token.detected_language:
+        lines[-1].detected_language = token.detected_language
+         
 
 def format_output(state, silence, current_time, args, debug, sep):
     diarization = args.diarization
