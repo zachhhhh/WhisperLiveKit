@@ -534,22 +534,6 @@ label {
   color: var(--muted);
 }
 
-.label_language img {
-  width: 12px;
-  height: 12px;
-}
-
-.silence-icon {
-  width: 14px;
-  height: 14px;
-  vertical-align: text-bottom;
-}
-
-.speaker-icon {
-  width: 16px;
-  height: 16px;
-  vertical-align: text-bottom;
-}
 
 .speaker-badge {
   display: inline-flex;
