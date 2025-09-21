@@ -4,7 +4,7 @@ from time import time, sleep
 import math
 import logging
 import traceback
-from whisperlivekit.timed_objects import ASRToken, Silence, Line, FrontData, State
+from whisperlivekit.timed_objects import ASRToken, Silence, Line, FrontData, State, Transcript
 from whisperlivekit.core import TranscriptionEngine, online_factory, online_diarization_factory, online_translation_factory
 from whisperlivekit.silero_vad_iterator import FixedVADIterator
 from whisperlivekit.results_formater import format_output
@@ -58,7 +58,7 @@ class AudioProcessor:
         self.silence_duration = 0.0
         self.tokens = []
         self.translated_segments = []
-        self.buffer_transcription = ""
+        self.buffer_transcription = Transcript()
         self.buffer_diarization = ""
         self.end_buffer = 0
         self.end_attributed_speaker = 0
@@ -114,20 +114,6 @@ class AudioProcessor:
         """Convert PCM buffer in s16le format to normalized NumPy array."""
         return np.frombuffer(pcm_buffer, dtype=np.int16).astype(np.float32) / 32768.0
 
-    async def update_transcription(self, new_tokens, buffer, end_buffer):
-        """Thread-safe update of transcription with new data."""
-        async with self.lock:
-            self.tokens.extend(new_tokens)
-            self.buffer_transcription = buffer
-            self.end_buffer = end_buffer
-            
-    async def update_diarization(self, end_attributed_speaker, buffer_diarization=""):
-        """Thread-safe update of diarization with new data."""
-        async with self.lock:
-            self.end_attributed_speaker = end_attributed_speaker
-            if buffer_diarization:
-                self.buffer_diarization = buffer_diarization
-            
     async def add_dummy_token(self):
         """Placeholder token when no transcription is available."""
         async with self.lock:
@@ -168,7 +154,7 @@ class AudioProcessor:
         async with self.lock:
             self.tokens = []
             self.translated_segments = []
-            self.buffer_transcription = self.buffer_diarization = ""
+            self.buffer_transcription = self.buffer_diarization = Transcript()
             self.end_buffer = self.end_attributed_speaker = 0
             self.beg_loop = time()
 
@@ -264,30 +250,28 @@ class AudioProcessor:
                 self.online.insert_audio_chunk(pcm_array, stream_time_end_of_current_pcm)
                 new_tokens, current_audio_processed_upto = await asyncio.to_thread(self.online.process_iter)
                 
-                # Get buffer information
-                _buffer_transcript_obj = self.online.get_buffer()
-                buffer_text = _buffer_transcript_obj.text
+                _buffer_transcript = self.online.get_buffer()
+                buffer_text = _buffer_transcript.text
 
                 if new_tokens:
                     validated_text = self.sep.join([t.text for t in new_tokens])
                     if buffer_text.startswith(validated_text):
-                        buffer_text = buffer_text[len(validated_text):].lstrip()
+                        _buffer_transcript.text = buffer_text[len(validated_text):].lstrip()
 
                 candidate_end_times = [self.end_buffer]
 
                 if new_tokens:
                     candidate_end_times.append(new_tokens[-1].end)
                 
-                if _buffer_transcript_obj.end is not None:
-                    candidate_end_times.append(_buffer_transcript_obj.end)
+                if _buffer_transcript.end is not None:
+                    candidate_end_times.append(_buffer_transcript.end)
                 
                 candidate_end_times.append(current_audio_processed_upto)
                 
-                new_end_buffer = max(candidate_end_times)
-                
-                await self.update_transcription(
-                    new_tokens, buffer_text, new_end_buffer
-                )
+                async with self.lock:
+                    self.tokens.extend(new_tokens)
+                    self.buffer_transcription = _buffer_transcript
+                    self.end_buffer = max(candidate_end_times)
                 
                 if self.translation_queue:
                     for token in new_tokens:
@@ -438,8 +422,8 @@ class AudioProcessor:
                     sep=self.sep
                 )
                 if end_w_silence:
-                    buffer_transcription = ''
-                    buffer_diarization = ''
+                    buffer_transcription = Transcript()
+                    buffer_diarization = Transcript()
                 else:
                     buffer_transcription = state.buffer_transcription
                     buffer_diarization = state.buffer_diarization
@@ -449,8 +433,13 @@ class AudioProcessor:
                     combined = self.sep.join(undiarized_text)
                     if buffer_transcription:
                         combined += self.sep
-                    await self.update_diarization(state.end_attributed_speaker, combined)
-                    buffer_diarization = combined
+
+                    async with self.lock:
+                        self.end_attributed_speaker = state.end_attributed_speaker
+                        if buffer_diarization:
+                            self.buffer_diarization = buffer_diarization
+
+                    buffer_diarization.text = combined
                 
                 response_status = "active_transcription"
                 if not state.tokens and not buffer_transcription and not buffer_diarization:
@@ -466,8 +455,8 @@ class AudioProcessor:
                 response = FrontData(
                     status=response_status,
                     lines=lines,
-                    buffer_transcription=buffer_transcription,
-                    buffer_diarization=buffer_diarization,
+                    buffer_transcription=buffer_transcription.text,
+                    buffer_diarization=buffer_transcription.text,
                     remaining_time_transcription=state.remaining_time_transcription,
                     remaining_time_diarization=state.remaining_time_diarization if self.args.diarization else 0
                 )

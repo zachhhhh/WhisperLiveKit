@@ -150,4 +150,8 @@ def format_output(state, silence, current_time, args, debug, sep):
                     else:
                         remaining_segments.append(ts)
                 unassigned_translated_segments = remaining_segments #maybe do smth in the future about that
+    
+    if state.buffer_transcription and lines:
+        lines[-1].end = max(state.buffer_transcription.end, lines[-1].end)
+        
     return lines, undiarized_text, end_w_silence

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, Any
+from typing import Optional, Any, List
 from datetime import timedelta
 
 PUNCTUATION_MARKS = {'.', '!', '?', '。', '！', '？'}
@@ -17,6 +17,7 @@ class TimedText:
     speaker: Optional[int] = -1
     probability: Optional[float] = None
     is_dummy: Optional[bool] = False
+    language: str = None
     
     def is_punctuation(self):
         return self.text.strip() in PUNCTUATION_MARKS
@@ -35,6 +36,10 @@ class TimedText:
 
     def contains_timespan(self, other: 'TimedText') -> bool:
         return self.start <= other.start and self.end >= other.end
+    
+    def __bool__(self):
+        return bool(self.text)
+
 
 @dataclass
 class ASRToken(TimedText):
@@ -48,7 +53,28 @@ class Sentence(TimedText):
 
 @dataclass
 class Transcript(TimedText):
-    pass
+    """
+    represents a concatenation of several ASRToken
+    """
+
+    @classmethod
+    def from_tokens(
+        cls,
+        tokens: List[ASRToken],
+        sep: Optional[str] = None,
+        offset: float = 0
+    ) -> "Transcript":
+        sep = sep if sep is not None else ' '
+        text = sep.join(token.text for token in tokens)
+        probability = sum(token.probability for token in tokens if token.probability) / len(tokens) if tokens else None
+        if tokens:
+            start = offset + tokens[0].start
+            end = offset + tokens[-1].end
+        else:
+            start = None
+            end = None
+        return cls(start, end, text, probability=probability)
+
 
 @dataclass
 class SpeakerSegment(TimedText):

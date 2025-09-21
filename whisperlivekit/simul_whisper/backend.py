@@ -52,12 +52,7 @@ class SimulStreamingOnlineProcessor:
         self.asr = asr
         self.logfile = logfile
         self.end = 0.0
-        self.buffer = Transcript(
-            start=None, 
-            end=None, 
-            text='', 
-            probability=None
-        )
+        self.buffer = []
         self.committed: List[ASRToken] = []
         self.last_result_tokens: List[ASRToken] = []
         self.load_new_backend()
@@ -103,8 +98,9 @@ class SimulStreamingOnlineProcessor:
             self.model.refresh_segment(complete=True)
 
     def get_buffer(self):
-        return self.buffer
-
+        concat_buffer = Transcript.from_tokens(tokens= self.buffer, sep='')
+        return concat_buffer
+            
     def process_iter(self, is_last=False) -> Tuple[List[ASRToken], float]:
         """
         Process accumulated audio chunks using SimulStreaming.
@@ -112,9 +108,10 @@ class SimulStreamingOnlineProcessor:
         Returns a tuple: (list of committed ASRToken objects, float representing the audio processed up to time).
         """
         try:
-            new_tokens = self.model.infer(is_last=is_last)
-            self.committed.extend(new_tokens)
-            return new_tokens, self.end
+            timestamped_words, timestamped_buffer_language = self.model.infer(is_last=is_last)
+            self.buffer = timestamped_buffer_language
+            self.committed.extend(timestamped_words)
+            return timestamped_words, self.end
 
             
         except Exception as e:
