@@ -50,14 +50,12 @@ def format_output(state, silence, current_time, args, debug, sep):
     disable_punctuation_split = args.disable_punctuation_split
     tokens = state.tokens
     translated_segments = state.translated_segments # Here we will attribute the speakers only based on the timestamps of the segments
-    buffer_transcription = state.buffer_transcription
-    buffer_diarization = state.buffer_diarization
     end_attributed_speaker = state.end_attributed_speaker
     
     previous_speaker = -1
     lines = []
     undiarized_text = []
-    tokens, buffer_transcription, buffer_diarization = handle_silences(tokens, buffer_transcription, buffer_diarization, current_time, silence)
+    tokens, end_w_silence = handle_silences(tokens, current_time, silence)
     last_punctuation = None
     for i, token in enumerate(tokens):
         speaker = token.speaker
@@ -121,6 +119,7 @@ def format_output(state, silence, current_time, args, debug, sep):
                 pass
             
         append_token_to_last_line(lines, sep, token, debug_info)
+
     if lines and translated_segments:
         unassigned_translated_segments = []
         for ts in translated_segments:
@@ -151,4 +150,4 @@ def format_output(state, silence, current_time, args, debug, sep):
                     else:
                         remaining_segments.append(ts)
                 unassigned_translated_segments = remaining_segments #maybe do smth in the future about that
-    return lines, undiarized_text, buffer_transcription, ''
+    return lines, undiarized_text, end_w_silence

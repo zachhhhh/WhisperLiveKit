@@ -429,7 +429,7 @@ class AudioProcessor:
                     state = await self.get_current_state()
                 
                 # Format output
-                lines, undiarized_text, buffer_transcription, buffer_diarization = format_output(
+                lines, undiarized_text, end_w_silence = format_output(
                     state,
                     self.silence,
                     current_time = time() - self.beg_loop if self.beg_loop else None,
@@ -437,6 +437,13 @@ class AudioProcessor:
                     debug = self.debug,
                     sep=self.sep
                 )
+                if end_w_silence:
+                    buffer_transcription = ''
+                    buffer_diarization = ''
+                else:
+                    buffer_transcription = state.buffer_transcription
+                    buffer_diarization = state.buffer_diarization
+
                 # Handle undiarized text
                 if undiarized_text:
                     combined = self.sep.join(undiarized_text)

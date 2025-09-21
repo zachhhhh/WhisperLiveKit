@@ -8,6 +8,7 @@ import torch.nn.functional as F
 
 from .whisper import load_model, DecodingOptions, tokenizer
 from .config import AlignAttConfig
+from whisperlivekit.timed_objects import ASRToken
 from .whisper.audio import log_mel_spectrogram, TOKENS_PER_SECOND, pad_or_trim, N_SAMPLES, N_FRAMES
 from .whisper.timing import median_filter
 from .whisper.decoding import GreedyDecoder, BeamSearchDecoder, SuppressTokens, detect_language
@@ -18,6 +19,7 @@ from time import time
 from .token_buffer import TokenBuffer
 
 import numpy as np
+from ..timed_objects import PUNCTUATION_MARKS
 from .generation_progress import *
 
 DEC_PAD = 50257
@@ -40,12 +42,6 @@ else:
     except ImportError:
         HAS_FASTER_WHISPER = False
 
-# New features added to the original version of Simul-Whisper: 
-# - large-v3 model support
-# - translation support
-# - beam search
-# - prompt -- static vs. non-static
-# - context
 class PaddedAlignAttWhisper:
     def __init__(
             self, 
@@ -79,6 +75,9 @@ class PaddedAlignAttWhisper:
         self.tokenizer_is_multilingual = not model_name.endswith(".en")
         self.create_tokenizer(cfg.language if cfg.language != "auto" else None)
         self.detected_language = cfg.language if cfg.language != "auto" else None
+        self.global_time_offset = 0.0
+        self.reset_tokenizer_to_auto_next_call = False
+        self.sentence_start_time = 0.0
         
         self.max_text_len = self.model.dims.n_text_ctx
         self.num_decoder_layers = len(self.model.decoder.blocks)
@@ -153,6 +152,7 @@ class PaddedAlignAttWhisper:
         
         self.last_attend_frame = -self.cfg.rewind_threshold
         self.cumulative_time_offset = 0.0
+        self.sentence_start_time = self.cumulative_time_offset + self.segments_len()
 
         if self.cfg.max_context_tokens is None:
             self.max_context_tokens = self.max_text_len
@@ -382,17 +382,24 @@ class PaddedAlignAttWhisper:
         new_segment = True
         if len(self.segments) == 0:
             logger.debug("No segments, nothing to do")
-            return [], [], []
+            return []
         if not self._apply_minseglen():
             logger.debug(f"applied minseglen {self.cfg.audio_min_len} > {self.segments_len()}.")
             input_segments = torch.cat(self.segments, dim=0)
-            return [], [], []
+            return []
 
         # input_segments is concatenation of audio, it's one array
         if len(self.segments) > 1:
             input_segments = torch.cat(self.segments, dim=0)
         else:
             input_segments = self.segments[0]
+
+        # if self.cfg.language == "auto" and self.reset_tokenizer_to_auto_next_call:
+        #     logger.debug("Resetting tokenizer to auto for new sentence.")
+        #     self.create_tokenizer(None)
+        #     self.detected_language = None
+        #     self.init_tokens()
+        #     self.reset_tokenizer_to_auto_next_call = False
 
         # NEW : we can use a different encoder, before using standart whisper for cross attention with the hooks on the decoder
         beg_encode = time()
@@ -426,17 +433,21 @@ class PaddedAlignAttWhisper:
         end_encode = time()
         # print('Encoder duration:', end_encode-beg_encode)
                 
-        if self.cfg.language == "auto" and self.detected_language is None:
-            language_tokens, language_probs = self.lang_id(encoder_feature) 
-            logger.debug(f"Language tokens: {language_tokens}, probs: {language_probs}")
-            top_lan, p = max(language_probs[0].items(), key=lambda x: x[1])
-            logger.info(f"Detected language: {top_lan} with p={p:.4f}")
-            #self.tokenizer.language = top_lan
-            #self.tokenizer.__post_init__()
-            self.create_tokenizer(top_lan)
-            self.detected_language = top_lan
-            self.init_tokens()
-            logger.info(f"Tokenizer language: {self.tokenizer.language}, {self.tokenizer.sot_sequence_including_notimestamps}")
+        # if self.cfg.language == "auto" and self.detected_language is None:
+        #     seconds_since_start = (self.cumulative_time_offset + self.segments_len()) - self.sentence_start_time
+        #     if seconds_since_start >= 3.0:
+        #         language_tokens, language_probs = self.lang_id(encoder_feature) 
+        #         logger.debug(f"Language tokens: {language_tokens}, probs: {language_probs}")
+        #         top_lan, p = max(language_probs[0].items(), key=lambda x: x[1])
+        #         logger.info(f"Detected language: {top_lan} with p={p:.4f}")
+        #         #self.tokenizer.language = top_lan
+        #         #self.tokenizer.__post_init__()
+        #         self.create_tokenizer(top_lan)
+        #         self.detected_language = top_lan
+        #         self.init_tokens()
+        #         logger.info(f"Tokenizer language: {self.tokenizer.language}, {self.tokenizer.sot_sequence_including_notimestamps}")
+        #     else:
+        #         logger.debug(f"Skipping language detection: {seconds_since_start:.2f}s < 3.0s")
 
         self.trim_context()
         current_tokens = self._current_tokens()
@@ -446,6 +457,7 @@ class PaddedAlignAttWhisper:
 
         sum_logprobs = torch.zeros(self.cfg.beam_size, device=self.device)
         completed = False
+        # punctuation_stop = False
 
         attn_of_alignment_heads = None
         most_attended_frame = None
@@ -467,9 +479,7 @@ class PaddedAlignAttWhisper:
             if new_segment and self.tokenizer.no_speech is not None:
                 probs_at_sot = logits[:, self.sot_index, :].float().softmax(dim=-1)
                 no_speech_probs = probs_at_sot[:, self.tokenizer.no_speech].tolist()
-                # generation["no_speech_prob"] = no_speech_probs[0]
                 if no_speech_probs[0] > self.cfg.nonspeech_prob:
-                    # generation["no_speech"] = True
                     logger.info("no speech, stop")
                     break
 
@@ -484,6 +494,19 @@ class PaddedAlignAttWhisper:
 
             logger.debug(f"Decoding completed: {completed}, sum_logprobs: {sum_logprobs.tolist()}, tokens: ")
             self.debug_print_tokens(current_tokens)
+
+            # # Early stop on sentence-ending punctuation when language is auto
+            # if not completed and self.cfg.language == "auto":
+            #     last_token_id = current_tokens[0, -1].item()
+            #     last_token_text = self.tokenizer.decode([last_token_id]).strip()
+            #     if last_token_text in PUNCTUATION_MARKS:
+            #         logger.debug(f"Punctuation boundary '{last_token_text}' hit; stopping early to allow language re-check.")
+            #         punctuation_stop = True
+            #         # Ensure next call starts with auto language (re-detect for new sentence)
+            #         self.reset_tokenizer_to_auto_next_call = True
+            #         self.detected_language = None
+            #         self.sentence_start_time = self.cumulative_time_offset + self.segments_len()
+            #         break
 
             attn_of_alignment_heads = [[] for _ in range(self.num_align_heads)]
             for i, attn_mat in enumerate(self.dec_attns):
@@ -560,7 +583,7 @@ class PaddedAlignAttWhisper:
 
         tokens_to_split = current_tokens[0, token_len_before_decoding:]
 
-        if fire_detected or is_last:
+        if fire_detected or is_last: #or punctuation_stop:
             new_hypothesis = tokens_to_split.flatten().tolist()
             split_words, split_tokens = self.tokenizer.split_to_word_tokens(new_hypothesis)
         else:
@@ -582,4 +605,22 @@ class PaddedAlignAttWhisper:
         
         self._clean_cache()
 
-        return split_words, split_tokens, l_absolute_timestamps
+        timestamped_words = []
+        timestamp_idx = 0
+        for word, word_tokens in zip(split_words, split_tokens):
+            try:
+                current_timestamp = l_absolute_timestamps[timestamp_idx]
+            except:
+                pass
+            timestamp_idx += len(word_tokens)
+
+            timestamp_entry = ASRToken(
+                    start=current_timestamp,
+                    end=current_timestamp + 0.1,
+                    text=word,
+                    probability=0.95
+                ).with_offset(
+                    self.global_time_offset
+            )
+            timestamped_words.append(timestamp_entry)
+        return timestamped_words

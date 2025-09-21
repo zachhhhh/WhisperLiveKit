@@ -6,7 +6,6 @@ import logging
 import platform
 from whisperlivekit.timed_objects import ASRToken, Transcript, SpeakerSegment
 from whisperlivekit.warmup import load_file
-from whisperlivekit.simul_whisper.license_simulstreaming import SIMULSTREAMING_LICENSE
 from .whisper import load_model, tokenizer
 from .whisper.audio import TOKENS_PER_SECOND
 import os
@@ -23,7 +22,11 @@ try:
     HAS_MLX_WHISPER = True
 except ImportError:
     if platform.system() == "Darwin" and platform.machine() == "arm64":
-        print('MLX Whisper not found but you are on Apple Silicon. Consider installing mlx-whisper for better performance: pip install mlx-whisper')
+        print(f"""
+            {"="*50}
+            MLX Whisper not found but you are on Apple Silicon. Consider installing mlx-whisper for better performance: pip install mlx-whisper
+            {"="*50}
+            """)
     HAS_MLX_WHISPER = False
 if HAS_MLX_WHISPER:
     HAS_FASTER_WHISPER = False
@@ -49,8 +52,12 @@ class SimulStreamingOnlineProcessor:
         self.asr = asr
         self.logfile = logfile
         self.end = 0.0
-        self.global_time_offset = 0.0
-        
+        self.buffer = Transcript(
+            start=None, 
+            end=None, 
+            text='', 
+            probability=None
+        )
         self.committed: List[ASRToken] = []
         self.last_result_tokens: List[ASRToken] = []
         self.load_new_backend()
@@ -79,7 +86,7 @@ class SimulStreamingOnlineProcessor:
         else:
             self.process_iter(is_last=True) #we want to totally process what remains in the buffer.
             self.model.refresh_segment(complete=True)
-            self.global_time_offset = silence_duration + offset
+            self.model.global_time_offset = silence_duration + offset
 
 
         
@@ -96,31 +103,7 @@ class SimulStreamingOnlineProcessor:
             self.model.refresh_segment(complete=True)
 
     def get_buffer(self):
-        return Transcript(
-            start=None, 
-            end=None, 
-            text='', 
-            probability=None
-        )
-
-    def timestamped_text(self, split_words, split_tokens, l_absolute_timestamps):
-        timestamped_words = []
-
-        for word, word_tokens in zip(split_words, split_tokens):
-            
-            for i in word_tokens:
-                current_timestamp = l_absolute_timestamps.pop(0)
-
-            timestamp_entry = ASRToken(
-                    start=current_timestamp,
-                    end=current_timestamp + 0.1,
-                    text=word,
-                    probability=0.95
-                ).with_offset(
-                    self.global_time_offset
-            )
-            timestamped_words.append(timestamp_entry)
-        return timestamped_words
+        return self.buffer
 
     def process_iter(self, is_last=False) -> Tuple[List[ASRToken], float]:
         """
@@ -129,9 +112,7 @@ class SimulStreamingOnlineProcessor:
         Returns a tuple: (list of committed ASRToken objects, float representing the audio processed up to time).
         """
         try:
-            split_words, split_tokens, l_absolute_timestamps = self.model.infer(is_last=is_last)
-            new_tokens = self.timestamped_text(split_words, split_tokens, l_absolute_timestamps)
-            
+            new_tokens = self.model.infer(is_last=is_last)
             self.committed.extend(new_tokens)
             return new_tokens, self.end
 
@@ -163,7 +144,6 @@ class SimulStreamingASR():
     sep = ""
 
     def __init__(self, lan, modelsize=None, cache_dir=None, model_dir=None, logfile=sys.stderr, **kwargs):
-        logger.warning(SIMULSTREAMING_LICENSE)
         self.logfile = logfile
         self.transcribe_kargs = {}
         self.original_language = lan
