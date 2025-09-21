@@ -4,7 +4,7 @@ import logging
 from typing import List, Tuple, Optional
 import logging
 import platform
-from whisperlivekit.timed_objects import ASRToken, Transcript
+from whisperlivekit.timed_objects import ASRToken, Transcript, SpeakerSegment
 from whisperlivekit.warmup import load_file
 from whisperlivekit.simul_whisper.license_simulstreaming import SIMULSTREAMING_LICENSE
 from .whisper import load_model, tokenizer
@@ -91,6 +91,10 @@ class SimulStreamingOnlineProcessor:
         self.end = audio_stream_end_time #Only to be aligned with what happens in whisperstreaming backend.
         self.model.insert_audio(audio_tensor)
 
+    def on_new_speaker(self, last_segment: SpeakerSegment):
+            self.model.on_new_speaker(last_segment)
+            self.model.refresh_segment(complete=True)
+
     def get_buffer(self):
         return Transcript(
             start=None, 
@@ -99,54 +103,23 @@ class SimulStreamingOnlineProcessor:
             probability=None
         )
 
-    def timestamped_text(self, tokens, generation):
-        """
-        generate timestamped text from tokens and generation data.
-        
-        args:
-            tokens: List of tokens to process
-            generation: Dictionary containing generation progress and optionally results
-            
-        returns:
-            List of tuples containing (start_time, end_time, word) for each word
-        """
-        FRAME_DURATION = 0.02    
-        if "result" in generation:
-            split_words = generation["result"]["split_words"]
-            split_tokens = generation["result"]["split_tokens"]
-        else:
-            split_words, split_tokens = self.model.tokenizer.split_to_word_tokens(tokens)
-        progress = generation["progress"]
-        frames = [p["most_attended_frames"][0] for p in progress]
-        absolute_timestamps = [p["absolute_timestamps"][0] for p in progress]
-        tokens_queue = tokens.copy()
+    def timestamped_text(self, split_words, split_tokens, l_absolute_timestamps):
         timestamped_words = []
-        
+
         for word, word_tokens in zip(split_words, split_tokens):
-            # start_frame = None
-            # end_frame = None
-            for expected_token in word_tokens:
-                if not tokens_queue or not frames:
-                    raise ValueError(f"Insufficient tokens or frames for word '{word}'")
-                    
-                actual_token = tokens_queue.pop(0)
-                current_frame = frames.pop(0)
-                current_timestamp = absolute_timestamps.pop(0)
-                if actual_token != expected_token:
-                    raise ValueError(
-                        f"Token mismatch: expected '{expected_token}', "
-                        f"got '{actual_token}' at frame {current_frame}"
-                    )
-                # if start_frame is None:
-                #     start_frame = current_frame
-                # end_frame = current_frame
-            # start_time = start_frame * FRAME_DURATION
-            # end_time = end_frame * FRAME_DURATION
-            start_time = current_timestamp
-            end_time = current_timestamp + 0.1
-            timestamp_entry = (start_time, end_time, word)
+            
+            for i in word_tokens:
+                current_timestamp = l_absolute_timestamps.pop(0)
+
+            timestamp_entry = ASRToken(
+                    start=current_timestamp,
+                    end=current_timestamp + 0.1,
+                    text=word,
+                    probability=0.95
+                ).with_offset(
+                    self.global_time_offset
+            )
             timestamped_words.append(timestamp_entry)
-            logger.debug(f"TS-WORD:\t{start_time:.2f}\t{end_time:.2f}\t{word}")
         return timestamped_words
 
     def process_iter(self, is_last=False) -> Tuple[List[ASRToken], float]:
@@ -156,46 +129,10 @@ class SimulStreamingOnlineProcessor:
         Returns a tuple: (list of committed ASRToken objects, float representing the audio processed up to time).
         """
         try:
-            tokens, generation_progress = self.model.infer(is_last=is_last)
-            ts_words = self.timestamped_text(tokens, generation_progress)
-            
-            new_tokens = []
-            for ts_word in ts_words:
-                
-                start, end, word = ts_word
-                token = ASRToken(
-                    start=start,
-                    end=end,
-                    text=word,
-                    probability=0.95  # fake prob. Maybe we can extract it from the model?
-                ).with_offset(
-                    self.global_time_offset
-                )
-                new_tokens.append(token)
-                
-            # identical_tokens = 0
-            # n_new_tokens = len(new_tokens)
-            # if n_new_tokens:
+            split_words, split_tokens, l_absolute_timestamps = self.model.infer(is_last=is_last)
+            new_tokens = self.timestamped_text(split_words, split_tokens, l_absolute_timestamps)
             
             self.committed.extend(new_tokens)
-            
-            # if token in self.committed:
-            #     pos = len(self.committed) - 1 - self.committed[::-1].index(token)
-            # if pos:
-            #     for i in range(len(self.committed) - n_new_tokens, -1, -n_new_tokens):
-            #         commited_segment = self.committed[i:i+n_new_tokens]
-            #         if commited_segment == new_tokens:
-            #             identical_segments +=1
-            #             if identical_tokens >= TOO_MANY_REPETITIONS:
-            #                 logger.warning('Too many repetition, model is stuck. Load a new one')
-            #                 self.committed = self.committed[:i]
-            #                 self.load_new_backend()
-            #                 return [], self.end
-
-            # pos = self.committed.rindex(token)
-
-            
-            
             return new_tokens, self.end
 
             
