@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from typing import Optional, Any
 from datetime import timedelta
 
+PUNCTUATION_MARKS = {'.', '!', '?', '。', '！', '？'}
+
 def format_time(seconds: float) -> str:
     """Format seconds as HH:MM:SS."""
     return str(timedelta(seconds=int(seconds)))
@@ -15,6 +17,9 @@ class TimedText:
     speaker: Optional[int] = -1
     probability: Optional[float] = None
     is_dummy: Optional[bool] = False
+    
+    def is_punctuation(self):
+        return self.text.strip() in PUNCTUATION_MARKS
     
     def overlaps_with(self, other: 'TimedText') -> bool:
         return not (self.end <= other.start or other.end <= self.start)

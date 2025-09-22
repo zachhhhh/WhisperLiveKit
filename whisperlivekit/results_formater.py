@@ -6,11 +6,10 @@ from whisperlivekit.timed_objects import Line, format_time
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-PUNCTUATION_MARKS = {'.', '!', '?', '。', '！', '？'}
 CHECK_AROUND = 4
 
 def is_punctuation(token):
-    if token.text.strip() in PUNCTUATION_MARKS:
+    if token.is_punctuation():
         return True
     return False
 

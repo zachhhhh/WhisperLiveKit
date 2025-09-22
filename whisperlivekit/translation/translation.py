@@ -12,8 +12,6 @@ logger = logging.getLogger(__name__)
 
 #In diarization case, we may want to translate just one speaker, or at least start the sentences there
 
-PUNCTUATION_MARKS = {'.', '!', '?', '。', '！', '？'}
-
 MIN_SILENCE_DURATION_DEL_BUFFER = 3 #After a silence of x seconds, we consider the model should not use the buffer, even if the previous
 # sentence is not finished.
 
@@ -111,7 +109,7 @@ class OnlineTranslation:
         if len(self.buffer) < self.len_processed_buffer + 3: #nothing new to process
             return self.validated + [self.translation_remaining]
         while i < len(self.buffer):
-            if self.buffer[i].text in PUNCTUATION_MARKS:
+            if self.buffer[i].is_punctuation():
                 translation_sentence = self.translate_tokens(self.buffer[:i+1])
                 self.validated.append(translation_sentence)
                 self.buffer = self.buffer[i+1:]
