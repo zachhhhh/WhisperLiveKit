@@ -66,7 +66,7 @@ class PaddedAlignAttWhisper:
             self.fw_feature_extractor = FeatureExtractor(feature_size=self.model.dims.n_mels)
             
         logger.info(f"Model dimensions: {self.model.dims}")
-
+        self.speaker = -1
         self.decode_options = DecodingOptions(
             language = cfg.language, 
             without_timestamps = True,
@@ -152,7 +152,7 @@ class PaddedAlignAttWhisper:
         
         self.last_attend_frame = -self.cfg.rewind_threshold
         self.cumulative_time_offset = 0.0
-        self.second_word_timestamp = None
+        self.first_timestamp = None
 
         if self.cfg.max_context_tokens is None:
             self.max_context_tokens = self.max_text_len
@@ -432,9 +432,9 @@ class PaddedAlignAttWhisper:
         end_encode = time()
         # print('Encoder duration:', end_encode-beg_encode)
                 
-        if self.cfg.language == "auto" and self.detected_language is None and self.second_word_timestamp:
-            seconds_since_start = self.segments_len() - self.second_word_timestamp
-            if seconds_since_start >= 5.0:
+        if self.cfg.language == "auto" and self.detected_language is None and self.first_timestamp:
+            seconds_since_start = self.segments_len() - self.first_timestamp
+            if seconds_since_start >= 2.0:
                 language_tokens, language_probs = self.lang_id(encoder_feature) 
                 top_lan, p = max(language_probs[0].items(), key=lambda x: x[1])
                 print(f"Detected language: {top_lan} with p={p:.4f}")
@@ -445,8 +445,6 @@ class PaddedAlignAttWhisper:
                 self.init_context()
                 self.detected_language = top_lan
                 logger.info(f"Tokenizer language: {self.tokenizer.language}, {self.tokenizer.sot_sequence_including_notimestamps}")
-            else:
-                logger.debug(f"Skipping language detection: {seconds_since_start:.2f}s < 3.0s")
 
         self.trim_context()
         current_tokens = self._current_tokens()
@@ -591,8 +589,8 @@ class PaddedAlignAttWhisper:
         
         self._clean_cache()
 
-        if len(l_absolute_timestamps) >=2 and self.second_word_timestamp is None:
-            self.second_word_timestamp = l_absolute_timestamps[1]
+        if len(l_absolute_timestamps) >=2 and self.first_timestamp is None:
+            self.first_timestamp = l_absolute_timestamps[0]
             
 
         timestamped_words = []
@@ -609,6 +607,7 @@ class PaddedAlignAttWhisper:
                     end=current_timestamp + 0.1,
                     text= word,
                     probability=0.95,
+                    speaker=self.speaker,
                     detected_language=self.detected_language
                 ).with_offset(
                     self.global_time_offset

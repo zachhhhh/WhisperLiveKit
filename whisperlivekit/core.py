@@ -145,8 +145,8 @@ class TranscriptionEngine:
         
         self.translation_model = None
         if self.args.target_language:
-            if self.args.lan == 'auto':
-                raise Exception('Translation cannot be set with language auto')
+            if self.args.lan == 'auto' and self.args.backend != "simulstreaming":
+                raise Exception('Translation cannot be set with language auto when transcription backend is not simulstreaming')
             else:
                 from whisperlivekit.translation.translation import load_model
                 self.translation_model = load_model([self.args.lan], backend=self.args.nllb_backend, model_size=self.args.nllb_size) #in the future we want to handle different languages for different speakers

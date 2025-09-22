@@ -160,13 +160,17 @@ class FrontData():
         if self.error:
             _dict['error'] = self.error
         return _dict
-    
+
+@dataclass  
+class ChangeSpeaker:
+    speaker: int
+    start: int
+
 @dataclass  
 class State():
     tokens: list
     translated_segments: list
     buffer_transcription: str
-    buffer_diarization: str
     end_buffer: float
     end_attributed_speaker: float
     remaining_time_transcription: float

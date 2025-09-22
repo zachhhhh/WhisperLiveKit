@@ -4,7 +4,7 @@ import logging
 from typing import List, Tuple, Optional
 import logging
 import platform
-from whisperlivekit.timed_objects import ASRToken, Transcript, SpeakerSegment
+from whisperlivekit.timed_objects import ASRToken, Transcript, ChangeSpeaker
 from whisperlivekit.warmup import load_file
 from .whisper import load_model, tokenizer
 from .whisper.audio import TOKENS_PER_SECOND
@@ -93,14 +93,16 @@ class SimulStreamingOnlineProcessor:
         self.end = audio_stream_end_time #Only to be aligned with what happens in whisperstreaming backend.
         self.model.insert_audio(audio_tensor)
 
-    def on_new_speaker(self, last_segment: SpeakerSegment):
-            self.model.on_new_speaker(last_segment)
+    def new_speaker(self, change_speaker: ChangeSpeaker):
+            self.process_iter(is_last=True)
             self.model.refresh_segment(complete=True)
-
+            self.model.speaker = change_speaker.speaker
+            self.global_time_offset = change_speaker.start
+            
     def get_buffer(self):
         concat_buffer = Transcript.from_tokens(tokens= self.buffer, sep='')
         return concat_buffer
-            
+
     def process_iter(self, is_last=False) -> Tuple[List[ASRToken], float]:
         """
         Process accumulated audio chunks using SimulStreaming.

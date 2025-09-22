@@ -4,7 +4,7 @@ from time import time, sleep
 import math
 import logging
 import traceback
-from whisperlivekit.timed_objects import ASRToken, Silence, Line, FrontData, State, Transcript
+from whisperlivekit.timed_objects import ASRToken, Silence, Line, FrontData, State, Transcript, ChangeSpeaker
 from whisperlivekit.core import TranscriptionEngine, online_factory, online_diarization_factory, online_translation_factory
 from whisperlivekit.silero_vad_iterator import FixedVADIterator
 from whisperlivekit.results_formater import format_output
@@ -67,7 +67,9 @@ class AudioProcessor:
         self.last_response_content = FrontData()
         self.last_detected_speaker = None
         self.speaker_languages = {}
-        
+        self.cumulative_pcm_len = 0
+        self.diarization_before_transcription = False
+
         # Models and processing
         self.asr = models.asr
         self.tokenizer = models.tokenizer
@@ -100,13 +102,14 @@ class AudioProcessor:
         self.diarization_task = None
         self.watchdog_task = None
         self.all_tasks_for_cleanup = []
+        self.online_translation = None
         
         if self.args.transcription:
             self.online = online_factory(self.args, models.asr, models.tokenizer)        
             self.sep = self.online.asr.sep   
         if self.args.diarization:
             self.diarization = online_diarization_factory(self.args, models.diarization_model)
-        if self.args.target_language:
+        if models.translation_model:
             self.online_translation = online_translation_factory(self.args, models.translation_model)
 
     def convert_pcm_to_float(self, pcm_buffer):
@@ -199,11 +202,11 @@ class AudioProcessor:
                 await asyncio.sleep(0.2)
 
         logger.info("FFmpeg stdout processing finished. Signaling downstream processors if needed.")
-        if self.args.transcription and self.transcription_queue:
+        if not self.diarization_before_transcription and self.transcription_queue:
             await self.transcription_queue.put(SENTINEL)
         if self.args.diarization and self.diarization_queue:
             await self.diarization_queue.put(SENTINEL)
-        if self.args.target_language and self.translation_queue:
+        if self.online_translation:
             await self.translation_queue.put(SENTINEL)
 
     async def transcription_processor(self):
@@ -217,11 +220,6 @@ class AudioProcessor:
                     logger.debug("Transcription processor received sentinel. Finishing.")
                     self.transcription_queue.task_done()
                     break
-                
-                if not self.online:
-                    logger.warning("Transcription processor: self.online not initialized.")
-                    self.transcription_queue.task_done()
-                    continue
 
                 asr_internal_buffer_duration_s = len(getattr(self.online, 'audio_buffer', [])) / self.online.SAMPLING_RATE
                 transcription_lag_s = max(0.0, time() - self.beg_loop - self.end_buffer)
@@ -234,12 +232,12 @@ class AudioProcessor:
                     cumulative_pcm_duration_stream_time += item.duration
                     self.online.insert_silence(item.duration, self.tokens[-1].end if self.tokens else 0)
                     continue
-                logger.info(asr_processing_logs)
-                
-                if isinstance(item, np.ndarray):
+                elif isinstance(item, ChangeSpeaker):
+                    self.online.new_speaker(item)
+                elif isinstance(item, np.ndarray):
                     pcm_array = item
-                else:
-                    raise Exception('item should be pcm_array')
+                
+                logger.info(asr_processing_logs)
                 
                 duration_this_chunk = len(pcm_array) / self.sample_rate
                 cumulative_pcm_duration_stream_time += duration_this_chunk
@@ -295,8 +293,7 @@ class AudioProcessor:
 
     async def diarization_processor(self, diarization_obj):
         """Process audio chunks for speaker diarization."""
-        buffer_diarization = Transcript()
-        cumulative_pcm_duration_stream_time = 0.0
+        self.current_speaker = 0
         while True:
             try:
                 item = await self.diarization_queue.get()
@@ -305,7 +302,6 @@ class AudioProcessor:
                     self.diarization_queue.task_done()
                     break
                 elif type(item) is Silence:
-                    cumulative_pcm_duration_stream_time += item.duration
                     diarization_obj.insert_silence(item.duration)
                     continue
                 elif isinstance(item, np.ndarray):
@@ -315,22 +311,26 @@ class AudioProcessor:
                 
                 # Process diarization
                 await diarization_obj.diarize(pcm_array)
-                
                 segments = diarization_obj.get_segments()
                 
-                async with self.lock:
-                    self.tokens = diarization_obj.assign_speakers_to_tokens(
-                        self.tokens,
-                        use_punctuation_split=self.args.punctuation_split
-                    )
-                    if len(self.tokens) > 0:
-                        self.end_attributed_speaker = max(self.tokens[-1].end, self.end_attributed_speaker)
-
-                    # if last_segment is not None and last_segment.speaker != self.last_detected_speaker:
-                    #     if not self.speaker_languages.get(last_segment.speaker, None):
-                    #         self.last_detected_speaker = last_segment.speaker
-                    #         self.online.on_new_speaker(last_segment)
-       
+                if self.diarization_before_transcription:
+                    if segments and segments[-1].speaker != self.current_speaker:
+                        self.current_speaker = segments[-1].speaker
+                        cut_at = int(segments[-1].start*16000 - (self.cumulative_pcm_len))
+                        await self.transcription_queue.put(pcm_array[cut_at:])
+                        await self.transcription_queue.put(ChangeSpeaker(speaker=self.current_speaker, start=cut_at))                        
+                        await self.transcription_queue.put(pcm_array[:cut_at])
+                    else:
+                        await self.transcription_queue.put(pcm_array)
+                else:           
+                    async with self.lock:
+                        self.tokens = diarization_obj.assign_speakers_to_tokens(
+                            self.tokens,
+                            use_punctuation_split=self.args.punctuation_split
+                        )
+                self.cumulative_pcm_len += len(pcm_array)            
+                if len(self.tokens) > 0:
+                    self.end_attributed_speaker = max(self.tokens[-1].end, self.end_attributed_speaker)
                 self.diarization_queue.task_done()
                 
             except Exception as e:
@@ -340,7 +340,7 @@ class AudioProcessor:
                     self.diarization_queue.task_done()
         logger.info("Diarization processor task finished.")
 
-    async def translation_processor(self, online_translation):
+    async def translation_processor(self):
         # the idea is to ignore diarization for the moment. We use only transcription tokens. 
         # And the speaker is attributed given the segments used for the translation
         # in the future we want to have different languages for each speaker etc, so it will be more complex.
@@ -352,7 +352,7 @@ class AudioProcessor:
                     self.translation_queue.task_done()
                     break
                 elif type(item) is Silence:
-                    online_translation.insert_silence(item.duration)
+                    self.online_translation.insert_silence(item.duration)
                     continue
                 
                 # get all the available tokens for translation. The more words, the more precise
@@ -366,9 +366,8 @@ class AudioProcessor:
                         break
                     tokens_to_process.append(additional_token)                
                 if tokens_to_process:
-                    online_translation.insert_tokens(tokens_to_process)
-                    self.translated_segments = await asyncio.to_thread(online_translation.process)
-                
+                    self.online_translation.insert_tokens(tokens_to_process)
+                    self.translated_segments = await asyncio.to_thread(self.online_translation.process)
                 self.translation_queue.task_done()
                 for _ in additional_tokens:
                     self.translation_queue.task_done()
@@ -445,8 +444,8 @@ class AudioProcessor:
                 response = FrontData(
                     status=response_status,
                     lines=lines,
-                    buffer_transcription=buffer_transcription.text,
-                    buffer_diarization=buffer_diarization,
+                    buffer_transcription=buffer_transcription.text.strip(),
+                    buffer_diarization=buffer_diarization.strip(),
                     remaining_time_transcription=state.remaining_time_transcription,
                     remaining_time_diarization=state.remaining_time_diarization if self.args.diarization else 0
                 )
@@ -505,8 +504,8 @@ class AudioProcessor:
             self.all_tasks_for_cleanup.append(self.diarization_task)
             processing_tasks_for_watchdog.append(self.diarization_task)
         
-        if self.args.target_language and self.args.lan != 'auto':
-            self.translation_task = asyncio.create_task(self.translation_processor(self.online_translation))
+        if self.online_translation:
+            self.translation_task = asyncio.create_task(self.translation_processor())
             self.all_tasks_for_cleanup.append(self.translation_task)
             processing_tasks_for_watchdog.append(self.translation_task)
         
@@ -628,7 +627,7 @@ class AudioProcessor:
                 silence_buffer = Silence(duration=time() - self.start_silence)
 
         if silence_buffer:
-            if self.args.transcription and self.transcription_queue:
+            if not self.diarization_before_transcription and self.transcription_queue:
                 await self.transcription_queue.put(silence_buffer)
             if self.args.diarization and self.diarization_queue:
                 await self.diarization_queue.put(silence_buffer)
@@ -636,7 +635,7 @@ class AudioProcessor:
                 await self.translation_queue.put(silence_buffer)
 
         if not self.silence:
-            if self.args.transcription and self.transcription_queue:
+            if not self.diarization_before_transcription and self.transcription_queue:
                 await self.transcription_queue.put(pcm_array.copy())
 
             if self.args.diarization and self.diarization_queue:

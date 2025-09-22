@@ -3,7 +3,7 @@ import time
 import ctranslate2
 import torch
 import transformers
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import huggingface_hub
 from whisperlivekit.translation.mapping_languages import get_nllb_code
 from whisperlivekit.timed_objects import Translation
@@ -18,9 +18,20 @@ MIN_SILENCE_DURATION_DEL_BUFFER = 3 #After a silence of x seconds, we consider t
 @dataclass
 class TranslationModel():
     translator: ctranslate2.Translator
-    tokenizer: dict
     device: str
+    tokenizer: dict = field(default_factory=dict)
     backend_type: str = 'ctranslate2'
+    model_size: str = '600M'
+    
+    def get_tokenizer(self, input_lang):
+        if not self.tokenizer.get(input_lang, False):
+            self.tokenizer[input_lang] = transformers.AutoTokenizer.from_pretrained(
+                f"facebook/nllb-200-distilled-{self.model_size}",
+                src_lang=input_lang,
+                clean_up_tokenization_spaces=True
+            )
+        return self.tokenizer[input_lang]
+            
 
 def load_model(src_langs, backend='ctranslate2', model_size='600M'):
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -33,14 +44,20 @@ def load_model(src_langs, backend='ctranslate2', model_size='600M'):
         translator = transformers.AutoModelForSeq2SeqLM.from_pretrained(f"facebook/nllb-200-distilled-{model_size}")
     tokenizer = dict()
     for src_lang in src_langs:
-        tokenizer[src_lang] = transformers.AutoTokenizer.from_pretrained(MODEL, src_lang=src_lang, clean_up_tokenization_spaces=True)
+        if src_lang != 'auto':
+            tokenizer[src_lang] = transformers.AutoTokenizer.from_pretrained(MODEL, src_lang=src_lang, clean_up_tokenization_spaces=True)
 
-    return TranslationModel(
+    translation_model = TranslationModel(
         translator=translator,
         tokenizer=tokenizer,
         backend_type=backend,
-        device = device
+        device = device,
+        model_size = model_size
     )
+    for src_lang in src_langs:
+        if src_lang != 'auto':
+            translation_model.get_tokenizer(src_lang)
+    return translation_model
 
 class OnlineTranslation:
     def __init__(self, translation_model: TranslationModel, input_languages: list, output_languages: list):
@@ -63,16 +80,12 @@ class OnlineTranslation:
                     self.commited.extend(self.buffer[:i])
                     self.buffer = results[i:]
 
-    def translate(self, input, input_lang=None, output_lang=None):
+    def translate(self, input, input_lang, output_lang):
         if not input:
             return ""
-        if input_lang is None:
-            input_lang = self.input_languages[0]
-        if output_lang is None:
-            output_lang = self.output_languages[0]
         nllb_output_lang = get_nllb_code(output_lang)
             
-        tokenizer = self.translation_model.tokenizer[input_lang]
+        tokenizer = self.translation_model.get_tokenizer(input_lang)
         tokenizer_output = tokenizer(input, return_tensors="pt").to(self.translation_model.device)
         
         if self.translation_model.backend_type == 'ctranslate2':
@@ -90,7 +103,15 @@ class OnlineTranslation:
             text = ' '.join([token.text for token in tokens])
             start = tokens[0].start
             end = tokens[-1].end
-            translated_text = self.translate(text)
+            if self.input_languages[0] == 'auto':
+                input_lang = tokens[0].detected_language
+            else:
+                input_lang = self.input_languages[0]
+                
+            translated_text = self.translate(text,
+                                            input_lang,
+                                            self.output_languages[0]
+                                            )
             translation = Translation(
                 text=translated_text,
                 start=start,
