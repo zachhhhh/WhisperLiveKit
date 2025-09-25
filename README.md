@@ -54,7 +54,15 @@ pip install whisperlivekit
 > - See [tokenizer.py](https://github.com/QuentinFuxa/WhisperLiveKit/blob/main/whisperlivekit/simul_whisper/whisper/tokenizer.py) for the list of all available languages.
 > - For HTTPS requirements, see the **Parameters** section for SSL configuration options.
 
- 
+#### Use it to capture audio from web pages.
+
+Go to `chrome-extension` for instructions.
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/refs/heads/main/chrome-extension/demo-extension.png" alt="WhisperLiveKit Demo" width="600">
+</p>
+
+
 
 #### Optional Dependencies
 

@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WhisperLiveKit</title>
-    <link rel="stylesheet" href="/web/live_transcription.css" />
+    <link rel="stylesheet" href="live_transcription.css" />
 </head>
 
 <body>
@@ -21,6 +21,10 @@
                     </div>
                     <div class="timer">00:00</div>
                 </div>
+            </button>
+
+            <button id="settingsToggle" class="settings-toggle" title="Show/hide settings">
+                <img src="web/src/settings.svg" alt="Settings" />
             </button>
 
             <div class="settings">
@@ -67,7 +71,7 @@
         <div id="linesTranscript"></div>
     </div>
 
-    <script src="/web/live_transcription.js"></script>
+    <script src="live_transcription.js"></script>
 </body>
 
 </html>

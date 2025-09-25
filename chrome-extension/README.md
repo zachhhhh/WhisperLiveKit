@@ -1,11 +1,13 @@
-## WhisperLiveKit Chrome Extension v0.1.0
-Capture the audio of your current tab, transcribe or translate it using WhisperliveKit. **Still unstable**
+## WhisperLiveKit Chrome Extension v0.1.1
+Capture the audio of your current tab, transcribe diarize and translate it using WhisperliveKit, in Chrome and other Chromium-based browsers.
+
+> Currently, only the tab audio is captured; your microphone audio is not recorded.
 
 <img src="https://raw.githubusercontent.com/QuentinFuxa/WhisperLiveKit/refs/heads/main/chrome-extension/demo-extension.png" alt="WhisperLiveKit Demo" width="730">
 
 ## Running this extension
-1. Clone this repository.
-2. Load this directory in Chrome as an unpacked extension.
+1. Run `python sync_extension.py` to copy frontend files to the `chrome-extension` directory.
+2. Load the `chrome-extension` directory in Chrome as an unpacked extension.
 
 
 ## Devs:

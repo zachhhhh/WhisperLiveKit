@@ -72,6 +72,12 @@
   --label-trans-text: #111111;
 }
 
+html.is-extension
+{
+    width: 350px;
+    height: 500px;
+}
+
 body {
   font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   margin: 0;
@@ -191,6 +197,7 @@ body {
   justify-content: center;
   align-items: center;
   gap: 15px;
+  position: relative;
 }
 
 .settings {
@@ -198,6 +205,52 @@ body {
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 12px;
+}
+
+.settings-toggle {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--button-bg);
+  border: 1px solid var(--button-border);
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.settings-toggle:hover {
+  background-color: var(--chip-bg);
+}
+
+.settings-toggle.active {
+  background-color: var(--chip-bg);
+}
+
+.settings-toggle img {
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 10000px) {
+  .settings-toggle {
+    display: flex;
+  }
+  
+  .settings {
+    display: none;
+    top: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 12px;
+  }
+  
+  .settings.visible {
+    display: flex;
+  }
 }
 
 .field {
@@ -454,7 +507,7 @@ label {
 }
 
 /* for smaller screens */
-@media (max-width: 768px) {
+@media (max-width: 200px) {
   .header-container {
     padding: 15px;
   }

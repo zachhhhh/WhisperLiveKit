@@ -33,15 +33,18 @@ def get_inline_ui_html():
         with resources.files('whisperlivekit.web').joinpath('src', 'dark_mode.svg').open('r', encoding='utf-8') as f:
             dark_svg = f.read()
             dark_data_uri = f"data:image/svg+xml;base64,{base64.b64encode(dark_svg.encode('utf-8')).decode('utf-8')}"
-        
+        with resources.files('whisperlivekit.web').joinpath('src', 'settings.svg').open('r', encoding='utf-8') as f:
+            settings = f.read()
+            settings_uri = f"data:image/svg+xml;base64,{base64.b64encode(settings.encode('utf-8')).decode('utf-8')}"
+
         # Replace external references
         html_content = html_content.replace(
-            '<link rel="stylesheet" href="/web/live_transcription.css" />',
+            '<link rel="stylesheet" href="live_transcription.css" />',
             f'<style>\n{css_content}\n</style>'
         )
         
         html_content = html_content.replace(
-            '<script src="/web/live_transcription.js"></script>',
+            '<script src="live_transcription.js"></script>',
             f'<script>\n{js_content}\n</script>'
         )
         
@@ -59,6 +62,11 @@ def get_inline_ui_html():
         html_content = html_content.replace(
             '<img src="/web/src/dark_mode.svg" alt="" />',
             f'<img src="{dark_data_uri}" alt="" />'
+        )
+        
+        html_content = html_content.replace(
+            '<img src="web/src/settings.svg" alt="Settings" />',
+            f'<img src="{settings_uri}" alt="" />'
         )
         
         return html_content
