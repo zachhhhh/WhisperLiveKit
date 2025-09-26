@@ -4,6 +4,7 @@ from time import time, sleep
 import math
 import logging
 import traceback
+from argparse import Namespace
 from whisperlivekit.timed_objects import ASRToken, Silence, Line, FrontData, State, Transcript, ChangeSpeaker
 from whisperlivekit.core import TranscriptionEngine, online_factory, online_diarization_factory, online_translation_factory
 from whisperlivekit.silero_vad_iterator import FixedVADIterator
@@ -40,9 +41,25 @@ class AudioProcessor:
             models = kwargs['transcription_engine']
         else:
             models = TranscriptionEngine(**kwargs)
-        
+
+        # Audio processing settings with optional per-connection overrides
+        self.base_engine = models
+        self.args = Namespace(**vars(models.args))
+        override_language = (
+            kwargs.get('source_language')
+            or kwargs.get('lan')
+            or kwargs.get('language')
+        )
+        if override_language:
+            self.args.lan = override_language
+
+        if 'target_language' in kwargs and kwargs['target_language'] is not None:
+            self.args.target_language = kwargs['target_language']
+
+        if 'task' in kwargs and kwargs['task']:
+            self.args.task = kwargs['task']
+
         # Audio processing settings
-        self.args = models.args
         self.sample_rate = 16000
         self.channels = 1
         self.samples_per_sec = int(self.sample_rate * self.args.min_chunk_size)
@@ -105,12 +122,19 @@ class AudioProcessor:
         self.online_translation = None
         
         if self.args.transcription:
-            self.online = online_factory(self.args, models.asr, models.tokenizer)        
-            self.sep = self.online.asr.sep   
+            self.online = online_factory(self.args, models.asr, models.tokenizer)
+            self.sep = self.online.asr.sep
         if self.args.diarization:
             self.diarization = online_diarization_factory(self.args, models.diarization_model)
-        if models.translation_model:
-            self.online_translation = online_translation_factory(self.args, models.translation_model)
+        if self.args.target_language:
+            translation_model = None
+            if hasattr(models, "get_translation_model"):
+                translation_model = models.get_translation_model(self.args.lan)
+            else:
+                translation_model = getattr(models, 'translation_model', None)
+
+            if translation_model:
+                self.online_translation = online_translation_factory(self.args, translation_model)
 
     def convert_pcm_to_float(self, pcm_buffer):
         """Convert PCM buffer in s16le format to normalized NumPy array."""

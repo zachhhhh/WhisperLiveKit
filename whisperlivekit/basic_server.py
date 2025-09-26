@@ -53,14 +53,27 @@ async def handle_websocket_results(websocket, results_generator):
 @app.websocket("/asr")
 async def websocket_endpoint(websocket: WebSocket):
     global transcription_engine
+    query_params = websocket.query_params
+    source_language = query_params.get('source') or query_params.get('lan') or args.lan
+    target_language = query_params.get('target') or query_params.get('target_language')
+    if target_language is None:
+        target_language = args.target_language
+
     audio_processor = AudioProcessor(
         transcription_engine=transcription_engine,
+        source_language=source_language,
+        target_language=target_language,
     )
     await websocket.accept()
     logger.info("WebSocket connection opened.")
 
     try:
-        await websocket.send_json({"type": "config", "useAudioWorklet": bool(args.pcm_input)})
+        await websocket.send_json({
+            "type": "config",
+            "useAudioWorklet": bool(args.pcm_input),
+            "source_language": source_language,
+            "target_language": target_language,
+        })
     except Exception as e:
         logger.warning(f"Failed to send config to client: {e}")
             

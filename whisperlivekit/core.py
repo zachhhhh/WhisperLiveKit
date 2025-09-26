@@ -144,6 +144,7 @@ class TranscriptionEngine:
                 raise ValueError(f"Unknown diarization backend: {self.args.diarization_backend}")
         
         self.translation_model = None
+        self._translation_model_cache = {}
         if self.args.target_language:
             if self.args.lan == 'auto' and self.args.backend != "simulstreaming":
                 raise Exception('Translation cannot be set with language auto when transcription backend is not simulstreaming')
@@ -151,6 +152,16 @@ class TranscriptionEngine:
                 from whisperlivekit.translation.translation import load_model
                 self.translation_model = load_model([self.args.lan], backend=self.args.nllb_backend, model_size=self.args.nllb_size) #in the future we want to handle different languages for different speakers
         TranscriptionEngine._initialized = True
+
+    def get_translation_model(self, source_language: str):
+        """Return a translation model for the requested source language, caching instances by language."""
+        from whisperlivekit.translation.translation import load_model
+
+        source_language = source_language or self.args.lan
+        cache_key = (source_language, self.args.nllb_backend, self.args.nllb_size)
+        if cache_key not in self._translation_model_cache:
+            self._translation_model_cache[cache_key] = load_model([source_language], backend=self.args.nllb_backend, model_size=self.args.nllb_size)
+        return self._translation_model_cache[cache_key]
 
 
 
