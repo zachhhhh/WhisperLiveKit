@@ -1,0 +1,75 @@
+{
+  "": {
+    "swift-dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/master.swiftdeps"
+  },
+  "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/AudioCapture.swift": {
+    "dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/AudioCapture.d",
+    "object": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/AudioCapture.swift.o",
+    "swiftmodule": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/AudioCapture~partial.swiftmodule",
+    "swift-dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/AudioCapture.swiftdeps",
+    "diagnostics": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/AudioCapture.dia"
+  },
+  "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ConnectionSettingsView.swift": {
+    "dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ConnectionSettingsView.d",
+    "object": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ConnectionSettingsView.swift.o",
+    "swiftmodule": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ConnectionSettingsView~partial.swiftmodule",
+    "swift-dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ConnectionSettingsView.swiftdeps",
+    "diagnostics": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ConnectionSettingsView.dia"
+  },
+  "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ContentView.swift": {
+    "dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ContentView.d",
+    "object": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ContentView.swift.o",
+    "swiftmodule": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ContentView.swiftdeps",
+    "diagnostics": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ContentView.dia"
+  },
+  "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/LanguageCatalog.swift": {
+    "dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguageCatalog.d",
+    "object": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguageCatalog.swift.o",
+    "swiftmodule": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguageCatalog~partial.swiftmodule",
+    "swift-dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguageCatalog.swiftdeps",
+    "diagnostics": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguageCatalog.dia"
+  },
+  "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/LanguagePickerView.swift": {
+    "dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguagePickerView.d",
+    "object": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguagePickerView.swift.o",
+    "swiftmodule": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguagePickerView~partial.swiftmodule",
+    "swift-dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguagePickerView.swiftdeps",
+    "diagnostics": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguagePickerView.dia"
+  },
+  "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ModelTypes.swift": {
+    "dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ModelTypes.d",
+    "object": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ModelTypes.swift.o",
+    "swiftmodule": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ModelTypes~partial.swiftmodule",
+    "swift-dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ModelTypes.swiftdeps",
+    "diagnostics": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ModelTypes.dia"
+  },
+  "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/TranscriptHistoryView.swift": {
+    "dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/TranscriptHistoryView.d",
+    "object": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/TranscriptHistoryView.swift.o",
+    "swiftmodule": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/TranscriptHistoryView~partial.swiftmodule",
+    "swift-dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/TranscriptHistoryView.swiftdeps",
+    "diagnostics": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/TranscriptHistoryView.dia"
+  },
+  "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/WhisperLiveKitTranslateApp.swift": {
+    "dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperLiveKitTranslateApp.d",
+    "object": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperLiveKitTranslateApp.swift.o",
+    "swiftmodule": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperLiveKitTranslateApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperLiveKitTranslateApp.swiftdeps",
+    "diagnostics": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperLiveKitTranslateApp.dia"
+  },
+  "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/WhisperSession.swift": {
+    "dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperSession.d",
+    "object": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperSession.swift.o",
+    "swiftmodule": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperSession~partial.swiftmodule",
+    "swift-dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperSession.swiftdeps",
+    "diagnostics": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperSession.dia"
+  },
+  "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/DerivedSources/resource_bundle_accessor.swift": {
+    "dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/resource_bundle_accessor.d",
+    "object": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/resource_bundle_accessor.swift.o",
+    "swiftmodule": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/resource_bundle_accessor~partial.swiftmodule",
+    "swift-dependencies": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/resource_bundle_accessor.swiftdeps",
+    "diagnostics": "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/resource_bundle_accessor.dia"
+  }
+}

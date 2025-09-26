@@ -1,0 +1,451 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+    "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/WhisperLiveKitTranslate_AppModule.bundle/Assets.xcassets" : {
+      "inputs" : [
+        {
+          "kind" : "directory",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/Resources/Assets.xcassets"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "directory",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/WhisperLiveKitTranslate_AppModule.bundle/Assets.xcassets"
+        }
+      ]
+    }
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.AppModule-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/sources",
+      "importPath" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/AudioCapture.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ConnectionSettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/LanguageCatalog.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/LanguagePickerView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ModelTypes.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/TranscriptHistoryView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/WhisperLiveKitTranslateApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/WhisperSession.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/DerivedSources/resource_bundle_accessor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<AppModule-arm64-apple-macosx26.0-debug.module-resources>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "AppModule",
+      "moduleOutputPath" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/Modules/AppModule.swiftmodule",
+      "objects" : [
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/AudioCapture.swift.o",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ConnectionSettingsView.swift.o",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ContentView.swift.o",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguageCatalog.swift.o",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguagePickerView.swift.o",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ModelTypes.swift.o",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/TranscriptHistoryView.swift.o",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperLiveKitTranslateApp.swift.o",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperSession.swift.o",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/resource_bundle_accessor.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx10.13",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+        "-module-cache-path",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "AppModule_main",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "whisperlivekittranslate"
+      ],
+      "outputFileMapPath" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/AudioCapture.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ConnectionSettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ContentView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguageCatalog.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguagePickerView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ModelTypes.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/TranscriptHistoryView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperLiveKitTranslateApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperSession.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/resource_bundle_accessor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/Modules/AppModule.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/AudioCapture.swift",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ConnectionSettingsView.swift",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ContentView.swift",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/LanguageCatalog.swift",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/LanguagePickerView.swift",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ModelTypes.swift",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/TranscriptHistoryView.swift",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/WhisperLiveKitTranslateApp.swift",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/WhisperSession.swift",
+        "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/DerivedSources/resource_bundle_accessor.swift"
+      ],
+      "tempsPath" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "AppModule" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "AppModule",
+      "-package-name",
+      "whisperlivekittranslate",
+      "-c",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/AudioCapture.swift",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ConnectionSettingsView.swift",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ContentView.swift",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/LanguageCatalog.swift",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/LanguagePickerView.swift",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ModelTypes.swift",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/TranscriptHistoryView.swift",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/WhisperLiveKitTranslateApp.swift",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/WhisperSession.swift",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/DerivedSources/resource_bundle_accessor.swift",
+      "-I",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx10.13",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+      "-module-cache-path",
+      "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "AppModule_main",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "whisperlivekittranslate",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "AppModule" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/AudioCapture.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ConnectionSettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/LanguageCatalog.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/LanguagePickerView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/ModelTypes.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/TranscriptHistoryView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/WhisperLiveKitTranslateApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/Sources/AppModule/WhisperSession.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/DerivedSources/resource_bundle_accessor.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/sources"
+    },
+    "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/WhisperLiveKitTranslateCLI-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/WhisperLiveKitTranslateCLI-entitlement.plist"
+    },
+    "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/WhisperLiveKitTranslateCLI.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/AudioCapture.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ConnectionSettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ContentView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguageCatalog.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/LanguagePickerView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/ModelTypes.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/TranscriptHistoryView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperLiveKitTranslateApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/WhisperSession.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/AppModule.build/resource_bundle_accessor.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/WhisperLiveKitTranslateCLI.product/Objects.LinkFileList"
+    },
+    "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/zach/Development/WhisperLiveKit/mobile/ios/WhisperLiveKitTranslate/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}
